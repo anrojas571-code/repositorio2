@@ -7,20 +7,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
 
+// Ruta dinamica para carpeta Public (compatible con minúsculas/mayúsculas en Linux)
+const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'Public'))
+    ? path.join(__dirname, 'Public')
+    : path.join(__dirname, 'public');
+
 app.use(cors());
 app.use(express.json());
 
-// Servir archivos estáticos desde la carpeta Public utilizando la ruta absoluta
-app.use(express.static(path.join(__dirname, 'Public')));
+// Servir archivos estáticos
+app.use(express.static(PUBLIC_DIR));
 
 // Ruta raíz principal
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'index.html'));
+    const indexPath = path.join(PUBLIC_DIR, 'index.html');
+    res.sendFile(indexPath);
 });
 
 // Ruta dedicada para el panel de administración
 app.get(['/admin', '/admin.html'], (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'admin.html'));
+    const adminPath = path.join(PUBLIC_DIR, 'admin.html');
+    res.sendFile(adminPath);
 });
 
 // Leer base de datos local JSON
@@ -116,7 +123,7 @@ app.delete('/api/usuarios', (req, res) => {
 
 // Redirección de respaldo para rutas no reconocidas
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Public', 'index.html'));
+    res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
 app.listen(PORT, '0.0.0.0', () => {
