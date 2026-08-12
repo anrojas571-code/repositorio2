@@ -13,9 +13,14 @@ app.use(express.json());
 // Servir archivos estáticos desde la carpeta Public utilizando la ruta absoluta
 app.use(express.static(path.join(__dirname, 'Public')));
 
-// Ruta raíz para servir index.html directamente
+// Ruta raíz principal
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'Public', 'index.html'));
+});
+
+// Ruta dedicada para el panel de administración
+app.get(['/admin', '/admin.html'], (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'admin.html'));
 });
 
 // Leer base de datos local JSON
@@ -35,12 +40,12 @@ function guardarDB(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// Obtener todos los usuarios (para admin.html)
+// API: Obtener todos los usuarios (para admin.html)
 app.get('/api/usuarios', (req, res) => {
     res.json(leerDB());
 });
 
-// Registrar usuario
+// API: Registrar usuario
 app.post('/api/usuarios/registrar', (req, res) => {
     const { usuario, clave, telefono, direccion } = req.body;
     const usuarios = leerDB();
@@ -64,7 +69,7 @@ app.post('/api/usuarios/registrar', (req, res) => {
     res.json({ mensaje: 'Usuario registrado con éxito', usuario: nuevoUsuario });
 });
 
-// Iniciar sesión
+// API: Iniciar sesión
 app.post('/api/usuarios/login', (req, res) => {
     const { usuario, clave } = req.body;
     const usuarios = leerDB();
@@ -77,7 +82,7 @@ app.post('/api/usuarios/login', (req, res) => {
     }
 });
 
-// Editar perfil de usuario
+// API: Editar perfil de usuario
 app.put('/api/usuarios/editar', (req, res) => {
     const { usuario, clave, telefono, direccion } = req.body;
     let usuarios = leerDB();
@@ -94,7 +99,7 @@ app.put('/api/usuarios/editar', (req, res) => {
     res.json({ mensaje: 'Perfil actualizado', usuario: usuarios[idx] });
 });
 
-// Eliminar un usuario específico
+// API: Eliminar un usuario específico
 app.delete('/api/usuarios/:usuario', (req, res) => {
     const nombreUsuario = req.params.usuario;
     let usuarios = leerDB();
@@ -103,10 +108,15 @@ app.delete('/api/usuarios/:usuario', (req, res) => {
     res.json({ mensaje: 'Usuario eliminado' });
 });
 
-// Vaciar toda la base de datos
+// API: Vaciar toda la base de datos
 app.delete('/api/usuarios', (req, res) => {
     guardarDB([]);
     res.json({ mensaje: 'Base de datos vaciada' });
+});
+
+// Redirección de respaldo para rutas no reconocidas
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'index.html'));
 });
 
 app.listen(PORT, () => {

@@ -304,7 +304,7 @@
 
                 contadorElem.textContent = usuarios.length;
 
-                if (usuarios.length === 0) {
+                if (!usuarios || usuarios.length === 0) {
                     contenedor.innerHTML = `
                         <div class="empty-state">
                             <i class="fa-solid fa-users-slash"></i>
