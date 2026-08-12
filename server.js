@@ -9,7 +9,14 @@ const DB_FILE = path.join(__dirname, 'db.json');
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('Public'));
+
+// Servir archivos estáticos desde la carpeta Public utilizando la ruta absoluta
+app.use(express.static(path.join(__dirname, 'Public')));
+
+// Ruta raíz para servir index.html directamente
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Public', 'index.html'));
+});
 
 // Leer base de datos local JSON
 function leerDB() {
