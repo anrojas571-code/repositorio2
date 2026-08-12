@@ -9,7 +9,7 @@ const DB_FILE = path.join(__dirname, 'db.json');
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('Public'));
 
 // Leer base de datos local JSON
 function leerDB() {
