@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Control - Programador</title>
+
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-dark: #0f172a;
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --danger: #ef4444;
+            --warning-bg: #fef3c7;
+            --warning-text: #b45309;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 30px 20px;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+        }
+
+        .admin-container {
+            width: 100%;
+            max-width: 780px;
+        }
+
+        .header-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 24px 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header-info h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #4f46e5, #06b6d4);
+            color: white;
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            text-align: center;
+            min-width: 160px;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .content-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 26px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-refresh {
+            background: #f1f5f9;
+            color: #334155;
+        }
+
+        .btn-refresh:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-danger {
+            background: #fef2f2;
+            color: var(--danger);
+            border: 1px solid #fca5a5;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-item {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .user-detail {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), #06b6d4);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+        }
+
+        .user-data h3 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .user-data p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .badges-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge-date {
+            background: #e0e7ff;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-mods {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-delete-user {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 8px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete-user:hover {
+            color: var(--danger);
+            background: #fee2e2;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 10px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 40px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-container">
+
+        <div class="header-panel">
+            <div class="header-info">
+                <h1><i class="fa-solid fa-code"></i> Panel de Programador</h1>
+                <p>Monitoreo de usuarios y auditoría de ediciones</p>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="totalUsuariosCount">0</div>
+                <div class="label">Usuarios Totales</div>
+            </div>
+        </div>
+
+        <div class="content-panel">
+            <div class="controls-bar">
+                <span style="font-weight: 700; font-size: 15px; color: #0f172a;">Directorio y Auditoría</span>
+                <div>
+                    <button onclick="cargarDatos()" class="btn btn-refresh">
+                        <i class="fa-solid fa-rotate-right"></i> Actualizar
+                    </button>
+                    <button onclick="vaciarBaseDeDatos()" class="btn btn-danger">
+                        <i class="fa-solid fa-trash-can"></i> Borrar Todo
+                    </button>
+                </div>
+            </div>
+
+            <div id="contenedorLista" class="users-list"></div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', cargarDatos);
+
+        async function cargarDatos() {
+            const contadorElem = document.getElementById('totalUsuariosCount');
+            const contenedor = document.getElementById('contenedorLista');
+
+            try {
+                const response = await fetch('/api/usuarios');
+                const usuarios = await response.json();
+
+                contadorElem.textContent = usuarios.length;
+
+                if (usuarios.length === 0) {
+                    contenedor.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-users-slash"></i>
+                            <p>No hay usuarios registrados en la base de datos.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                usuarios.forEach((u, index) => {
+                    const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
+                    const ediciones = u.contadorModificaciones || 0;
+
+                    html += `
+                        <div class="user-item">
+                            <div class="user-detail">
+                                <div class="avatar">${inicial}</div>
+                                <div class="user-data">
+                                    <h3>#${index + 1} - ${u.usuario}</h3>
+                                    <p><i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'} | <i class="fa-solid fa-key"></i> Clave: ${u.clave}</p>
+                                    ${u.direccion ? `<p><i class="fa-solid fa-location-dot"></i> ${u.direccion}</p>` : ''}
+                                </div>
+                            </div>
+                            <div class="badges-group">
+                                <span class="badge-mods" title="Ediciones realizadas">
+                                    <i class="fa-solid fa-pen-to-square"></i> ${ediciones} ${ediciones === 1 ? 'edición' : 'ediciones'}
+                                </span>
+                                <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
+                                <button onclick="eliminarUsuario('${u.usuario}')" class="btn-delete-user" title="Eliminar usuario">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML = html;
+            } catch (err) {
+                console.error("Error al cargar los usuarios:", err);
+            }
+        }
+
+        async function eliminarUsuario(nombre) {
+            if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombre}"?`)) {
+                try {
+                    await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, {
+                        method: 'DELETE'
+                    });
+                    cargarDatos();
+                } catch (err) {
+                    alert("Error al eliminar el usuario");
+                }
+            }
+        }
+
+        async function vaciarBaseDeDatos() {
+            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios del sistema?")) {
+                try {
+                    await fetch('/api/usuarios', {
+                        method: 'DELETE'
+                    });
+                    cargarDatos();
+                } catch (err) {
+                    alert("Error al vaciar la base de datos");
+                }
+            }
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Usuarios</title>
+
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #0000ff;
+            --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
+            --secondary: #06b6d4;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #adadad 50%, #0f172a 100%);
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success-bg: #dcfce7;
+            --success-text: #15803d;
+            --success-border: #86efac;
+            --error-bg: #fef2f2;
+            --error-text: #b91c1c;
+            --error-border: #fca5a5;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            --shadow-glow: 0 20px 40px -15px rgba(79, 70, 229, 0.3);
+            --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--text-main);
+        }
+
+        .main-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            width: 100%;
+            max-width: 480px;
+            border-radius: var(--radius-lg);
+            padding: 36px 30px;
+            box-shadow: var(--shadow-card), var(--shadow-glow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-container::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.25;
+            z-index: 0;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        .app-header {
+            text-align: center;
+            margin-bottom: 26px;
+        }
+
+        .app-header .logo-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
+        }
+
+        .app-header h2 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: #0f172a;
+        }
+
+        .app-header p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background-color: #f1f5f9;
+            padding: 5px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+            gap: 4px;
+        }
+
+        .nav-tabs button {
+            flex: 1;
+            padding: 10px 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 13px;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .nav-tabs button.active {
+            background-color: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-tabs button:hover:not(.active) {
+            color: var(--text-main);
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.35s ease-in-out;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper i.field-icon {
+            position: absolute;
+            left: 14px;
+            color: #94a3b8;
+            font-size: 15px;
+            transition: color 0.2s ease;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 12px 14px 12px 40px;
+            font-size: 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: var(--radius-md);
+            background: #f8fafc;
+            color: var(--text-main);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--primary);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px var(--primary-light);
+        }
+
+        .input-wrapper input.input-error {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .btn-toggle-pwd {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        .btn-toggle-pwd:hover {
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+        }
+
+        .btn-secondary-sm {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary-sm:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .alert-box {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            animation: slideDown 0.25s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-box.exito {
+            display: flex;
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            border: 1px solid var(--success-border);
+        }
+
+        .alert-box.error {
+            display: flex;
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid var(--error-border);
+        }
+
+        .user-card {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s ease;
+        }
+
+        .user-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .user-info h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .detail-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #334155;
+            margin-top: 6px;
+        }
+
+        .detail-row i {
+            color: var(--primary);
+            width: 16px;
+            text-align: center;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            width: 90%;
+            max-width: 360px;
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.25s ease;
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            width: 60px;
+            height: 60px;
+            background: #fef3c7;
+            color: #d97706;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            margin: 0 auto 16px auto;
+        }
+
+        .modal-box h3 {
+            font-size: 18px;
+            color: #0f172a;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .modal-box p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="main-container">
+        <div class="content-wrapper">
+
+            <div class="app-header">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <h2>Sistema Web de Usuarios</h2>
+                <p>Plataforma de registro y gestión con servidor en la nube</p>
+            </div>
+
+            <div class="nav-tabs">
+                <button id="tab-registro" class="active" onclick="mostrarSeccion('sec-registro')">
+                    <i class="fa-solid fa-user-plus"></i> Registrar
+                </button>
+                <button id="tab-login" onclick="mostrarSeccion('sec-login')">
+                    <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+                </button>
+                <button id="tab-admin" onclick="mostrarSeccion('sec-admin')">
+                    <i class="fa-solid fa-users"></i> Lista
+                </button>
+            </div>
+
+            <div id="mensajeGlobal" class="alert-box">
+                <i id="alertaIcono" class="fa-solid fa-circle-info"></i>
+                <span id="alertaTexto"></span>
+            </div>
+
+            <!-- 1. SECCIÓN: REGISTRO -->
+            <div id="sec-registro" class="section active">
+                <div class="section-title">
+                    <i class="fa-solid fa-id-card"></i> Crear nueva cuenta
+                </div>
+
+                <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
+                    <div class="form-group">
+                        <label for="regUsuario">Nombre de Usuario</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user field-icon"></i>
+                            <input type="text" id="regUsuario" placeholder="Ej. AngelRojas" autocomplete="username">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regClave">Contraseña</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <input type="password" id="regClave" placeholder="••••••••" autocomplete="new-password">
+                            <button type="button" class="btn-toggle-pwd"
+                                onclick="togglePasswordVisibility('regClave', this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regTelefono">Teléfono</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone field-icon"></i>
+                            <input type="tel" id="regTelefono" placeholder="Ej. 04141234567">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regDireccion">Dirección (Opcional)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-location-dot field-icon"></i>
+                            <input type="text" id="regDireccion" placeholder="Ej. Av. Bolívar Norte">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-user-plus"></i> Registrar Usuario
+                    </button>
+                </form>
+            </div>
+
+            <!-- 2. SECCIÓN: INICIO DE SESIÓN -->
+            <div id="sec-login" class="section">
+                <div id="formLoginWrapper">
+                    <div class="section-title">
+                        <i class="fa-solid fa-key"></i> Acceder a tu cuenta
+                    </div>
+
+                    <form id="formLogin" onsubmit="event.preventDefault(); iniciarSesion();">
+                        <div class="form-group">
+                            <label for="loginUsuario">Usuario</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-user field-icon"></i>
+                                <input type="text" id="loginUsuario" placeholder="Ingresa tu usuario"
+                                    autocomplete="username">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="loginClave">Contraseña</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-lock field-icon"></i>
+                                <input type="password" id="loginClave" placeholder="••••••••"
+                                    autocomplete="current-password">
+                                <button type="button" class="btn-toggle-pwd"
+                                    onclick="togglePasswordVisibility('loginClave', this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            <i class="fa-solid fa-right-to-bracket"></i> Entrar al Sistema
+                        </button>
+                    </form>
+                </div>
+
+                <div id="perfilUsuario" style="display: none;">
+                    <div class="section-title">
+                        <i class="fa-solid fa-circle-user"></i> Tu Perfil
+                    </div>
+                    <div id="datosPerfil"></div>
+                    <button onclick="cerrarSesion()" class="btn-primary btn-danger">
+                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. SECCIÓN: CONSULTA -->
+            <div id="sec-admin" class="section">
+                <div id="formAdminWrapper">
+                    <div class="section-title">
+                        <i class="fa-solid fa-user-check"></i> Consulta de Registro
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                        Ingresa tus credenciales para consultar tu tarjeta de registro individual.
+                    </p>
+
+                    <form id="formAdmin" onsubmit="event.preventDefault(); verListaUsuarios();">
+                        <div class="form-group">
+                            <label for="adminUsuario">Usuario Credencial</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-user field-icon"></i>
+                                <input type="text" id="adminUsuario" placeholder="Tu usuario registrado"
+                                    autocomplete="username">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adminClave">Contraseña</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-lock field-icon"></i>
+                                <input type="password" id="adminClave" placeholder="••••••••"
+                                    autocomplete="current-password">
+                                <button type="button" class="btn-toggle-pwd"
+                                    onclick="togglePasswordVisibility('adminClave', this)">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            <i class="fa-solid fa-magnifying-glass"></i> Consultar Mi Registro
+                        </button>
+                    </form>
+                </div>
+
+                <div id="listaContenedor"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="modalExiste" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <i class="fa-solid fa-user-check"></i>
+            </div>
+            <h3>¡Atención!</h3>
+            <p>Usted ya está registrado en el sistema.</p>
+            <button onclick="cerrarModalEIrALogin()" class="btn-primary">
+                Okey
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const SESSION_KEY = 'mi_sistema_sesion_activa';
+        let usuarioActualEnSesion = null;
+        let usuarioTemporalModal = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            configurarLimpiezaAlertasAlEscribir();
+            verificarSesionGuardada();
+        });
+
+        function limpiarErroresEntrada() {
+            document.querySelectorAll('input').forEach(inp => inp.classList.remove('input-error'));
+        }
+
+        function remarcarErrorInput(elementId) {
+            const input = document.getElementById(elementId);
+            if (input) {
+                input.classList.add('input-error');
+                input.focus();
+            }
+        }
+
+        function mostrarSeccion(seccionId) {
+            limpiarErroresEntrada();
+            if (seccionId !== 'sec-admin') cerrarVistaLista();
+            if (seccionId !== 'sec-login') cerrarSesionSilenciosa();
+
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(seccionId).classList.add('active');
+            const tabElem = document.getElementById(seccionId.replace('sec-', 'tab-'));
+            if (tabElem) tabElem.classList.add('active');
+
+            ocultarMensaje();
+        }
+
+        function mostrarMensaje(texto, tipo) {
+            const msg = document.getElementById('mensajeGlobal');
+            const icono = document.getElementById('alertaIcono');
+            const txt = document.getElementById('alertaTexto');
+
+            txt.innerText = texto;
+            msg.className = "alert-box " + tipo;
+            icono.className = tipo === 'exito' ? "fa-solid fa-circle-check" : "fa-solid fa-circle-exclamation";
+        }
+
+        function ocultarMensaje() {
+            const msg = document.getElementById('mensajeGlobal');
+            msg.style.display = 'none';
+            msg.className = 'alert-box';
+        }
+
+        function configurarLimpiezaAlertasAlEscribir() {
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
+                    input.classList.remove('input-error');
+                    const msg = document.getElementById('mensajeGlobal');
+                    if (msg.classList.contains('error')) ocultarMensaje();
+                });
+            });
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function abrirModalExiste(usuario) {
+            usuarioTemporalModal = usuario;
+            document.getElementById('modalExiste').classList.add('active');
+        }
+
+        function cerrarModalEIrALogin() {
+            document.getElementById('modalExiste').classList.remove('active');
+            document.getElementById('loginUsuario').value = usuarioTemporalModal;
+            mostrarSeccion('sec-login');
+            setTimeout(() => document.getElementById('loginClave').focus(), 100);
+        }
+
+        // --- API: REGISTRAR USUARIO ---
+        async function registrarUsuario() {
+            limpiarErroresEntrada();
+
+            const usuario = document.getElementById('regUsuario').value.trim();
+            const clave = document.getElementById('regClave').value.trim();
+            const telefono = document.getElementById('regTelefono').value.trim();
+            const direccion = document.getElementById('regDireccion').value.trim();
+
+            if (!usuario) { mostrarMensaje("Por favor ingresa un nombre de usuario.", "error"); remarcarErrorInput('regUsuario'); return; }
+            if (!clave) { mostrarMensaje("Por favor ingresa una contraseña.", "error"); remarcarErrorInput('regClave'); return; }
+            if (!telefono) { mostrarMensaje("Por favor ingresa tu número de teléfono.", "error"); remarcarErrorInput('regTelefono'); return; }
+
+            try {
+                const response = await fetch('/api/usuarios/registrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, clave, telefono, direccion })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    mostrarMensaje(`¡Cuenta '${usuario}' creada con éxito!`, "exito");
+                    document.getElementById('formRegistro').reset();
+                    setTimeout(() => {
+                        document.getElementById('loginUsuario').value = usuario;
+                        mostrarSeccion('sec-login');
+                        document.getElementById('loginClave').focus();
+                    }, 1200);
+                } else {
+                    remarcarErrorInput('regUsuario');
+                    abrirModalExiste(usuario);
+                }
+            } catch (err) {
+                mostrarMensaje("Error al conectar con el servidor.", "error");
+            }
+        }
+
+        // --- API: INICIAR SESIÓN ---
+        async function iniciarSesion() {
+            limpiarErroresEntrada();
+
+            const usuario = document.getElementById('loginUsuario').value.trim();
+            const clave = document.getElementById('loginClave').value.trim();
+
+            if (!usuario) { mostrarMensaje("Por favor ingresa tu usuario.", "error"); remarcarErrorInput('loginUsuario'); return; }
+            if (!clave) { mostrarMensaje("Por favor ingresa tu contraseña.", "error"); remarcarErrorInput('loginClave'); return; }
+
+            try {
+                const response = await fetch('/api/usuarios/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, clave })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    ocultarMensaje();
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+                    renderizarPerfil(data);
+                } else {
+                    mostrarMensaje("Credenciales incorrectas.", "error");
+                    remarcarErrorInput('loginUsuario');
+                    remarcarErrorInput('loginClave');
+                }
+            } catch (err) {
+                mostrarMensaje("Error de conexión al servidor.", "error");
+            }
+        }
+
+        function renderizarPerfil(user) {
+            usuarioActualEnSesion = user;
+            document.getElementById('formLoginWrapper').style.display = 'none';
+            document.getElementById('perfilUsuario').style.display = 'block';
+
+            const inicial = user.usuario.charAt(0).toUpperCase();
+            document.getElementById('datosPerfil').innerHTML = `
+            <div class="user-card">
+                <div class="user-card-header">
+                    <div class="avatar">${inicial}</div>
+                    <div class="user-info">
+                        <h4>Bienvenido, ${user.usuario}</h4>
+                        <p>Estado: Sesión Activa</p>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <i class="fa-solid fa-phone"></i>
+                    <span><strong>Teléfono:</strong> ${user.telefono || 'No registrado'}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span><strong>Dirección:</strong> ${user.direccion || 'No registrada'}</span>
+                </div>
+            </div>
+            <button onclick="mostrarFormularioEditar()" class="btn-primary" style="background: linear-gradient(135deg, var(--secondary), #0891b2); margin-bottom: 10px;">
+                <i class="fa-solid fa-user-pen"></i> Editar Mi Perfil
+            </button>
+            <div id="contenedorEdicionPerfil"></div>
+            `;
+        }
+
+        function mostrarFormularioEditar() {
+            if (!usuarioActualEnSesion) return;
+            const u = usuarioActualEnSesion;
+            const contenedor = document.getElementById('contenedorEdicionPerfil');
+
+            contenedor.innerHTML = `
+                <form id="formEditarPerfil" onsubmit="event.preventDefault(); guardarEdicionPerfil('${u.usuario}');" style="background:#f8fafc; padding:16px; border-radius:12px; border:1px solid var(--border-color); margin-bottom:12px; animation: fadeIn 0.25s;">
+                    <div style="font-weight:700; font-size:14px; margin-bottom:12px; color:#0f172a;">
+                        <i class="fa-solid fa-pen-to-square"></i> Modificar Datos
+                    </div>
+                    <div class="form-group">
+                        <label>Usuario (No modificable)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user field-icon"></i>
+                            <input type="text" value="${u.usuario}" disabled style="background:#e2e8f0; color:#64748b; cursor:not-allowed;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editClave">Nueva Contraseña</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <input type="password" id="editClave" value="${u.clave}" autocomplete="current-password">
+                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('editClave', this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTelefono">Teléfono</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone field-icon"></i>
+                            <input type="tel" id="editTelefono" value="${u.telefono || ''}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editDireccion">Dirección (Opcional)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-location-dot field-icon"></i>
+                            <input type="text" id="editDireccion" value="${u.direccion || ''}">
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="submit" class="btn-primary" style="margin-top:0; flex:1;">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar
+                        </button>
+                        <button type="button" class="btn-secondary-sm" onclick="cancelarEdicionPerfil()" style="padding:10px 14px;">
+                            <i class="fa-solid fa-xmark"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+            configurarLimpiezaAlertasAlEscribir();
+        }
+
+        function cancelarEdicionPerfil() {
+            document.getElementById('contenedorEdicionPerfil').innerHTML = '';
+        }
+
+        // --- API: EDITAR PERFIL ---
+        async function guardarEdicionPerfil(nombreUsuario) {
+            limpiarErroresEntrada();
+
+            const clave = document.getElementById('editClave').value.trim();
+            const telefono = document.getElementById('editTelefono').value.trim();
+            const direccion = document.getElementById('editDireccion').value.trim();
+
+            if (!clave) { mostrarMensaje("Ingresa la nueva contraseña.", "error"); remarcarErrorInput('editClave'); return; }
+            if (!telefono) { mostrarMensaje("Ingresa el teléfono.", "error"); remarcarErrorInput('editTelefono'); return; }
+
+            try {
+                const response = await fetch('/api/usuarios/editar', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: nombreUsuario, clave, telefono, direccion })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(data.usuario));
+                    renderizarPerfil(data.usuario);
+                    mostrarMensaje("¡Perfil actualizado con éxito!", "exito");
+                } else {
+                    mostrarMensaje(data.error || "Error al actualizar perfil.", "error");
+                }
+            } catch (err) {
+                mostrarMensaje("Error al conectar con el servidor.", "error");
+            }
+        }
+
+        function cerrarSesionSilenciosa() {
+            localStorage.removeItem(SESSION_KEY);
+            usuarioActualEnSesion = null;
+            document.getElementById('formLoginWrapper').style.display = 'block';
+            document.getElementById('perfilUsuario').style.display = 'none';
+            document.getElementById('datosPerfil').innerHTML = '';
+            document.getElementById('formLogin').reset();
+        }
+
+        function cerrarSesion() {
+            cerrarSesionSilenciosa();
+            mostrarMensaje("Has cerrado sesión exitosamente.", "exito");
+        }
+
+        function verificarSesionGuardada() {
+            try {
+                const sesion = localStorage.getItem(SESSION_KEY);
+                if (sesion) {
+                    const user = JSON.parse(sesion);
+                    renderizarPerfil(user);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // --- API: CONSULTAR REGISTRO UNICO ---
+        async function verListaUsuarios() {
+            limpiarErroresEntrada();
+
+            const usuario = document.getElementById('adminUsuario').value.trim();
+            const clave = document.getElementById('adminClave').value.trim();
+
+            if (!usuario) { mostrarMensaje("Ingresa tu usuario.", "error"); remarcarErrorInput('adminUsuario'); return; }
+            if (!clave) { mostrarMensaje("Ingresa tu contraseña.", "error"); remarcarErrorInput('adminClave'); return; }
+
+            try {
+                const response = await fetch('/api/usuarios/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, clave })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    ocultarMensaje();
+                    renderizarUsuarioUnico(data);
+                } else {
+                    mostrarMensaje("Acceso denegado: Credenciales no válidas.", "error");
+                    remarcarErrorInput('adminUsuario');
+                    remarcarErrorInput('adminClave');
+                }
+            } catch (err) {
+                mostrarMensaje("Error al conectar con el servidor.", "error");
+            }
+        }
+
+        function renderizarUsuarioUnico(u) {
+            const contenedor = document.getElementById('listaContenedor');
+            document.getElementById('formAdminWrapper').style.display = 'none';
+            const inicial = u.usuario.charAt(0).toUpperCase();
+
+            contenedor.innerHTML = `
+            <div class="admin-header">
+                <span style="font-weight:700; font-size:14px; color:#0f172a;">Registro Encontrado</span>
+                <button onclick="cerrarVistaLista()" class="btn-secondary-sm">
+                    <i class="fa-solid fa-arrow-left"></i> Volver
+                </button>
+            </div>
+            <div class="user-card">
+                <div class="user-card-header">
+                    <div class="avatar">${inicial}</div>
+                    <div class="user-info">
+                        <h4>${u.usuario}</h4>
+                        <p>Registrado el: ${u.fechaRegistro || 'N/D'}</p>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <i class="fa-solid fa-key"></i>
+                    <span><strong>Clave:</strong> ${u.clave}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fa-solid fa-phone"></i>
+                    <span><strong>Teléfono:</strong> ${u.telefono || 'No registrado'}</span>
+                </div>
+                <div class="detail-row">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span><strong>Dirección:</strong> ${u.direccion || 'No registrada'}</span>
+                </div>
+            </div>
+            `;
+        }
+
+        function cerrarVistaLista() {
+            document.getElementById('formAdminWrapper').style.display = 'block';
+            document.getElementById('listaContenedor').innerHTML = '';
+            document.getElementById('formAdmin').reset();
+        }
+    </script>
+</body>
+
+</html>
