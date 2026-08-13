@@ -761,71 +761,24 @@
                 return;
             }
 
-            // Estructura HTML con estilos que Excel interpreta como una tabla real
-            let excelTemplate = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-            <meta charset="UTF-8">
-            <!--[if gte mso 9]>
-            <xml>
-                <x:ExcelWorkbook>
-                    <x:ExcelWorksheets>
-                        <x:ExcelWorksheet>
-                            <x:Name>Usuarios</x:Name>
-                            <x:WorksheetOptions>
-                                <x:DisplayGridlines/>
-                            </x:WorksheetOptions>
-                        </x:ExcelWorksheet>
-                    </x:ExcelWorksheets>
-                </x:ExcelWorkbook>
-            </xml>
-            <![endif]-->
-            <style>
-                table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
-                th { background-color: #4f46e5; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #000000; padding: 8px; }
-                td { border: 1px solid #d1d5db; text-align: left; padding: 6px; mso-number-format:"\\@"; }
-                .center { text-align: center; }
-            </style>
-        </head>
-        <body>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Usuario</th>
-                        <th>Contraseña</th>
-                        <th>Teléfono</th>
-                        <th>Dirección</th>
-                        <th>Fecha Registro</th>
-                        <th>Modificaciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+            // Encabezados separados por Tabulaciones (\t)
+            let tsvContent = "\uFEFFUsuario\tContraseña\tTeléfono\tDirección\tFecha Registro\tModificaciones\n";
 
             usuariosCargados.forEach(u => {
-                excelTemplate += `
-            <tr>
-                <td>${u.usuario || ''}</td>
-                <td>${u.clave || ''}</td>
-                <td>${u.telefono || ''}</td>
-                <td>${u.direccion || ''}</td>
-                <td class="center">${u.fechaRegistro || ''}</td>
-                <td class="center">${u.contadorModificaciones || 0}</td>
-            </tr>
-        `;
+                const usuario = (u.usuario || '').replace(/\t/g, ' ');
+                const clave = (u.clave || '').replace(/\t/g, ' ');
+                const telefono = (u.telefono || '').replace(/\t/g, ' ');
+                const direccion = (u.direccion || '').replace(/\t/g, ' ');
+                const fecha = (u.fechaRegistro || '').replace(/\t/g, ' ');
+                const mods = u.contadorModificaciones || 0;
+
+                tsvContent += `${usuario}\t${clave}\t${telefono}\t${direccion}\t${fecha}\t${mods}\n`;
             });
 
-            excelTemplate += `
-                </tbody>
-            </table>
-        </body>
-        </html>
-    `;
-
-            descargarArchivo(excelTemplate, 'usuarios_sistema.xls', 'application/vnd.ms-excel');
-            registrarLogDescarga('EXCEL');
+            // Guardar como .csv limpio
+            descargarArchivo(tsvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
+            registrarLogDescarga('CSV');
         }
-
         function descargarArchivo(contenido, nombreArchivo, mimeType) {
             const blob = new Blob([contenido], { type: mimeType });
             const url = URL.createObjectURL(blob);
