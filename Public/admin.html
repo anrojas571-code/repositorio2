@@ -27,6 +27,7 @@
             --danger: #ef4444;
             --warning-bg: #fef3c7;
             --warning-text: #b45309;
+            --success: #10b981;
         }
 
         * {
@@ -48,7 +49,7 @@
 
         .admin-container {
             width: 100%;
-            max-width: 780px;
+            max-width: 820px;
         }
 
         /* CARD LOGIN ADMIN */
@@ -214,10 +215,17 @@
             align-items: center;
             margin-bottom: 20px;
             gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 10px 16px;
+            padding: 10px 14px;
             border: none;
             border-radius: 8px;
             font-size: 13px;
@@ -236,6 +244,28 @@
 
         .btn-refresh:hover {
             background: #e2e8f0;
+        }
+
+        .btn-export-csv {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+
+        .btn-export-csv:hover {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-export-json {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .btn-export-json:hover {
+            background: #3b82f6;
+            color: white;
         }
 
         .btn-danger {
@@ -416,12 +446,19 @@
             <div class="content-panel">
                 <div class="controls-bar">
                     <span style="font-weight: 700; font-size: 15px; color: #0f172a;">Directorio y Auditoría</span>
-                    <div>
-                        <button onclick="cargarDatos()" class="btn btn-refresh">
-                            <i class="fa-solid fa-rotate-right"></i> Actualizar
+                    <div class="btn-group">
+                        <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
+                            <i class="fa-solid fa-rotate-right"></i>
                         </button>
-                        <button onclick="vaciarBaseDeDatos()" class="btn btn-danger">
-                            <i class="fa-solid fa-trash-can"></i> Borrar Todo
+                        <button onclick="exportarCSV()" class="btn btn-export-csv" title="Exportar a CSV / Excel">
+                            <i class="fa-solid fa-file-csv"></i> CSV
+                        </button>
+                        <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar a JSON">
+                            <i class="fa-solid fa-file-code"></i> JSON
+                        </button>
+                        <button onclick="vaciarBaseDeDatos()" class="btn btn-danger"
+                            title="Borrar toda la base de datos">
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
                 </div>
@@ -435,6 +472,7 @@
 
     <script>
         const ADMIN_SESSION_KEY = 'admin_session_active';
+        let usuariosCargados = []; // Variable global para almacenar datos para exportar
 
         document.addEventListener('DOMContentLoaded', () => {
             const esAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
@@ -488,11 +526,11 @@
 
             try {
                 const response = await fetch('/api/usuarios');
-                const usuarios = await response.json();
+                usuariosCargados = await response.json();
 
-                contadorElem.textContent = usuarios.length;
+                contadorElem.textContent = usuariosCargados.length;
 
-                if (!usuarios || usuarios.length === 0) {
+                if (!usuariosCargados || usuariosCargados.length === 0) {
                     contenedor.innerHTML = `
                         <div class="empty-state">
                             <i class="fa-solid fa-users-slash"></i>
@@ -503,7 +541,7 @@
                 }
 
                 let html = '';
-                usuarios.forEach((u, index) => {
+                usuariosCargados.forEach((u, index) => {
                     const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
                     const ediciones = u.contadorModificaciones || 0;
 
@@ -560,6 +598,54 @@
                     alert("Error al vaciar la base de datos");
                 }
             }
+        }
+
+        // --- FUNCIONES DE EXPORTACIÓN ---
+
+        function exportarCSV() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                alert("No hay datos disponibles para exportar.");
+                return;
+            }
+
+            // Encabezados del CSV
+            let csvContent = "\uFEFF"; // BOM para caracteres especiales en Excel (como acentos)
+            csvContent += "Usuario,Contraseña,Teléfono,Dirección,Fecha Registro,Modificaciones\n";
+
+            usuariosCargados.forEach(u => {
+                const usuario = `"${(u.usuario || '').replace(/"/g, '""')}"`;
+                const clave = `"${(u.clave || '').replace(/"/g, '""')}"`;
+                const telefono = `"${(u.telefono || '').replace(/"/g, '""')}"`;
+                const direccion = `"${(u.direccion || '').replace(/"/g, '""')}"`;
+                const fecha = `"${(u.fechaRegistro || '').replace(/"/g, '""')}"`;
+                const mods = u.contadorModificaciones || 0;
+
+                csvContent += `${usuario},${clave},${telefono},${direccion},${fecha},${mods}\n`;
+            });
+
+            descargarArchivo(csvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
+        }
+
+        function exportarJSON() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                alert("No hay datos disponibles para exportar.");
+                return;
+            }
+
+            const jsonString = JSON.stringify(usuariosCargados, null, 2);
+            descargarArchivo(jsonString, 'usuarios_sistema.json', 'application/json');
+        }
+
+        function descargarArchivo(contenido, nombreArchivo, mimeType) {
+            const blob = new Blob([contenido], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
     </script>
 
