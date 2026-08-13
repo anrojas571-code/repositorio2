@@ -8,6 +8,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
 
+// Credenciales del administrador inicial
+const ADMIN_DEFAULT = {
+    usuario: 'Admin',
+    clave: 'An12345*'
+};
+
 // Configuración de PostgreSQL si DATABASE_URL existe
 let pool = null;
 if (process.env.DATABASE_URL) {
@@ -19,9 +25,10 @@ if (process.env.DATABASE_URL) {
     });
     console.log('Conectado a PostgreSQL mediante DATABASE_URL');
 
-    // Crear tabla si no existe automáticamente
+    // Crear tablas e insertar admin por defecto si no existe
     const initDb = async () => {
         try {
+            // Tabla de usuarios regulares
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS usuarios (
                     usuario VARCHAR(255) PRIMARY KEY,
@@ -32,9 +39,26 @@ if (process.env.DATABASE_URL) {
                     contador_modificaciones INT DEFAULT 0
                 );
             `);
-            console.log('Tabla "usuarios" lista en PostgreSQL');
+
+            // Tabla de administradores (preparada para agregar más en el futuro)
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS administradores (
+                    usuario VARCHAR(255) PRIMARY KEY,
+                    clave TEXT NOT NULL,
+                    rol VARCHAR(50) DEFAULT 'admin'
+                );
+            `);
+
+            // Insertar o actualizar el admin por defecto
+            await pool.query(`
+                INSERT INTO administradores (usuario, clave) 
+                VALUES ($1, $2)
+                ON CONFLICT (usuario) DO UPDATE SET clave = EXCLUDED.clave;
+            `, [ADMIN_DEFAULT.usuario, ADMIN_DEFAULT.clave]);
+
+            console.log('Tablas "usuarios" y "administradores" listas en PostgreSQL');
         } catch (err) {
-            console.error('Error al inicializar la tabla PostgreSQL:', err);
+            console.error('Error al inicializar la base de datos en PostgreSQL:', err);
         }
     };
     initDb();
@@ -42,7 +66,7 @@ if (process.env.DATABASE_URL) {
     console.log('DATABASE_URL no definida. Modo fallback a db.json local');
 }
 
-// Ruta dinámica para la carpeta Public (compatible con Linux/Render)
+// Ruta dinámica para la carpeta Public
 const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'Public'))
     ? path.join(__dirname, 'Public')
     : path.join(__dirname, 'public');
@@ -66,12 +90,20 @@ app.get(['/admin', '/admin.html'], (req, res) => {
 // --- MÉTODOS LOCALES (FALLBACK A db.json) ---
 function leerDBLocal() {
     if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify([]));
+        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT] }));
     }
     try {
-        return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+        // Compatibilidad si db.json antes era solo un array
+        if (Array.isArray(data)) {
+            return { usuarios: data, administradores: [ADMIN_DEFAULT] };
+        }
+        if (!data.administradores) {
+            data.administradores = [ADMIN_DEFAULT];
+        }
+        return data;
     } catch (e) {
-        return [];
+        return { usuarios: [], administradores: [ADMIN_DEFAULT] };
     }
 }
 
@@ -79,9 +111,41 @@ function guardarDBLocal(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// --- API ENDPOINTS (COMPATIBLES CON POSTGRES Y JSON) ---
+// --- API ENDPOINTS ---
 
-// API: Obtener todos los usuarios
+// API: Login exclusivo para Administradores
+app.post('/api/admin/login', async (req, res) => {
+    const { usuario, clave } = req.body;
+
+    if (pool) {
+        try {
+            const result = await pool.query(
+                'SELECT usuario FROM administradores WHERE usuario = $1 AND clave = $2',
+                [usuario, clave]
+            );
+
+            if (result.rows.length > 0) {
+                res.json({ ok: true, usuario: result.rows[0].usuario });
+            } else {
+                res.status(401).json({ error: 'Credenciales de administrador no válidas' });
+            }
+        } catch (err) {
+            console.error('Error en POST /api/admin/login:', err);
+            res.status(500).json({ error: 'Error en el servidor' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const adminExiste = db.administradores.find(a => a.usuario === usuario && a.clave === clave);
+
+        if (adminExiste) {
+            res.json({ ok: true, usuario: adminExiste.usuario });
+        } else {
+            res.status(401).json({ error: 'Credenciales de administrador no válidas' });
+        }
+    }
+});
+
+// API: Obtener todos los usuarios (Para el panel de admin)
 app.get('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
@@ -97,11 +161,12 @@ app.get('/api/usuarios', async (req, res) => {
             return res.status(500).json({ error: 'Error al consultar PostgreSQL' });
         }
     } else {
-        res.json(leerDBLocal());
+        const db = leerDBLocal();
+        res.json(db.usuarios || []);
     }
 });
 
-// API: Registrar usuario
+// API: Registrar usuario normal
 app.post('/api/usuarios/registrar', async (req, res) => {
     const { usuario, clave, telefono, direccion } = req.body;
     if (!usuario || !clave) {
@@ -130,8 +195,8 @@ app.post('/api/usuarios/registrar', async (req, res) => {
             return res.status(500).json({ error: 'Error en la base de datos PostgreSQL' });
         }
     } else {
-        const usuarios = leerDBLocal();
-        const yaExiste = usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase());
+        const db = leerDBLocal();
+        const yaExiste = db.usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase());
         if (yaExiste) {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
@@ -145,13 +210,13 @@ app.post('/api/usuarios/registrar', async (req, res) => {
             contadorModificaciones: 0
         };
 
-        usuarios.push(nuevoUsuario);
-        guardarDBLocal(usuarios);
+        db.usuarios.push(nuevoUsuario);
+        guardarDBLocal(db);
         res.json({ mensaje: 'Usuario registrado con éxito', usuario: nuevoUsuario });
     }
 });
 
-// API: Iniciar sesión
+// API: Iniciar sesión de usuario regular
 app.post('/api/usuarios/login', async (req, res) => {
     const { usuario, clave } = req.body;
 
@@ -175,8 +240,8 @@ app.post('/api/usuarios/login', async (req, res) => {
             res.status(500).json({ error: 'Error en PostgreSQL' });
         }
     } else {
-        const usuarios = leerDBLocal();
-        const encontrado = usuarios.find(u => u.usuario === usuario && u.clave === clave);
+        const db = leerDBLocal();
+        const encontrado = db.usuarios.find(u => u.usuario === usuario && u.clave === clave);
 
         if (encontrado) {
             res.json(encontrado);
@@ -210,17 +275,17 @@ app.put('/api/usuarios/editar', async (req, res) => {
             res.status(500).json({ error: 'Error al actualizar usuario' });
         }
     } else {
-        let usuarios = leerDBLocal();
-        const idx = usuarios.findIndex(u => u.usuario.toLowerCase() === usuario.toLowerCase());
+        const db = leerDBLocal();
+        const idx = db.usuarios.findIndex(u => u.usuario.toLowerCase() === usuario.toLowerCase());
         if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        usuarios[idx].clave = clave;
-        usuarios[idx].telefono = telefono;
-        usuarios[idx].direccion = direccion;
-        usuarios[idx].contadorModificaciones = (usuarios[idx].contadorModificaciones || 0) + 1;
+        db.usuarios[idx].clave = clave;
+        db.usuarios[idx].telefono = telefono;
+        db.usuarios[idx].direccion = direccion;
+        db.usuarios[idx].contadorModificaciones = (db.usuarios[idx].contadorModificaciones || 0) + 1;
 
-        guardarDBLocal(usuarios);
-        res.json({ mensaje: 'Perfil actualizado', usuario: usuarios[idx] });
+        guardarDBLocal(db);
+        res.json({ mensaje: 'Perfil actualizado', usuario: db.usuarios[idx] });
     }
 });
 
@@ -237,14 +302,14 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
             res.status(500).json({ error: 'Error al eliminar usuario' });
         }
     } else {
-        let usuarios = leerDBLocal();
-        usuarios = usuarios.filter(u => u.usuario.toLowerCase() !== nombreUsuario.toLowerCase());
-        guardarDBLocal(usuarios);
+        const db = leerDBLocal();
+        db.usuarios = db.usuarios.filter(u => u.usuario.toLowerCase() !== nombreUsuario.toLowerCase());
+        guardarDBLocal(db);
         res.json({ mensaje: 'Usuario eliminado' });
     }
 });
 
-// API: Vaciar toda la base de datos
+// API: Vaciar toda la base de datos de usuarios
 app.delete('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
@@ -255,7 +320,9 @@ app.delete('/api/usuarios', async (req, res) => {
             res.status(500).json({ error: 'Error al vaciar la base de datos' });
         }
     } else {
-        guardarDBLocal([]);
+        const db = leerDBLocal();
+        db.usuarios = [];
+        guardarDBLocal(db);
         res.json({ mensaje: 'Base de datos vaciada' });
     }
 });
