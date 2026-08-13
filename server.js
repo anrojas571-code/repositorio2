@@ -28,7 +28,7 @@ if (process.env.DATABASE_URL) {
     // Crear tablas e insertar admin por defecto si no existe
     const initDb = async () => {
         try {
-            // Tabla de usuarios regulares
+            // Tabla de usuarios
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS usuarios (
                     usuario VARCHAR(255) PRIMARY KEY,
@@ -40,12 +40,22 @@ if (process.env.DATABASE_URL) {
                 );
             `);
 
-            // Tabla de administradores (preparada para agregar más en el futuro)
+            // Tabla de administradores
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS administradores (
                     usuario VARCHAR(255) PRIMARY KEY,
                     clave TEXT NOT NULL,
                     rol VARCHAR(50) DEFAULT 'admin'
+                );
+            `);
+
+            // Tabla de historial de descargas
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS descargas (
+                    id SERIAL PRIMARY KEY,
+                    formato VARCHAR(20) NOT NULL,
+                    fecha TEXT NOT NULL,
+                    hora TEXT NOT NULL
                 );
             `);
 
@@ -56,7 +66,7 @@ if (process.env.DATABASE_URL) {
                 ON CONFLICT (usuario) DO UPDATE SET clave = EXCLUDED.clave;
             `, [ADMIN_DEFAULT.usuario, ADMIN_DEFAULT.clave]);
 
-            console.log('Tablas "usuarios" y "administradores" listas en PostgreSQL');
+            console.log('Tablas listas en PostgreSQL');
         } catch (err) {
             console.error('Error al inicializar la base de datos en PostgreSQL:', err);
         }
@@ -90,20 +100,18 @@ app.get(['/admin', '/admin.html'], (req, res) => {
 // --- MÉTODOS LOCALES (FALLBACK A db.json) ---
 function leerDBLocal() {
     if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT] }));
+        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] }));
     }
     try {
         const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-        // Compatibilidad si db.json antes era solo un array
         if (Array.isArray(data)) {
-            return { usuarios: data, administradores: [ADMIN_DEFAULT] };
+            return { usuarios: data, administradores: [ADMIN_DEFAULT], descargas: [] };
         }
-        if (!data.administradores) {
-            data.administradores = [ADMIN_DEFAULT];
-        }
+        if (!data.administradores) data.administradores = [ADMIN_DEFAULT];
+        if (!data.descargas) data.descargas = [];
         return data;
     } catch (e) {
-        return { usuarios: [], administradores: [ADMIN_DEFAULT] };
+        return { usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] };
     }
 }
 
@@ -127,25 +135,23 @@ app.post('/api/admin/login', async (req, res) => {
             if (result.rows.length > 0) {
                 res.json({ ok: true, usuario: result.rows[0].usuario });
             } else {
-                res.status(401).json({ error: 'Credenciales de administrador no válidas' });
+                res.status(401).json({ error: 'Credenciales no válidas' });
             }
         } catch (err) {
-            console.error('Error en POST /api/admin/login:', err);
             res.status(500).json({ error: 'Error en el servidor' });
         }
     } else {
         const db = leerDBLocal();
         const adminExiste = db.administradores.find(a => a.usuario === usuario && a.clave === clave);
-
         if (adminExiste) {
             res.json({ ok: true, usuario: adminExiste.usuario });
         } else {
-            res.status(401).json({ error: 'Credenciales de administrador no válidas' });
+            res.status(401).json({ error: 'Credenciales no válidas' });
         }
     }
 });
 
-// API: Obtener todos los usuarios (Para el panel de admin)
+// API: Obtener todos los usuarios
 app.get('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
@@ -157,7 +163,6 @@ app.get('/api/usuarios', async (req, res) => {
             );
             return res.json(result.rows);
         } catch (err) {
-            console.error('Error en GET /api/usuarios:', err);
             return res.status(500).json({ error: 'Error al consultar PostgreSQL' });
         }
     } else {
@@ -169,18 +174,14 @@ app.get('/api/usuarios', async (req, res) => {
 // API: Registrar usuario normal
 app.post('/api/usuarios/registrar', async (req, res) => {
     const { usuario, clave, telefono, direccion } = req.body;
-    if (!usuario || !clave) {
-        return res.status(400).json({ error: 'Usuario y clave son requeridos' });
-    }
+    if (!usuario || !clave) return res.status(400).json({ error: 'Usuario y clave requeridos' });
 
     const fechaRegistro = new Date().toLocaleDateString();
 
     if (pool) {
         try {
             const existe = await pool.query('SELECT usuario FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [usuario]);
-            if (existe.rows.length > 0) {
-                return res.status(400).json({ error: 'El usuario ya existe' });
-            }
+            if (existe.rows.length > 0) return res.status(400).json({ error: 'El usuario ya existe' });
 
             const insertResult = await pool.query(
                 `INSERT INTO usuarios (usuario, clave, telefono, direccion, fecha_registro, contador_modificaciones)
@@ -189,34 +190,24 @@ app.post('/api/usuarios/registrar', async (req, res) => {
                 [usuario, clave, telefono || '', direccion || '', fechaRegistro]
             );
 
-            return res.json({ mensaje: 'Usuario registrado con éxito', usuario: insertResult.rows[0] });
+            return res.json({ mensaje: 'Usuario registrado', usuario: insertResult.rows[0] });
         } catch (err) {
-            console.error('Error en POST /api/usuarios/registrar:', err);
-            return res.status(500).json({ error: 'Error en la base de datos PostgreSQL' });
+            return res.status(500).json({ error: 'Error en base de datos' });
         }
     } else {
         const db = leerDBLocal();
-        const yaExiste = db.usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase());
-        if (yaExiste) {
+        if (db.usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase())) {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
 
-        const nuevoUsuario = {
-            usuario,
-            clave,
-            telefono,
-            direccion,
-            fechaRegistro,
-            contadorModificaciones: 0
-        };
-
+        const nuevoUsuario = { usuario, clave, telefono, direccion, fechaRegistro, contadorModificaciones: 0 };
         db.usuarios.push(nuevoUsuario);
         guardarDBLocal(db);
-        res.json({ mensaje: 'Usuario registrado con éxito', usuario: nuevoUsuario });
+        res.json({ mensaje: 'Usuario registrado', usuario: nuevoUsuario });
     }
 });
 
-// API: Iniciar sesión de usuario regular
+// API: Iniciar sesión usuario normal
 app.post('/api/usuarios/login', async (req, res) => {
     const { usuario, clave } = req.body;
 
@@ -236,22 +227,17 @@ app.post('/api/usuarios/login', async (req, res) => {
                 res.status(401).json({ error: 'Credenciales incorrectas' });
             }
         } catch (err) {
-            console.error('Error en POST /api/usuarios/login:', err);
             res.status(500).json({ error: 'Error en PostgreSQL' });
         }
     } else {
         const db = leerDBLocal();
         const encontrado = db.usuarios.find(u => u.usuario === usuario && u.clave === clave);
-
-        if (encontrado) {
-            res.json(encontrado);
-        } else {
-            res.status(401).json({ error: 'Credenciales incorrectas' });
-        }
+        if (encontrado) res.json(encontrado);
+        else res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 });
 
-// API: Editar perfil de usuario
+// API: Editar perfil
 app.put('/api/usuarios/editar', async (req, res) => {
     const { usuario, clave, telefono, direccion } = req.body;
 
@@ -265,14 +251,10 @@ app.put('/api/usuarios/editar', async (req, res) => {
                 [usuario, clave, telefono, direccion]
             );
 
-            if (updateResult.rows.length === 0) {
-                return res.status(404).json({ error: 'Usuario no encontrado' });
-            }
-
+            if (updateResult.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
             res.json({ mensaje: 'Perfil actualizado', usuario: updateResult.rows[0] });
         } catch (err) {
-            console.error('Error en PUT /api/usuarios/editar:', err);
-            res.status(500).json({ error: 'Error al actualizar usuario' });
+            res.status(500).json({ error: 'Error al actualizar' });
         }
     } else {
         const db = leerDBLocal();
@@ -289,7 +271,7 @@ app.put('/api/usuarios/editar', async (req, res) => {
     }
 });
 
-// API: Eliminar un usuario específico
+// API: Eliminar usuario individual
 app.delete('/api/usuarios/:usuario', async (req, res) => {
     const nombreUsuario = req.params.usuario;
 
@@ -298,7 +280,6 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
             await pool.query('DELETE FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [nombreUsuario]);
             res.json({ mensaje: 'Usuario eliminado' });
         } catch (err) {
-            console.error('Error en DELETE /api/usuarios/:usuario:', err);
             res.status(500).json({ error: 'Error al eliminar usuario' });
         }
     } else {
@@ -309,14 +290,13 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
     }
 });
 
-// API: Vaciar toda la base de datos de usuarios
+// API: Vaciar usuarios
 app.delete('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
             await pool.query('TRUNCATE TABLE usuarios');
             res.json({ mensaje: 'Base de datos vaciada' });
         } catch (err) {
-            console.error('Error en DELETE /api/usuarios:', err);
             res.status(500).json({ error: 'Error al vaciar la base de datos' });
         }
     } else {
@@ -327,7 +307,86 @@ app.delete('/api/usuarios', async (req, res) => {
     }
 });
 
-// Redirección de respaldo para rutas no reconocidas
+// --- HISTORIAL DE DESCARGAS ---
+
+// API: Registrar una descarga
+app.post('/api/descargas', async (req, res) => {
+    const { formato } = req.body;
+    const ahora = new Date();
+    const fecha = ahora.toLocaleDateString();
+    const hora = ahora.toLocaleTimeString();
+
+    if (pool) {
+        try {
+            const result = await pool.query(
+                'INSERT INTO descargas (formato, fecha, hora) VALUES ($1, $2, $3) RETURNING *',
+                [formato, fecha, hora]
+            );
+            res.json(result.rows[0]);
+        } catch (err) {
+            res.status(500).json({ error: 'Error al guardar log de descarga' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const nuevaDescarga = { id: Date.now(), formato, fecha, hora };
+        db.descargas.push(nuevaDescarga);
+        guardarDBLocal(db);
+        res.json(nuevaDescarga);
+    }
+});
+
+// API: Obtener lista de descargas
+app.get('/api/descargas', async (req, res) => {
+    if (pool) {
+        try {
+            const result = await pool.query('SELECT * FROM descargas ORDER BY id DESC');
+            res.json(result.rows);
+        } catch (err) {
+            res.status(500).json({ error: 'Error al consultar descargas' });
+        }
+    } else {
+        const db = leerDBLocal();
+        res.json(db.descargas.reverse());
+    }
+});
+
+// API: Eliminar una descarga específica por ID
+app.delete('/api/descargas/:id', async (req, res) => {
+    const { id } = req.params;
+
+    if (pool) {
+        try {
+            await pool.query('DELETE FROM descargas WHERE id = $1', [id]);
+            res.json({ mensaje: 'Registro de descarga eliminado' });
+        } catch (err) {
+            res.status(500).json({ error: 'Error al eliminar el registro' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.descargas = db.descargas.filter(d => d.id.toString() !== id.toString());
+        guardarDBLocal(db);
+        res.json({ mensaje: 'Registro de descarga eliminado' });
+    }
+});
+
+// API: Vaciar todas las descargas
+app.delete('/api/descargas', async (req, res) => {
+    if (pool) {
+        try {
+            await pool.query('TRUNCATE TABLE descargas');
+            res.json({ mensaje: 'Historial de descargas vaciado' });
+        } catch (err) {
+            res.status(500).json({ error: 'Error al vaciar historial' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.descargas = [];
+        guardarDBLocal(db);
+        res.json({ mensaje: 'Historial de descargas vaciado' });
+    }
+});
+
+// Redirección por defecto
 app.get('*', (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });

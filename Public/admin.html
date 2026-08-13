@@ -27,7 +27,6 @@
             --danger: #ef4444;
             --warning-bg: #fef3c7;
             --warning-text: #b45309;
-            --success: #10b981;
         }
 
         * {
@@ -49,7 +48,7 @@
 
         .admin-container {
             width: 100%;
-            max-width: 820px;
+            max-width: 840px;
         }
 
         /* CARD LOGIN ADMIN */
@@ -268,6 +267,17 @@
             color: white;
         }
 
+        .btn-history {
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .btn-history:hover {
+            background: #f59e0b;
+            color: white;
+        }
+
         .btn-danger {
             background: #fef2f2;
             color: var(--danger);
@@ -351,9 +361,6 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
         }
 
         .btn-delete-user {
@@ -364,7 +371,6 @@
             font-size: 16px;
             padding: 8px;
             border-radius: 6px;
-            transition: all 0.2s ease;
         }
 
         .btn-delete-user:hover {
@@ -383,6 +389,125 @@
             color: #cbd5e1;
             margin-bottom: 12px;
         }
+
+        /* MODAL DE HISTORIAL DE DESCARGAS */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 550px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--danger);
+        }
+
+        .modal-body {
+            max-height: 350px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .download-item {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .download-info span {
+            font-weight: 800;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .badge-csv {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-json {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .download-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .modal-footer {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -396,7 +521,7 @@
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h2>Acceso Administrador</h2>
-            <p>Ingresa tus credenciales especiales para acceder al panel.</p>
+            <p>Ingresa tus credenciales para acceder al panel.</p>
 
             <div id="loginError" class="alert-error">Credenciales incorrectas</div>
 
@@ -423,7 +548,7 @@
             </form>
         </div>
 
-        <!-- 2. PANEL COMPLETO (OCULTO HASTA INICIAR SESIÓN) -->
+        <!-- 2. PANEL COMPLETO -->
         <div id="vistaPanelAdmin" style="display: none;">
 
             <div class="header-panel">
@@ -437,7 +562,7 @@
                         <div class="label">Usuarios Totales</div>
                     </div>
                     <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;"
-                        title="Cerrar sesión de admin">
+                        title="Cerrar sesión">
                         <i class="fa-solid fa-power-off"></i>
                     </button>
                 </div>
@@ -450,11 +575,15 @@
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
                             <i class="fa-solid fa-rotate-right"></i>
                         </button>
-                        <button onclick="exportarCSV()" class="btn btn-export-csv" title="Exportar a CSV / Excel">
+                        <button onclick="exportarCSV()" class="btn btn-export-csv" title="Exportar CSV">
                             <i class="fa-solid fa-file-csv"></i> CSV
                         </button>
-                        <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar a JSON">
+                        <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
                             <i class="fa-solid fa-file-code"></i> JSON
+                        </button>
+                        <button onclick="abrirModalDescargas()" class="btn btn-history"
+                            title="Ver Historial de Descargas">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Historial
                         </button>
                         <button onclick="vaciarBaseDeDatos()" class="btn btn-danger"
                             title="Borrar toda la base de datos">
@@ -470,13 +599,29 @@
 
     </div>
 
+    <!-- MODAL HISTORIAL DE DESCARGAS -->
+    <div id="modalDescargas" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-download"></i> Historial de Descargas</h2>
+                <button onclick="cerrarModalDescargas()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="listaDescargas" class="modal-body"></div>
+            <div class="modal-footer">
+                <button onclick="vaciarHistorialDescargas()" class="btn btn-danger">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Historial
+                </button>
+                <button onclick="cerrarModalDescargas()" class="btn btn-refresh">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const ADMIN_SESSION_KEY = 'admin_session_active';
-        let usuariosCargados = []; // Variable global para almacenar datos para exportar
+        let usuariosCargados = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            const esAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
-            if (esAdmin) {
+            if (sessionStorage.getItem(ADMIN_SESSION_KEY)) {
                 mostrarPanelAdmin();
             }
         });
@@ -577,9 +722,7 @@
         async function eliminarUsuario(nombre) {
             if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombre}"?`)) {
                 try {
-                    await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, {
-                        method: 'DELETE'
-                    });
+                    await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
                     cargarDatos();
                 } catch (err) {
                     alert("Error al eliminar el usuario");
@@ -588,11 +731,9 @@
         }
 
         async function vaciarBaseDeDatos() {
-            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios del sistema?")) {
+            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios?")) {
                 try {
-                    await fetch('/api/usuarios', {
-                        method: 'DELETE'
-                    });
+                    await fetch('/api/usuarios', { method: 'DELETE' });
                     cargarDatos();
                 } catch (err) {
                     alert("Error al vaciar la base de datos");
@@ -600,7 +741,19 @@
             }
         }
 
-        // --- FUNCIONES DE EXPORTACIÓN ---
+        // --- EXPORTAR Y REGISTRAR DESCARGA ---
+
+        async function registrarLogDescarga(formato) {
+            try {
+                await fetch('/api/descargas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ formato })
+                });
+            } catch (err) {
+                console.error("No se pudo registrar la descarga:", err);
+            }
+        }
 
         function exportarCSV() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
@@ -608,9 +761,7 @@
                 return;
             }
 
-            // Encabezados del CSV
-            let csvContent = "\uFEFF"; // BOM para caracteres especiales en Excel (como acentos)
-            csvContent += "Usuario,Contraseña,Teléfono,Dirección,Fecha Registro,Modificaciones\n";
+            let csvContent = "\uFEFFUsuario,Contraseña,Teléfono,Dirección,Fecha Registro,Modificaciones\n";
 
             usuariosCargados.forEach(u => {
                 const usuario = `"${(u.usuario || '').replace(/"/g, '""')}"`;
@@ -624,6 +775,7 @@
             });
 
             descargarArchivo(csvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
+            registrarLogDescarga('CSV');
         }
 
         function exportarJSON() {
@@ -634,6 +786,7 @@
 
             const jsonString = JSON.stringify(usuariosCargados, null, 2);
             descargarArchivo(jsonString, 'usuarios_sistema.json', 'application/json');
+            registrarLogDescarga('JSON');
         }
 
         function descargarArchivo(contenido, nombreArchivo, mimeType) {
@@ -646,6 +799,77 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // --- HISTORIAL DE DESCARGAS (MODAL) ---
+
+        function abrirModalDescargas() {
+            document.getElementById('modalDescargas').classList.add('active');
+            cargarHistorialDescargas();
+        }
+
+        function cerrarModalDescargas() {
+            document.getElementById('modalDescargas').classList.remove('active');
+        }
+
+        async function cargarHistorialDescargas() {
+            const contenedor = document.getElementById('listaDescargas');
+            try {
+                const res = await fetch('/api/descargas');
+                const descargas = await res.json();
+
+                if (!descargas || descargas.length === 0) {
+                    contenedor.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <p>No se han realizado descargas de reportes.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                descargas.forEach(d => {
+                    const badgeClass = d.formato === 'CSV' ? 'badge-csv' : 'badge-json';
+                    html += `
+                        <div class="download-item">
+                            <div class="download-info">
+                                <span class="${badgeClass}">${d.formato}</span>
+                                <div class="download-time">
+                                    <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
+                                </div>
+                            </div>
+                            <button onclick="eliminarDescarga('${d.id}')" class="btn-delete-user" title="Eliminar este registro">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML = html;
+            } catch (err) {
+                contenedor.innerHTML = '<p style="text-align:center; color:red;">Error al cargar el historial.</p>';
+            }
+        }
+
+        async function eliminarDescarga(id) {
+            try {
+                await fetch(`/api/descargas/${id}`, { method: 'DELETE' });
+                cargarHistorialDescargas();
+            } catch (err) {
+                alert("Error al eliminar el registro.");
+            }
+        }
+
+        async function vaciarHistorialDescargas() {
+            if (confirm("¿Estás seguro de vaciar todo el historial de descargas?")) {
+                try {
+                    await fetch('/api/descargas', { method: 'DELETE' });
+                    cargarHistorialDescargas();
+                } catch (err) {
+                    alert("Error al vaciar el historial.");
+                }
+            }
         }
     </script>
 
