@@ -8,36 +8,39 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
 
+// Credenciales del administrador inicial
 const ADMIN_DEFAULT = {
     usuario: 'Admin',
     clave: 'An12345*'
 };
 
+// Configuración de PostgreSQL si DATABASE_URL existe
 let pool = null;
 if (process.env.DATABASE_URL) {
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: {
+            rejectUnauthorized: false
+        }
     });
-    console.log('Conectado a PostgreSQL');
+    console.log('Conectado a PostgreSQL mediante DATABASE_URL');
 
+    // Crear tablas e insertar admin por defecto si no existe
     const initDb = async () => {
         try {
+            // Tabla de usuarios
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS usuarios (
                     usuario VARCHAR(255) PRIMARY KEY,
                     clave TEXT NOT NULL,
-                    nombre TEXT DEFAULT '',
-                    apellido TEXT DEFAULT '',
-                    ci TEXT DEFAULT '',
-                    telefono TEXT DEFAULT '',
-                    direccion TEXT DEFAULT '',
+                    telefono TEXT,
+                    direccion TEXT,
                     fecha_registro TEXT,
-                    contador_modificaciones INT DEFAULT 0,
-                    historial_modificaciones JSONB DEFAULT '[]'::jsonb
+                    contador_modificaciones INT DEFAULT 0
                 );
             `);
 
+            // Tabla de administradores
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS administradores (
                     usuario VARCHAR(255) PRIMARY KEY,
@@ -46,6 +49,7 @@ if (process.env.DATABASE_URL) {
                 );
             `);
 
+            // Tabla de historial de descargas
             await pool.query(`
                 CREATE TABLE IF NOT EXISTS descargas (
                     id SERIAL PRIMARY KEY,
@@ -55,40 +59,54 @@ if (process.env.DATABASE_URL) {
                 );
             `);
 
+            // Insertar o actualizar el admin por defecto
             await pool.query(`
                 INSERT INTO administradores (usuario, clave) 
                 VALUES ($1, $2)
                 ON CONFLICT (usuario) DO UPDATE SET clave = EXCLUDED.clave;
             `, [ADMIN_DEFAULT.usuario, ADMIN_DEFAULT.clave]);
 
-            console.log('Tablas inicializadas en PostgreSQL');
+            console.log('Tablas listas en PostgreSQL');
         } catch (err) {
-            console.error('Error al inicializar PostgreSQL:', err);
+            console.error('Error al inicializar la base de datos en PostgreSQL:', err);
         }
     };
     initDb();
 } else {
-    console.log('Modo fallback db.json local');
+    console.log('DATABASE_URL no definida. Modo fallback a db.json local');
 }
 
+// Ruta dinámica para la carpeta Public
 const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'Public'))
     ? path.join(__dirname, 'Public')
     : path.join(__dirname, 'public');
 
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos
 app.use(express.static(PUBLIC_DIR));
 
-app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
-app.get(['/admin', '/admin.html'], (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'admin.html')));
+// Ruta raíz principal
+app.get('/', (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
 
+// Ruta dedicada para el panel de administración
+app.get(['/admin', '/admin.html'], (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+});
+
+// --- MÉTODOS LOCALES (FALLBACK A db.json) ---
 function leerDBLocal() {
     if (!fs.existsSync(DB_FILE)) {
         fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] }));
     }
     try {
         const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-        if (Array.isArray(data)) return { usuarios: data, administradores: [ADMIN_DEFAULT], descargas: [] };
+        if (Array.isArray(data)) {
+            return { usuarios: data, administradores: [ADMIN_DEFAULT], descargas: [] };
+        }
         if (!data.administradores) data.administradores = [ADMIN_DEFAULT];
         if (!data.descargas) data.descargas = [];
         return data;
@@ -101,39 +119,51 @@ function guardarDBLocal(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// LOGIN ADMIN
+// --- API ENDPOINTS ---
+
+// API: Login exclusivo para Administradores
 app.post('/api/admin/login', async (req, res) => {
     const { usuario, clave } = req.body;
+
     if (pool) {
         try {
-            const result = await pool.query('SELECT usuario FROM administradores WHERE usuario = $1 AND clave = $2', [usuario, clave]);
-            if (result.rows.length > 0) res.json({ ok: true, usuario: result.rows[0].usuario });
-            else res.status(401).json({ error: 'Credenciales inválidas' });
+            const result = await pool.query(
+                'SELECT usuario FROM administradores WHERE usuario = $1 AND clave = $2',
+                [usuario, clave]
+            );
+
+            if (result.rows.length > 0) {
+                res.json({ ok: true, usuario: result.rows[0].usuario });
+            } else {
+                res.status(401).json({ error: 'Credenciales no válidas' });
+            }
         } catch (err) {
-            res.status(500).json({ error: 'Error del servidor' });
+            res.status(500).json({ error: 'Error en el servidor' });
         }
     } else {
         const db = leerDBLocal();
-        const admin = db.administradores.find(a => a.usuario === usuario && a.clave === clave);
-        if (admin) res.json({ ok: true, usuario: admin.usuario });
-        else res.status(401).json({ error: 'Credenciales inválidas' });
+        const adminExiste = db.administradores.find(a => a.usuario === usuario && a.clave === clave);
+        if (adminExiste) {
+            res.json({ ok: true, usuario: adminExiste.usuario });
+        } else {
+            res.status(401).json({ error: 'Credenciales no válidas' });
+        }
     }
 });
 
-// OBTENER USUARIOS
+// API: Obtener todos los usuarios
 app.get('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
-            const result = await pool.query(`
-                SELECT usuario, clave, nombre, apellido, ci, telefono, direccion, 
-                       fecha_registro AS "fechaRegistro", 
-                       contador_modificaciones AS "contadorModificaciones",
-                       historial_modificaciones AS "historialModificaciones"
-                FROM usuarios ORDER BY usuario ASC
-            `);
-            res.json(result.rows);
+            const result = await pool.query(
+                `SELECT usuario, clave, telefono, direccion, 
+                        fecha_registro AS "fechaRegistro", 
+                        contador_modificaciones AS "contadorModificaciones" 
+                 FROM usuarios ORDER BY usuario ASC`
+            );
+            return res.json(result.rows);
         } catch (err) {
-            res.status(500).json({ error: 'Error al consultar usuarios' });
+            return res.status(500).json({ error: 'Error al consultar PostgreSQL' });
         }
     } else {
         const db = leerDBLocal();
@@ -141,9 +171,9 @@ app.get('/api/usuarios', async (req, res) => {
     }
 });
 
-// REGISTRAR USUARIO
+// API: Registrar usuario normal
 app.post('/api/usuarios/registrar', async (req, res) => {
-    const { usuario, clave, nombre, apellido, ci, telefono, direccion } = req.body;
+    const { usuario, clave, telefono, direccion } = req.body;
     if (!usuario || !clave) return res.status(400).json({ error: 'Usuario y clave requeridos' });
 
     const fechaRegistro = new Date().toLocaleDateString();
@@ -153,74 +183,78 @@ app.post('/api/usuarios/registrar', async (req, res) => {
             const existe = await pool.query('SELECT usuario FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [usuario]);
             if (existe.rows.length > 0) return res.status(400).json({ error: 'El usuario ya existe' });
 
-            const insertResult = await pool.query(`
-                INSERT INTO usuarios (usuario, clave, nombre, apellido, ci, telefono, direccion, fecha_registro, contador_modificaciones, historial_modificaciones)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, '[]'::jsonb)
-                RETURNING usuario, clave, nombre, apellido, ci, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones", historial_modificaciones AS "historialModificaciones"
-            `, [usuario, clave, nombre || '', apellido || '', ci || '', telefono || '', direccion || '', fechaRegistro]);
+            const insertResult = await pool.query(
+                `INSERT INTO usuarios (usuario, clave, telefono, direccion, fecha_registro, contador_modificaciones)
+                 VALUES ($1, $2, $3, $4, $5, 0)
+                 RETURNING usuario, clave, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
+                [usuario, clave, telefono || '', direccion || '', fechaRegistro]
+            );
 
-            res.json({ mensaje: 'Usuario registrado', usuario: insertResult.rows[0] });
+            return res.json({ mensaje: 'Usuario registrado', usuario: insertResult.rows[0] });
         } catch (err) {
-            res.status(500).json({ error: 'Error en la base de datos' });
+            return res.status(500).json({ error: 'Error en base de datos' });
         }
     } else {
         const db = leerDBLocal();
         if (db.usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase())) {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
-        const nuevo = { usuario, clave, nombre: nombre || '', apellido: apellido || '', ci: ci || '', telefono: telefono || '', direccion: direccion || '', fechaRegistro, contadorModificaciones: 0, historialModificaciones: [] };
-        db.usuarios.push(nuevo);
+
+        const nuevoUsuario = { usuario, clave, telefono, direccion, fechaRegistro, contadorModificaciones: 0 };
+        db.usuarios.push(nuevoUsuario);
         guardarDBLocal(db);
-        res.json({ mensaje: 'Usuario registrado', usuario: nuevo });
+        res.json({ mensaje: 'Usuario registrado', usuario: nuevoUsuario });
     }
 });
 
-// LOGIN USUARIO
+// API: Iniciar sesión usuario normal
 app.post('/api/usuarios/login', async (req, res) => {
     const { usuario, clave } = req.body;
+
     if (pool) {
         try {
-            const result = await pool.query(`
-                SELECT usuario, clave, nombre, apellido, ci, telefono, direccion, 
-                       fecha_registro AS "fechaRegistro", 
-                       contador_modificaciones AS "contadorModificaciones",
-                       historial_modificaciones AS "historialModificaciones"
-                FROM usuarios WHERE usuario = $1 AND clave = $2
-            `, [usuario, clave]);
+            const result = await pool.query(
+                `SELECT usuario, clave, telefono, direccion, 
+                        fecha_registro AS "fechaRegistro", 
+                        contador_modificaciones AS "contadorModificaciones" 
+                 FROM usuarios WHERE usuario = $1 AND clave = $2`,
+                [usuario, clave]
+            );
 
-            if (result.rows.length > 0) res.json(result.rows[0]);
-            else res.status(401).json({ error: 'Credenciales incorrectas' });
+            if (result.rows.length > 0) {
+                res.json(result.rows[0]);
+            } else {
+                res.status(401).json({ error: 'Credenciales incorrectas' });
+            }
         } catch (err) {
-            res.status(500).json({ error: 'Error del servidor' });
+            res.status(500).json({ error: 'Error en PostgreSQL' });
         }
     } else {
         const db = leerDBLocal();
-        const enc = db.usuarios.find(u => u.usuario === usuario && u.clave === clave);
-        if (enc) res.json(enc);
+        const encontrado = db.usuarios.find(u => u.usuario === usuario && u.clave === clave);
+        if (encontrado) res.json(encontrado);
         else res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 });
 
-// EDITAR PERFIL Y GUARDAR FECHA DE MODIFICACIÓN
+// API: Editar perfil
 app.put('/api/usuarios/editar', async (req, res) => {
-    const { usuario, clave, nombre, apellido, ci, telefono, direccion } = req.body;
-    const fechaHoraMod = `${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
+    const { usuario, clave, telefono, direccion } = req.body;
 
     if (pool) {
         try {
-            const updateResult = await pool.query(`
-                UPDATE usuarios 
-                SET clave = $2, nombre = $3, apellido = $4, ci = $5, telefono = $6, direccion = $7,
-                    contador_modificaciones = COALESCE(contador_modificaciones, 0) + 1,
-                    historial_modificaciones = COALESCE(historial_modificaciones, '[]'::jsonb) || jsonb_build_array($8::text)
-                WHERE LOWER(usuario) = LOWER($1)
-                RETURNING usuario, clave, nombre, apellido, ci, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones", historial_modificaciones AS "historialModificaciones"
-            `, [usuario, clave, nombre, apellido, ci, telefono, direccion, fechaHoraMod]);
+            const updateResult = await pool.query(
+                `UPDATE usuarios 
+                 SET clave = $2, telefono = $3, direccion = $4, contador_modificaciones = COALESCE(contador_modificaciones, 0) + 1 
+                 WHERE LOWER(usuario) = LOWER($1)
+                 RETURNING usuario, clave, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
+                [usuario, clave, telefono, direccion]
+            );
 
             if (updateResult.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
             res.json({ mensaje: 'Perfil actualizado', usuario: updateResult.rows[0] });
         } catch (err) {
-            res.status(500).json({ error: 'Error al actualizar perfil' });
+            res.status(500).json({ error: 'Error al actualizar' });
         }
     } else {
         const db = leerDBLocal();
@@ -228,23 +262,19 @@ app.put('/api/usuarios/editar', async (req, res) => {
         if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
         db.usuarios[idx].clave = clave;
-        db.usuarios[idx].nombre = nombre;
-        db.usuarios[idx].apellido = apellido;
-        db.usuarios[idx].ci = ci;
         db.usuarios[idx].telefono = telefono;
         db.usuarios[idx].direccion = direccion;
         db.usuarios[idx].contadorModificaciones = (db.usuarios[idx].contadorModificaciones || 0) + 1;
-        if (!db.usuarios[idx].historialModificaciones) db.usuarios[idx].historialModificaciones = [];
-        db.usuarios[idx].historialModificaciones.push(fechaHoraMod);
 
         guardarDBLocal(db);
         res.json({ mensaje: 'Perfil actualizado', usuario: db.usuarios[idx] });
     }
 });
 
-// ELIMINAR USUARIO
+// API: Eliminar usuario individual
 app.delete('/api/usuarios/:usuario', async (req, res) => {
     const nombreUsuario = req.params.usuario;
+
     if (pool) {
         try {
             await pool.query('DELETE FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [nombreUsuario]);
@@ -260,14 +290,14 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
     }
 });
 
-// VACIAR USUARIOS
+// API: Vaciar usuarios
 app.delete('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
             await pool.query('TRUNCATE TABLE usuarios');
             res.json({ mensaje: 'Base de datos vaciada' });
         } catch (err) {
-            res.status(500).json({ error: 'Error al vaciar base de datos' });
+            res.status(500).json({ error: 'Error al vaciar la base de datos' });
         }
     } else {
         const db = leerDBLocal();
@@ -277,7 +307,9 @@ app.delete('/api/usuarios', async (req, res) => {
     }
 });
 
-// REGISTRAR Y OBTENER HISTORIAL DE DESCARGAS
+// --- HISTORIAL DE DESCARGAS ---
+
+// API: Registrar una descarga
 app.post('/api/descargas', async (req, res) => {
     const { formato } = req.body;
     const ahora = new Date();
@@ -286,56 +318,63 @@ app.post('/api/descargas', async (req, res) => {
 
     if (pool) {
         try {
-            const result = await pool.query('INSERT INTO descargas (formato, fecha, hora) VALUES ($1, $2, $3) RETURNING *', [formato, fecha, hora]);
+            const result = await pool.query(
+                'INSERT INTO descargas (formato, fecha, hora) VALUES ($1, $2, $3) RETURNING *',
+                [formato, fecha, hora]
+            );
             res.json(result.rows[0]);
         } catch (err) {
-            res.status(500).json({ error: 'Error al registrar descarga' });
+            res.status(500).json({ error: 'Error al guardar log de descarga' });
         }
     } else {
         const db = leerDBLocal();
-        const nueva = { id: Date.now(), formato, fecha, hora };
-        db.descargas.push(nueva);
+        const nuevaDescarga = { id: Date.now(), formato, fecha, hora };
+        db.descargas.push(nuevaDescarga);
         guardarDBLocal(db);
-        res.json(nueva);
+        res.json(nuevaDescarga);
     }
 });
 
+// API: Obtener lista de descargas
 app.get('/api/descargas', async (req, res) => {
     if (pool) {
         try {
             const result = await pool.query('SELECT * FROM descargas ORDER BY id DESC');
             res.json(result.rows);
         } catch (err) {
-            res.status(500).json({ error: 'Error al obtener descargas' });
+            res.status(500).json({ error: 'Error al consultar descargas' });
         }
     } else {
         const db = leerDBLocal();
-        res.json((db.descargas || []).reverse());
+        res.json(db.descargas.reverse());
     }
 });
 
+// API: Eliminar una descarga específica por ID
 app.delete('/api/descargas/:id', async (req, res) => {
     const { id } = req.params;
+
     if (pool) {
         try {
             await pool.query('DELETE FROM descargas WHERE id = $1', [id]);
-            res.json({ mensaje: 'Registro eliminado' });
+            res.json({ mensaje: 'Registro de descarga eliminado' });
         } catch (err) {
-            res.status(500).json({ error: 'Error al eliminar registro' });
+            res.status(500).json({ error: 'Error al eliminar el registro' });
         }
     } else {
         const db = leerDBLocal();
         db.descargas = db.descargas.filter(d => d.id.toString() !== id.toString());
         guardarDBLocal(db);
-        res.json({ mensaje: 'Registro eliminado' });
+        res.json({ mensaje: 'Registro de descarga eliminado' });
     }
 });
 
+// API: Vaciar todas las descargas
 app.delete('/api/descargas', async (req, res) => {
     if (pool) {
         try {
             await pool.query('TRUNCATE TABLE descargas');
-            res.json({ mensaje: 'Historial vaciado' });
+            res.json({ mensaje: 'Historial de descargas vaciado' });
         } catch (err) {
             res.status(500).json({ error: 'Error al vaciar historial' });
         }
@@ -343,10 +382,15 @@ app.delete('/api/descargas', async (req, res) => {
         const db = leerDBLocal();
         db.descargas = [];
         guardarDBLocal(db);
-        res.json({ mensaje: 'Historial vaciado' });
+        res.json({ mensaje: 'Historial de descargas vaciado' });
     }
 });
 
-app.get('*', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+// Redirección por defecto
+app.get('*', (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
 
-app.listen(PORT, '0.0.0.0', () => console.log(`Servidor en puerto ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor iniciado en puerto ${PORT}`);
+});

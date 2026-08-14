@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Administrador</title>
 
+    <!-- Google Fonts & Font Awesome Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
@@ -16,6 +17,7 @@
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
+            --bg-dark: #0f172a;
             --card-bg: rgba(255, 255, 255, 0.96);
             --text-main: #1e293b;
             --text-muted: #64748b;
@@ -25,15 +27,13 @@
             --danger: #ef4444;
             --warning-bg: #fef3c7;
             --warning-text: #b45309;
-            --alert-bg: #fee2e2;
-            --alert-text: #991b1b;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         body {
@@ -48,9 +48,10 @@
 
         .admin-container {
             width: 100%;
-            max-width: 900px;
+            max-width: 840px;
         }
 
+        /* CARD LOGIN ADMIN */
         .login-card {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
@@ -59,6 +60,19 @@
             margin: 0 auto;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
             text-align: center;
+        }
+
+        .login-card h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: #0f172a;
+        }
+
+        .login-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
         }
 
         .form-group {
@@ -70,6 +84,8 @@
             display: block;
             font-size: 12px;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: #475569;
             margin-bottom: 6px;
         }
@@ -84,6 +100,7 @@
             position: absolute;
             left: 14px;
             color: #94a3b8;
+            font-size: 15px;
         }
 
         .input-wrapper input {
@@ -92,30 +109,71 @@
             font-size: 14px;
             border: 1.5px solid var(--border-color);
             border-radius: var(--radius-md);
+            background: #f8fafc;
+            color: var(--text-main);
             outline: none;
+        }
+
+        .input-wrapper input:focus {
+            border-color: var(--primary);
+            background: #ffffff;
         }
 
         .btn-primary {
             width: 100%;
             padding: 13px;
-            background: var(--primary);
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             color: white;
             border: none;
             border-radius: var(--radius-md);
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
         }
 
+        .alert-error {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        /* HEADER PANEL ADMIN */
         .header-panel {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
             padding: 24px 30px;
             margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 15px;
+        }
+
+        .header-info h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-info p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
         }
 
         .stat-card {
@@ -124,12 +182,30 @@
             padding: 16px 24px;
             border-radius: var(--radius-md);
             text-align: center;
+            min-width: 160px;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-card .label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+            margin-top: 4px;
         }
 
         .content-panel {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
             padding: 26px 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         .controls-bar {
@@ -137,8 +213,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            flex-wrap: wrap;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .btn-group {
@@ -154,6 +230,7 @@
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             gap: 6px;
@@ -164,10 +241,30 @@
             color: #334155;
         }
 
+        .btn-refresh:hover {
+            background: #e2e8f0;
+        }
+
         .btn-export-csv {
             background: #ecfdf5;
             color: #047857;
             border: 1px solid #a7f3d0;
+        }
+
+        .btn-export-csv:hover {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-export-json {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .btn-export-json:hover {
+            background: #3b82f6;
+            color: white;
         }
 
         .btn-history {
@@ -176,10 +273,20 @@
             border: 1px solid #fde68a;
         }
 
+        .btn-history:hover {
+            background: #f59e0b;
+            color: white;
+        }
+
         .btn-danger {
             background: #fef2f2;
             color: var(--danger);
             border: 1px solid #fca5a5;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger);
+            color: white;
         }
 
         .users-list {
@@ -192,17 +299,12 @@
             background: #f8fafc;
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 18px;
+            padding: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 15px;
             flex-wrap: wrap;
-        }
-
-        .user-item.exceeded {
-            border: 2px solid var(--danger);
-            background: #fff5f5;
         }
 
         .user-detail {
@@ -212,8 +314,8 @@
         }
 
         .avatar {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), #06b6d4);
             color: white;
@@ -225,15 +327,15 @@
         }
 
         .user-data h3 {
-            font-size: 16px;
-            font-weight: 800;
+            font-size: 15px;
+            font-weight: 700;
             color: #0f172a;
         }
 
         .user-data p {
             font-size: 12px;
             color: var(--text-muted);
-            margin-top: 3px;
+            margin-top: 2px;
         }
 
         .badges-group {
@@ -243,39 +345,22 @@
             flex-wrap: wrap;
         }
 
-        .badge-mods {
-            background: var(--warning-bg);
-            color: var(--warning-text);
-            padding: 5px 10px;
+        .badge-date {
+            background: #e0e7ff;
+            color: var(--primary);
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
-            cursor: pointer;
         }
 
-        .badge-alert {
-            background: var(--alert-bg);
-            color: var(--alert-text);
-            padding: 5px 10px;
+        .badge-mods {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 11px;
-            font-weight: 800;
-            border: 1px solid #fca5a5;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-
-            100% {
-                opacity: 1;
-            }
+            font-weight: 700;
         }
 
         .btn-delete-user {
@@ -285,13 +370,27 @@
             cursor: pointer;
             font-size: 16px;
             padding: 8px;
+            border-radius: 6px;
         }
 
         .btn-delete-user:hover {
             color: var(--danger);
+            background: #fee2e2;
         }
 
-        /* MODAL */
+        .empty-state {
+            text-align: center;
+            padding: 40px 10px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 40px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+        }
+
+        /* MODAL DE HISTORIAL DE DESCARGAS */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -318,8 +417,15 @@
             background: #ffffff;
             border-radius: var(--radius-lg);
             width: 90%;
-            max-width: 500px;
+            max-width: 550px;
             padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transform: translateY(20px);
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: translateY(0);
         }
 
         .modal-header {
@@ -327,8 +433,17 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
-            border-bottom: 1px solid var(--border-color);
             padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .modal-close {
@@ -339,22 +454,59 @@
             cursor: pointer;
         }
 
+        .modal-close:hover {
+            color: var(--danger);
+        }
+
         .modal-body {
-            max-height: 300px;
+            max-height: 350px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .history-item {
+        .download-item {
             background: #f8fafc;
-            padding: 10px;
-            border-radius: 8px;
             border: 1px solid var(--border-color);
-            font-size: 13px;
-            font-weight: 600;
-            color: #334155;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .download-info span {
+            font-weight: 800;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .badge-csv {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-json {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .download-time {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .modal-footer {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
     </style>
 </head>
@@ -363,22 +515,25 @@
 
     <div class="admin-container">
 
-        <!-- LOGIN ADMIN -->
+        <!-- 1. FORMULARIO DE ACCESO ADMIN -->
         <div id="vistaLoginAdmin" class="login-card">
             <div style="font-size: 40px; color: var(--primary); margin-bottom: 10px;">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h2>Acceso Administrador</h2>
-            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Ingresa tus credenciales</p>
+            <p>Ingresa tus credenciales para acceder al panel.</p>
+
+            <div id="loginError" class="alert-error">Credenciales incorrectas</div>
 
             <form onsubmit="event.preventDefault(); iniciarSesionAdmin();">
                 <div class="form-group">
                     <label>Usuario Administrador</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-user field-icon"></i>
-                        <input type="text" id="adminUser" placeholder="Admin" required>
+                        <input type="text" id="adminUser" placeholder="Usuario Admin" required>
                     </div>
                 </div>
+
                 <div class="form-group">
                     <label>Contraseña</label>
                     <div class="input-wrapper">
@@ -386,41 +541,54 @@
                         <input type="password" id="adminPass" placeholder="••••••••" required>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary">Ingresar al Panel</button>
+
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-right-to-bracket"></i> Ingresar al Panel
+                </button>
             </form>
         </div>
 
-        <!-- PANEL DE CONTROL -->
+        <!-- 2. PANEL COMPLETO -->
         <div id="vistaPanelAdmin" style="display: none;">
 
             <div class="header-panel">
-                <div>
-                    <h1 style="font-size: 20px; font-weight: 800;"><i class="fa-solid fa-code"></i> Panel de Auditoría y
-                        Control</h1>
-                    <p style="font-size: 13px; color: var(--text-muted);">Monitoreo y alertas de ediciones de perfil</p>
+                <div class="header-info">
+                    <h1><i class="fa-solid fa-code"></i> Panel de Programador</h1>
+                    <p>Monitoreo de usuarios y auditoría de ediciones</p>
                 </div>
-                <div style="display: flex; gap: 12px; align-items: center;">
+                <div style="display: flex; gap: 15px; align-items: center;">
                     <div class="stat-card">
-                        <div style="font-size: 28px; font-weight: 800;" id="totalUsuariosCount">0</div>
-                        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase;">Usuarios</div>
+                        <div class="number" id="totalUsuariosCount">0</div>
+                        <div class="label">Usuarios Totales</div>
                     </div>
-                    <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;"><i
-                            class="fa-solid fa-power-off"></i></button>
+                    <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;"
+                        title="Cerrar sesión">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
                 </div>
             </div>
 
             <div class="content-panel">
                 <div class="controls-bar">
-                    <span style="font-weight: 700; font-size: 15px;">Directorio de Usuarios</span>
+                    <span style="font-weight: 700; font-size: 15px; color: #0f172a;">Directorio y Auditoría</span>
                     <div class="btn-group">
-                        <button onclick="cargarDatos()" class="btn btn-refresh"><i
-                                class="fa-solid fa-rotate-right"></i></button>
-                        <button onclick="exportarCSV()" class="btn btn-export-csv"><i class="fa-solid fa-file-csv"></i>
-                            CSV</button>
-                        <button onclick="abrirModalDescargas()" class="btn btn-history"><i
-                                class="fa-solid fa-clock-rotate-left"></i> Descargas</button>
-                        <button onclick="vaciarBaseDeDatos()" class="btn btn-danger"><i
-                                class="fa-solid fa-trash-can"></i></button>
+                        <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button onclick="exportarCSV()" class="btn btn-export-csv" title="Exportar CSV">
+                            <i class="fa-solid fa-file-csv"></i> CSV
+                        </button>
+                        <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
+                            <i class="fa-solid fa-file-code"></i> JSON
+                        </button>
+                        <button onclick="abrirModalDescargas()" class="btn btn-history"
+                            title="Ver Historial de Descargas">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Historial
+                        </button>
+                        <button onclick="vaciarBaseDeDatos()" class="btn btn-danger"
+                            title="Borrar toda la base de datos">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -431,14 +599,20 @@
 
     </div>
 
-    <!-- MODALS -->
-    <div id="modalGenerico" class="modal-overlay">
+    <!-- MODAL HISTORIAL DE DESCARGAS -->
+    <div id="modalDescargas" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h2 id="modalTitulo" style="font-size: 16px; font-weight: 800;"></h2>
-                <button onclick="cerrarModalGenerico()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+                <h2><i class="fa-solid fa-download"></i> Historial de Descargas</h2>
+                <button onclick="cerrarModalDescargas()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div id="modalContenido" class="modal-body"></div>
+            <div id="listaDescargas" class="modal-body"></div>
+            <div class="modal-footer">
+                <button onclick="vaciarHistorialDescargas()" class="btn btn-danger">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Historial
+                </button>
+                <button onclick="cerrarModalDescargas()" class="btn btn-refresh">Cerrar</button>
+            </div>
         </div>
     </div>
 
@@ -447,28 +621,33 @@
         let usuariosCargados = [];
 
         document.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem(ADMIN_SESSION_KEY)) mostrarPanelAdmin();
+            if (sessionStorage.getItem(ADMIN_SESSION_KEY)) {
+                mostrarPanelAdmin();
+            }
         });
 
         async function iniciarSesionAdmin() {
             const usuario = document.getElementById('adminUser').value.trim();
             const clave = document.getElementById('adminPass').value.trim();
+            const errorElem = document.getElementById('loginError');
+
+            errorElem.style.display = 'none';
 
             try {
-                const res = await fetch('/api/admin/login', {
+                const response = await fetch('/api/admin/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuario, clave })
                 });
 
-                if (res.ok) {
+                if (response.ok) {
                     sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
                     mostrarPanelAdmin();
                 } else {
-                    alert('Credenciales incorrectas');
+                    errorElem.style.display = 'block';
                 }
             } catch (err) {
-                alert('Error de conexión');
+                alert("Error al conectar con el servidor.");
             }
         }
 
@@ -482,47 +661,50 @@
             sessionStorage.removeItem(ADMIN_SESSION_KEY);
             document.getElementById('vistaPanelAdmin').style.display = 'none';
             document.getElementById('vistaLoginAdmin').style.display = 'block';
+            document.getElementById('adminUser').value = '';
+            document.getElementById('adminPass').value = '';
         }
 
         async function cargarDatos() {
-            try {
-                const res = await fetch('/api/usuarios');
-                usuariosCargados = await res.json();
-                document.getElementById('totalUsuariosCount').textContent = usuariosCargados.length;
+            const contadorElem = document.getElementById('totalUsuariosCount');
+            const contenedor = document.getElementById('contenedorLista');
 
-                const contenedor = document.getElementById('contenedorLista');
+            try {
+                const response = await fetch('/api/usuarios');
+                usuariosCargados = await response.json();
+
+                contadorElem.textContent = usuariosCargados.length;
+
                 if (!usuariosCargados || usuariosCargados.length === 0) {
-                    contenedor.innerHTML = '<p style="text-align:center; padding: 20px; color:#64748b;">No hay usuarios registrados.</p>';
+                    contenedor.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-users-slash"></i>
+                            <p>No hay usuarios registrados en la base de datos.</p>
+                        </div>
+                    `;
                     return;
                 }
 
                 let html = '';
-                usuariosCargados.forEach((u, i) => {
+                usuariosCargados.forEach((u, index) => {
                     const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
-                    const mods = u.contadorModificaciones || 0;
-                    const haExcedido = mods > 3;
-
-                    const nombreCompleto = (u.nombre || u.apellido) ? `${u.nombre} ${u.apellido}`.trim() : 'Sin nombre';
+                    const ediciones = u.contadorModificaciones || 0;
 
                     html += `
-                        <div class="user-item ${haExcedido ? 'exceeded' : ''}">
+                        <div class="user-item">
                             <div class="user-detail">
                                 <div class="avatar">${inicial}</div>
                                 <div class="user-data">
-                                    <h3>#${i + 1} - ${u.usuario} <span style="font-weight: 500; color: #64748b; font-size: 13px;">(${nombreCompleto})</span></h3>
-                                    <p><i class="fa-solid fa-id-card"></i> C.I: ${u.ci || 'N/A'} | <i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'N/A'}</p>
-                                    <p><i class="fa-solid fa-location-dot"></i> Dir: ${u.direccion || 'N/A'} | <i class="fa-solid fa-key"></i> Clave: ${u.clave}</p>
+                                    <h3>#${index + 1} - ${u.usuario}</h3>
+                                    <p><i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'} | <i class="fa-solid fa-key"></i> Clave: ${u.clave}</p>
+                                    ${u.direccion ? `<p><i class="fa-solid fa-location-dot"></i> ${u.direccion}</p>` : ''}
                                 </div>
                             </div>
                             <div class="badges-group">
-                                ${haExcedido ? `
-                                    <span class="badge-alert" onclick="verHistorialEdiciones('${u.usuario}')">
-                                        <i class="fa-solid fa-triangle-exclamation"></i> ¡ALERTA: +3 EDICIONES!
-                                    </span>
-                                ` : ''}
-                                <span class="badge-mods" onclick="verHistorialEdiciones('${u.usuario}')">
-                                    <i class="fa-solid fa-pen-to-square"></i> ${mods} ${mods === 1 ? 'edición' : 'ediciones'}
+                                <span class="badge-mods" title="Ediciones realizadas">
+                                    <i class="fa-solid fa-pen-to-square"></i> ${ediciones} ${ediciones === 1 ? 'edición' : 'ediciones'}
                                 </span>
+                                <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
                                 <button onclick="eliminarUsuario('${u.usuario}')" class="btn-delete-user" title="Eliminar usuario">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
@@ -533,73 +715,91 @@
 
                 contenedor.innerHTML = html;
             } catch (err) {
-                console.error("Error al cargar usuarios:", err);
+                console.error("Error al cargar los usuarios:", err);
             }
-        }
-
-        function verHistorialEdiciones(usuarioNombre) {
-            const user = usuariosCargados.find(u => u.usuario === usuarioNombre);
-            if (!user) return;
-
-            document.getElementById('modalTitulo').innerText = `Historial de Ediciones: ${user.usuario}`;
-            const contenedor = document.getElementById('modalContenido');
-
-            const historial = user.historialModificaciones || [];
-
-            if (historial.length === 0) {
-                contenedor.innerHTML = '<p style="text-align:center; color:#64748b;">Este usuario no ha modificado su perfil.</p>';
-            } else {
-                let html = '';
-                historial.forEach((fecha, idx) => {
-                    html += `
-                        <div class="history-item">
-                            <i class="fa-solid fa-clock"></i> Edición #${idx + 1}: ${fecha}
-                        </div>
-                    `;
-                });
-                contenedor.innerHTML = html;
-            }
-
-            document.getElementById('modalGenerico').classList.add('active');
-        }
-
-        function cerrarModalGenerico() {
-            document.getElementById('modalGenerico').classList.remove('active');
         }
 
         async function eliminarUsuario(nombre) {
-            if (confirm(`¿Eliminar usuario "${nombre}"?`)) {
-                await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
-                cargarDatos();
+            if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombre}"?`)) {
+                try {
+                    await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
+                    cargarDatos();
+                } catch (err) {
+                    alert("Error al eliminar el usuario");
+                }
             }
         }
 
         async function vaciarBaseDeDatos() {
-            if (confirm("⚠️ ¿Deseas vaciar TODOS los usuarios?")) {
-                await fetch('/api/usuarios', { method: 'DELETE' });
-                cargarDatos();
+            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios?")) {
+                try {
+                    await fetch('/api/usuarios', { method: 'DELETE' });
+                    cargarDatos();
+                } catch (err) {
+                    alert("Error al vaciar la base de datos");
+                }
             }
         }
 
-        // EXPORTAR TSV LIMPIO
+        // --- EXPORTAR Y REGISTRAR DESCARGA ---
+
+        async function registrarLogDescarga(formato) {
+            try {
+                await fetch('/api/descargas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ formato })
+                });
+            } catch (err) {
+                console.error("No se pudo registrar la descarga:", err);
+            }
+        }
+
         function exportarCSV() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
-                alert("No hay datos para exportar.");
+                alert("No hay datos disponibles para exportar.");
                 return;
             }
 
-            let tsvContent = "\uFEFFUsuario\tClave\tNombre\tApellido\tC.I\tTeléfono\tDirección\tFecha Registro\tModificaciones\n";
+            // Encabezados separados por Tabulaciones (\t)
+            let tsvContent = "\uFEFFUsuario\tContraseña\tTeléfono\tDirección\tFecha Registro\tModificaciones\n";
 
             usuariosCargados.forEach(u => {
-                tsvContent += `${u.usuario || ''}\t${u.clave || ''}\t${u.nombre || ''}\t${u.apellido || ''}\t${u.ci || ''}\t${u.telefono || ''}\t${u.direccion || ''}\t${u.fechaRegistro || ''}\t${u.contadorModificaciones || 0}\n`;
+                const usuario = (u.usuario || '').replace(/\t/g, ' ');
+                const clave = (u.clave || '').replace(/\t/g, ' ');
+                const telefono = (u.telefono || '').replace(/\t/g, ' ');
+                const direccion = (u.direccion || '').replace(/\t/g, ' ');
+                const fecha = (u.fechaRegistro || '').replace(/\t/g, ' ');
+                const mods = u.contadorModificaciones || 0;
+
+                tsvContent += `${usuario}\t${clave}\t${telefono}\t${direccion}\t${fecha}\t${mods}\n`;
             });
 
+            // Guardar como .csv limpio
             descargarArchivo(tsvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
-            fetch('/api/descargas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ formato: 'CSV' })
-            });
+            registrarLogDescarga('CSV');
+        }
+        function descargarArchivo(contenido, nombreArchivo, mimeType) {
+            const blob = new Blob([contenido], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function exportarJSON() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                alert("No hay datos disponibles para exportar.");
+                return;
+            }
+
+            const jsonString = JSON.stringify(usuariosCargados, null, 2);
+            descargarArchivo(jsonString, 'usuarios_sistema.json', 'application/json');
+            registrarLogDescarga('JSON');
         }
 
         function descargarArchivo(contenido, nombreArchivo, mimeType) {
@@ -614,40 +814,78 @@
             URL.revokeObjectURL(url);
         }
 
-        async function abrirModalDescargas() {
-            document.getElementById('modalTitulo').innerText = 'Historial de Descargas';
-            const contenedor = document.getElementById('modalContenido');
+        // --- HISTORIAL DE DESCARGAS (MODAL) ---
 
+        function abrirModalDescargas() {
+            document.getElementById('modalDescargas').classList.add('active');
+            cargarHistorialDescargas();
+        }
+
+        function cerrarModalDescargas() {
+            document.getElementById('modalDescargas').classList.remove('active');
+        }
+
+        async function cargarHistorialDescargas() {
+            const contenedor = document.getElementById('listaDescargas');
             try {
                 const res = await fetch('/api/descargas');
                 const descargas = await res.json();
 
                 if (!descargas || descargas.length === 0) {
-                    contenedor.innerHTML = '<p style="text-align:center; color:#64748b;">No hay descargas registradas.</p>';
-                } else {
-                    let html = '';
-                    descargas.forEach(d => {
-                        html += `
-                            <div class="history-item" style="display:flex; justify-content:space-between; align-items:center;">
-                                <span><i class="fa-solid fa-download"></i> ${d.formato} - ${d.fecha} ${d.hora}</span>
-                                <button onclick="eliminarDescarga('${d.id}')" style="background:transparent; border:none; color:#ef4444; cursor:pointer;"><i class="fa-solid fa-trash"></i></button>
-                            </div>
-                        `;
-                    });
-                    contenedor.innerHTML = html;
+                    contenedor.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <p>No se han realizado descargas de reportes.</p>
+                        </div>
+                    `;
+                    return;
                 }
-            } catch (err) {
-                contenedor.innerHTML = '<p style="color:red;">Error al cargar descargas.</p>';
-            }
 
-            document.getElementById('modalGenerico').classList.add('active');
+                let html = '';
+                descargas.forEach(d => {
+                    const badgeClass = d.formato === 'CSV' ? 'badge-csv' : 'badge-json';
+                    html += `
+                        <div class="download-item">
+                            <div class="download-info">
+                                <span class="${badgeClass}">${d.formato}</span>
+                                <div class="download-time">
+                                    <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
+                                </div>
+                            </div>
+                            <button onclick="eliminarDescarga('${d.id}')" class="btn-delete-user" title="Eliminar este registro">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML = html;
+            } catch (err) {
+                contenedor.innerHTML = '<p style="text-align:center; color:red;">Error al cargar el historial.</p>';
+            }
         }
 
         async function eliminarDescarga(id) {
-            await fetch(`/api/descargas/${id}`, { method: 'DELETE' });
-            abrirModalDescargas();
+            try {
+                await fetch(`/api/descargas/${id}`, { method: 'DELETE' });
+                cargarHistorialDescargas();
+            } catch (err) {
+                alert("Error al eliminar el registro.");
+            }
+        }
+
+        async function vaciarHistorialDescargas() {
+            if (confirm("¿Estás seguro de vaciar todo el historial de descargas?")) {
+                try {
+                    await fetch('/api/descargas', { method: 'DELETE' });
+                    cargarHistorialDescargas();
+                } catch (err) {
+                    alert("Error al vaciar el historial.");
+                }
+            }
         }
     </script>
+
 </body>
 
 </html>
