@@ -256,6 +256,17 @@
             color: white;
         }
 
+        .btn-export-excel {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .btn-export-excel:hover {
+            background: #16a34a;
+            color: white;
+        }
+
         .btn-export-json {
             background: #eff6ff;
             color: #1d4ed8;
@@ -489,6 +500,11 @@
             color: #065f46;
         }
 
+        .badge-excel {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
         .badge-json {
             background: #dbeafe;
             color: #1e40af;
@@ -574,6 +590,9 @@
                     <div class="btn-group">
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
                             <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xls)">
+                            <i class="fa-solid fa-file-excel"></i> Excel
                         </button>
                         <button onclick="exportarCSV()" class="btn btn-export-csv" title="Exportar CSV">
                             <i class="fa-solid fa-file-csv"></i> CSV
@@ -755,40 +774,93 @@
             }
         }
 
+        function exportarExcel() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                alert("No hay datos disponibles para exportar.");
+                return;
+            }
+
+            let excelContent = `
+            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+            <head>
+                <meta charset="utf-8">
+                <!--[if gte mso 9]>
+                <xml>
+                    <x:ExcelWorkbook>
+                        <x:ExcelWorksheets>
+                            <x:ExcelWorksheet>
+                                <x:Name>Usuarios del Sistema</x:Name>
+                                <x:WorksheetOptions>
+                                    <x:DisplayGridlines/>
+                                </x:WorksheetOptions>
+                            </x:ExcelWorksheet>
+                        </x:ExcelWorksheets>
+                    </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+                <style>
+                    table { border-collapse: collapse; width: 100%; font-family: Calibri, Arial, sans-serif; }
+                    th { background-color: #0f172a; color: #ffffff; border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-weight: bold; }
+                    td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; mso-number-format:"\\@"; }
+                    tr:nth-child(even) { background-color: #f8fafc; }
+                </style>
+            </head>
+            <body>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Contraseña</th>
+                            <th>Teléfono</th>
+                            <th>Dirección</th>
+                            <th>Fecha Registro</th>
+                            <th>Modificaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${usuariosCargados.map(u => `
+                            <tr>
+                                <td>${u.usuario || ''}</td>
+                                <td>${u.clave || ''}</td>
+                                <td>${u.telefono || ''}</td>
+                                <td>${u.direccion || ''}</td>
+                                <td>${u.fechaRegistro || ''}</td>
+                                <td>${u.contadorModificaciones || 0}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+            `;
+
+            descargarArchivo(excelContent, 'usuarios_sistema.xls', 'application/vnd.ms-excel;charset=utf-8');
+            registrarLogDescarga('Excel');
+        }
+
         function exportarCSV() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
                 alert("No hay datos disponibles para exportar.");
                 return;
             }
 
-            // Encabezados separados por Tabulaciones (\t)
-            let tsvContent = "\uFEFFUsuario\tContraseña\tTeléfono\tDirección\tFecha Registro\tModificaciones\n";
+            // Directiva 'sep=;' para que Excel identifique el punto y coma como separador en cualquier idioma/región
+            // BOM (\uFEFF) para preservar acentos, tildes y caracteres especiales en UTF-8
+            let csvContent = "\uFEFFsep=;\nUsuario;Contraseña;Teléfono;Dirección;Fecha Registro;Modificaciones\n";
 
             usuariosCargados.forEach(u => {
-                const usuario = (u.usuario || '').replace(/\t/g, ' ');
-                const clave = (u.clave || '').replace(/\t/g, ' ');
-                const telefono = (u.telefono || '').replace(/\t/g, ' ');
-                const direccion = (u.direccion || '').replace(/\t/g, ' ');
-                const fecha = (u.fechaRegistro || '').replace(/\t/g, ' ');
+                const usuario = `"${(u.usuario || '').replace(/"/g, '""')}"`;
+                const clave = `"${(u.clave || '').replace(/"/g, '""')}"`;
+                const telefono = `"${(u.telefono || '').replace(/"/g, '""')}"`;
+                const direccion = `"${(u.direccion || '').replace(/"/g, '""')}"`;
+                const fecha = `"${(u.fechaRegistro || '').replace(/"/g, '""')}"`;
                 const mods = u.contadorModificaciones || 0;
 
-                tsvContent += `${usuario}\t${clave}\t${telefono}\t${direccion}\t${fecha}\t${mods}\n`;
+                csvContent += `${usuario};${clave};${telefono};${direccion};${fecha};${mods}\n`;
             });
 
-            // Guardar como .csv limpio
-            descargarArchivo(tsvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
+            descargarArchivo(csvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
             registrarLogDescarga('CSV');
-        }
-        function descargarArchivo(contenido, nombreArchivo, mimeType) {
-            const blob = new Blob([contenido], { type: mimeType });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = nombreArchivo;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
         }
 
         function exportarJSON() {
@@ -843,7 +915,10 @@
 
                 let html = '';
                 descargas.forEach(d => {
-                    const badgeClass = d.formato === 'CSV' ? 'badge-csv' : 'badge-json';
+                    let badgeClass = 'badge-json';
+                    if (d.formato === 'CSV') badgeClass = 'badge-csv';
+                    if (d.formato === 'Excel') badgeClass = 'badge-excel';
+
                     html += `
                         <div class="download-item">
                             <div class="download-info">
