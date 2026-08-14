@@ -245,17 +245,6 @@
             background: #e2e8f0;
         }
 
-        .btn-export-csv {
-            background: #ecfdf5;
-            color: #047857;
-            border: 1px solid #a7f3d0;
-        }
-
-        .btn-export-csv:hover {
-            background: #10b981;
-            color: white;
-        }
-
         .btn-export-excel {
             background: #f0fdf4;
             color: #15803d;
@@ -594,9 +583,6 @@
                         <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xls)">
                             <i class="fa-solid fa-file-excel"></i> Excel
                         </button>
-                        <button onclick="exportarCSV()" class="btn btn-export-csv" title="Exportar CSV">
-                            <i class="fa-solid fa-file-csv"></i> CSV
-                        </button>
                         <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
                             <i class="fa-solid fa-file-code"></i> JSON
                         </button>
@@ -836,31 +822,6 @@
 
             descargarArchivo(excelContent, 'usuarios_sistema.xls', 'application/vnd.ms-excel;charset=utf-8');
             registrarLogDescarga('Excel');
-        }
-
-        function exportarCSV() {
-            if (!usuariosCargados || usuariosCargados.length === 0) {
-                alert("No hay datos disponibles para exportar.");
-                return;
-            }
-
-            // Directiva 'sep=;' para que Excel identifique el punto y coma como separador en cualquier idioma/región
-            // BOM (\uFEFF) para preservar acentos, tildes y caracteres especiales en UTF-8
-            let csvContent = "\uFEFFsep=;\nUsuario;Contraseña;Teléfono;Dirección;Fecha Registro;Modificaciones\n";
-
-            usuariosCargados.forEach(u => {
-                const usuario = `"${(u.usuario || '').replace(/"/g, '""')}"`;
-                const clave = `"${(u.clave || '').replace(/"/g, '""')}"`;
-                const telefono = `"${(u.telefono || '').replace(/"/g, '""')}"`;
-                const direccion = `"${(u.direccion || '').replace(/"/g, '""')}"`;
-                const fecha = `"${(u.fechaRegistro || '').replace(/"/g, '""')}"`;
-                const mods = u.contadorModificaciones || 0;
-
-                csvContent += `${usuario};${clave};${telefono};${direccion};${fecha};${mods}\n`;
-            });
-
-            descargarArchivo(csvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
-            registrarLogDescarga('CSV');
         }
 
         function exportarJSON() {
