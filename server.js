@@ -5,7 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend'); // Se cambió Nodemailer por el SDK Oficial de Resend
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,18 +17,10 @@ const ADMIN_DEFAULT = {
     clave: 'An12345*'
 };
 
-// Función dinámica para obtener credenciales de correo desde process.env en cada petición
-function obtenerCredencialesEmail() {
-    const user = (
-        process.env.EMAIL_USER ||
-        process.env.GMAIL_USER ||
-        process.env.SMTP_USER ||
-        process.env.MAIL_USER ||
-        process.env.USER_EMAIL ||
-        ''
-    ).trim();
-
+// Función auxiliar para obtener la API Key de Resend desde process.env
+function obtenerApiKeyResend() {
     const rawPass = (
+        process.env.RESEND_API_KEY ||
         process.env.EMAIL_PASS ||
         process.env.GMAIL_PASS ||
         process.env.SMTP_PASS ||
@@ -37,93 +29,10 @@ function obtenerCredencialesEmail() {
         ''
     ).trim();
 
-    // Limpiar espacios de la Contraseña de Aplicación de Google (ej: "abcd efgh ijkl mnop" -> "abcdefghijklmnop")
-    const pass = rawPass.replace(/\s+/g, '');
-
-    return { user, pass };
+    return rawPass.replace(/\s+/g, '');
 }
 
-// Función creadora del transportador de Nodemailer
-function crearTransporter() {
-    const { user, pass } = obtenerCredencialesEmail();
-    const SMTP_HOST = process.env.SMTP_HOST;
-    const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465');
-
-    // Detectar si la clave o el host corresponden al servicio Resend
-    const esResend = (SMTP_HOST && SMTP_HOST.includes('resend')) || (pass && pass.startsWith('re_'));
-
-    if (esResend) {
-        const hostResend = SMTP_HOST || 'smtp.resend.com';
-        const portResend = parseInt(process.env.SMTP_PORT || '465');
-        const userResend = (user && user !== '') ? user : 'resend';
-
-        console.log(`[EMAIL RESEND] Configurando Nodemailer para Resend SMTP (${hostResend}:${portResend}) con API Key: ${pass.substring(0, 8)}...`);
-
-        return {
-            transporter: nodemailer.createTransport({
-                host: hostResend,
-                port: portResend,
-                secure: portResend === 465,
-                family: 4, // FORZAR IPv4 para compatibilidad total en Render
-                auth: {
-                    user: userResend,
-                    pass: pass
-                },
-                tls: {
-                    rejectUnauthorized: false
-                }
-            }),
-            user: userResend,
-            esResend: true
-        };
-    }
-
-    if (!user || !pass) {
-        console.log('\n==================================================');
-        console.log('[CONFIGURACIÓN SMTP INCOMPLETA EN PROCESS.ENV]');
-        console.log('⚠️ No se han detectado EMAIL_USER / EMAIL_PASS en las variables de entorno de Render/Servidor.');
-        console.log('Variables de entorno buscadas: EMAIL_USER, EMAIL_PASS, GMAIL_USER, GMAIL_PASS, SMTP_USER, SMTP_PASS');
-        console.log('==================================================\n');
-        return null;
-    }
-
-    // Servidor SMTP personalizado (ej. Mailtrap, SendGrid, Outlook SMTP personalizado)
-    if (SMTP_HOST) {
-        console.log(`[EMAIL] Configurando Nodemailer con SMTP personalizado: ${SMTP_HOST}:${SMTP_PORT} para usuario: ${user}`);
-        return {
-            transporter: nodemailer.createTransport({
-                host: SMTP_HOST,
-                port: SMTP_PORT,
-                secure: process.env.SMTP_SECURE === 'true' || SMTP_PORT === 465,
-                family: 4, // FORZAR IPv4 para evitar ENETUNREACH en Render
-                auth: { user, pass },
-                tls: { rejectUnauthorized: false }
-            }),
-            user,
-            esResend: false
-        };
-    }
-
-    // Servicio Gmail por defecto
-    console.log(`[EMAIL] Configurando Nodemailer para Gmail (SSL Puerto 465 / IPv4) con usuario: ${user}`);
-    return {
-        transporter: nodemailer.createTransport({
-            service: 'gmail',
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            family: 4, // FORZAR IPv4
-            auth: { user, pass },
-            tls: {
-                rejectUnauthorized: false
-            }
-        }),
-        user,
-        esResend: false
-    };
-}
-
-// Función auxiliar para enviar el correo de recuperación
+// Función auxiliar para enviar el correo de recuperación mediante la API HTTP de Resend
 async function enviarCorreoRecuperacion(correoDestino, codigo) {
     console.log(`\n==================================================`);
     console.log(`[CÓDIGO DE RECUPERACIÓN GENERADO]`);
@@ -132,53 +41,49 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     console.log(`Válido durante: 2 minutos (120 segundos)`);
     console.log(`==================================================\n`);
 
-    const transportObj = crearTransporter();
+    const apiKey = obtenerApiKeyResend();
 
-    if (!transportObj || !transportObj.transporter) {
-        console.warn(`[EMAIL ADVERTENCIA] No se ejecutó sendMail() porque faltan las credenciales EMAIL_USER/EMAIL_PASS en Render.`);
+    if (!apiKey) {
+        console.warn(`[EMAIL ADVERTENCIA] No se envió el correo porque falta RESEND_API_KEY / EMAIL_PASS en Render.`);
         return { enviado: false, motivo: 'no_credentials', codigo };
     }
 
-    const { transporter, user: emailRemitente, esResend } = transportObj;
+    const resend = new Resend(apiKey);
 
     // Determinar dirección del remitente (from) válida
-    let remitenteFinal = process.env.EMAIL_FROM;
-    if (!remitenteFinal) {
-        if (esResend || !emailRemitente.includes('@')) {
-            // Resend exige un remitente con formato de correo válido (onboarding@resend.dev por defecto)
-            remitenteFinal = '"Sistema de Usuarios" <onboarding@resend.dev>';
-        } else {
-            remitenteFinal = `"Sistema de Usuarios" <${emailRemitente}>`;
-        }
-    }
+    let remitenteFinal = process.env.EMAIL_FROM || 'Sistema de Usuarios <onboarding@resend.dev>';
 
-    console.log(`[EMAIL DISPARANDO] Ejecutando transporter.sendMail() hacia ${correoDestino} desde ${remitenteFinal}...`);
-
-    const mailOptions = {
-        from: remitenteFinal,
-        to: correoDestino,
-        subject: '🔒 Código de Recuperación de Contraseña (6 dígitos)',
-        text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
-        html: `
-            <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                <div style="text-align: center; margin-bottom: 16px;">
-                    <h2 style="color: #4f46e5; font-size: 22px; margin: 0;">Recuperación de Contraseña</h2>
-                    <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Código de seguridad temporal</p>
-                </div>
-                <p style="color: #334155; font-size: 14px; line-height: 1.5;">Has solicitado restablecer tu contraseña. Utiliza el siguiente código numérico de 6 dígitos:</p>
-                <div style="background: #f8fafc; border: 2px dashed #4f46e5; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
-                    <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">${codigo}</span>
-                </div>
-                <p style="color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px;">⏰ Este código caducará en exactamente 2 minutos.</p>
-                <p style="color: #94a3b8; font-size: 12px; text-align: center;">Si no fue solicitado por ti, puedes ignorar este mensaje o revisar la carpeta de <strong>Spam / Correo No Deseado</strong>.</p>
-            </div>
-        `
-    };
+    console.log(`[EMAIL DISPARANDO VIA API HTTP] Enviando a ${correoDestino} desde ${remitenteFinal}...`);
 
     try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente a ${correoDestino} (Message ID: ${info.messageId})`);
-        return { enviado: true, messageId: info.messageId };
+        const data = await resend.emails.send({
+            from: remitenteFinal,
+            to: correoDestino,
+            subject: '🔒 Código de Recuperación de Contraseña (6 dígitos)',
+            text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <h2 style="color: #4f46e5; font-size: 22px; margin: 0;">Recuperación de Contraseña</h2>
+                        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Código de seguridad temporal</p>
+                    </div>
+                    <p style="color: #334155; font-size: 14px; line-height: 1.5;">Has solicitado restablecer tu contraseña. Utiliza el siguiente código numérico de 6 dígitos:</p>
+                    <div style="background: #f8fafc; border: 2px dashed #4f46e5; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
+                        <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">${codigo}</span>
+                    </div>
+                    <p style="color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px;">⏰ Este código caducará en exactamente 2 minutos.</p>
+                    <p style="color: #94a3b8; font-size: 12px; text-align: center;">Si no fue solicitado por ti, puedes ignorar este mensaje o revisar la carpeta de <strong>Spam / Correo No Deseado</strong>.</p>
+                </div>
+            `
+        });
+
+        if (data.error) {
+            console.error('[EMAIL ERROR RESEND API]', data.error);
+            throw new Error(data.error.message);
+        }
+
+        console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente a ${correoDestino} (ID: ${data.data.id})`);
+        return { enviado: true, messageId: data.data.id };
     } catch (err) {
         console.error('[EMAIL ERROR] ❌ Falló el envío del correo electrónico:', err.message);
         throw err;
@@ -476,13 +381,13 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
         guardarDBLocal(db);
     }
 
-    // DISPARAR EL ENVÍO REAL DEL CORREO MEDIANTE NODEMAILER
+    // DISPARAR EL ENVÍO REAL DEL CORREO MEDIANTE RESEND API
     try {
         const resultadoEnvio = await enviarCorreoRecuperacion(usuarioEncontrado.correo, codigo);
 
         if (resultadoEnvio && resultadoEnvio.enviado === false) {
             return res.status(400).json({
-                error: 'No se detectaron las variables EMAIL_USER y EMAIL_PASS en el servidor (Render). Configúralas en Environment Variables.',
+                error: 'No se detectó la variable RESEND_API_KEY en el servidor (Render). Configúrala en Environment Variables.',
                 modoDev: true
             });
         }
@@ -494,8 +399,8 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
     } catch (emailErr) {
         console.error('[CAPTURA ERROR ENVÍO CORREO]:', emailErr);
         return res.status(500).json({
-            error: 'Falló el envío del correo por Gmail. Verifica que EMAIL_USER y EMAIL_PASS (Contraseña de Aplicación de 16 letras) estén bien configuradas en Render.',
-            detalle: emailErr.message || 'Error de autenticación SMTP'
+            error: 'Falló el envío del correo por Resend. Verifica que RESEND_API_KEY esté bien configurada en Render.',
+            detalle: emailErr.message || 'Error de API Resend'
         });
     }
 });
