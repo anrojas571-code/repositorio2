@@ -87,6 +87,17 @@
       "contadorModificaciones": 1,
       "codigoRecuperacion": null,
       "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786993317167",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786993317167@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
     }
   ],
   "administradores": [
