@@ -5,7 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
-const { Resend } = require('resend'); // Se cambió Nodemailer por el SDK Oficial de Resend
+const { Resend } = require('resend'); // SDK Oficial de Resend
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -50,8 +50,8 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
 
     const resend = new Resend(apiKey);
 
-    // Determinar dirección del remitente (from) válida
-    let remitenteFinal = process.env.EMAIL_FROM || 'Sistema de Usuarios <onboarding@resend.dev>';
+    // Dirección del remitente configurada con tu dominio personalizado verificado
+    let remitenteFinal = process.env.EMAIL_FROM || 'Sistema <soporte@misistema.space>';
 
     console.log(`[EMAIL DISPARANDO VIA API HTTP] Enviando a ${correoDestino} desde ${remitenteFinal}...`);
 
