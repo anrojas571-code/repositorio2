@@ -701,8 +701,8 @@
                                 <div class="avatar">${inicial}</div>
                                 <div class="user-data">
                                     <h3>#${index + 1} - ${u.usuario}</h3>
-                                    <p><i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'} | <i class="fa-solid fa-key"></i> Clave: ${u.clave}</p>
-                                    ${u.direccion ? `<p><i class="fa-solid fa-location-dot"></i> ${u.direccion}</p>` : ''}
+                                    <p><i class="fa-solid fa-envelope"></i> Correo: ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'}</p>
+                                    <p><i class="fa-solid fa-key"></i> Clave: ${u.clave} ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
                                 </div>
                             </div>
                             <div class="badges-group">

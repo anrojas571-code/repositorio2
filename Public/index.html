@@ -277,6 +277,13 @@
             box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
         }
 
+        .btn-primary:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-danger {
             background: linear-gradient(135deg, #ef4444, #dc2626);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
@@ -425,17 +432,35 @@
         .modal-box {
             background: #ffffff;
             width: 90%;
-            max-width: 360px;
+            max-width: 400px;
             padding: 24px;
             border-radius: var(--radius-lg);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
             text-align: center;
             transform: scale(0.9);
             transition: transform 0.25s ease;
+            position: relative;
         }
 
         .modal-overlay.active .modal-box {
             transform: scale(1);
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #94a3b8;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            color: #0f172a;
         }
 
         .modal-icon {
@@ -451,6 +476,11 @@
             margin: 0 auto 16px auto;
         }
 
+        .modal-icon.icon-blue {
+            background: #e0e7ff;
+            color: var(--primary);
+        }
+
         .modal-box h3 {
             font-size: 18px;
             color: #0f172a;
@@ -459,10 +489,32 @@
         }
 
         .modal-box p {
-            font-size: 14px;
+            font-size: 13.5px;
             color: var(--text-muted);
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             line-height: 1.4;
+        }
+
+        .timer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .otp-input {
+            letter-spacing: 12px;
+            font-size: 22px !important;
+            font-weight: 800;
+            text-align: center;
+            padding-left: 20px !important;
         }
     </style>
 </head>
@@ -513,6 +565,14 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="regCorreo">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope field-icon"></i>
+                            <input type="email" id="regCorreo" placeholder="ejemplo@correo.com" autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         <label for="regClave">Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
@@ -555,15 +615,15 @@
 
                     <form id="formLogin" onsubmit="event.preventDefault(); iniciarSesion();">
                         <div class="form-group">
-                            <label for="loginUsuario">Usuario</label>
+                            <label for="loginUsuario">Usuario o Correo Electrónico</label>
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-user field-icon"></i>
-                                <input type="text" id="loginUsuario" placeholder="Ingresa tu usuario"
+                                <input type="text" id="loginUsuario" placeholder="Usuario o tu@correo.com"
                                     autocomplete="username">
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group" style="margin-bottom: 8px;">
                             <label for="loginClave">Contraseña</label>
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-lock field-icon"></i>
@@ -574,6 +634,12 @@
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
                             </div>
+                        </div>
+
+                        <div style="text-align: right; margin-bottom: 16px;">
+                            <a href="javascript:void(0)" onclick="abrirModalRecuperar()" style="color: var(--primary); font-size: 12.5px; font-weight: 700; text-decoration: none;">
+                                <i class="fa-solid fa-key"></i> ¿Olvidaste tu contraseña?
+                            </a>
                         </div>
 
                         <button type="submit" class="btn-primary">
@@ -638,6 +704,7 @@
         </div>
     </div>
 
+    <!-- MODAL DE USUARIO EXISTENTE -->
     <div id="modalExiste" class="modal-overlay">
         <div class="modal-box">
             <div class="modal-icon">
@@ -651,10 +718,123 @@
         </div>
     </div>
 
+    <!-- MODAL RECUPERACIÓN DE CONTRASEÑA EN 3 PASOS -->
+    <div id="modalRecuperar" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close-btn" onclick="cerrarModalRecuperar()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- MENSAJE DE ALERTA INTERNO DEL MODAL -->
+            <div id="mensajeModalRecuperar" class="alert-box" style="margin-bottom: 14px;">
+                <i id="alertaModalIcono" class="fa-solid fa-circle-info"></i>
+                <span id="alertaModalTexto"></span>
+            </div>
+
+            <!-- PASO 1: INGRESAR CORREO -->
+            <div id="step-recuperar-1">
+                <div class="modal-icon icon-blue">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                </div>
+                <h3>Recuperar Contraseña</h3>
+                <p>Ingresa el correo electrónico asociado a tu cuenta para enviarte un código de 6 dígitos.</p>
+
+                <form onsubmit="event.preventDefault(); solicitarCodigoRecuperacion();">
+                    <div class="form-group" style="text-align: left;">
+                        <label for="recCorreoInput">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope field-icon"></i>
+                            <input type="email" id="recCorreoInput" placeholder="tu@correo.com" required autocomplete="email">
+                        </div>
+                    </div>
+                    <button type="submit" id="btnEnviarCodigo" class="btn-primary">
+                        <i class="fa-solid fa-paper-plane"></i> Enviar Código
+                    </button>
+                </form>
+            </div>
+
+            <!-- PASO 2: VERIFICAR CÓDIGO DE 6 DÍGITOS (2 MINUTOS) -->
+            <div id="step-recuperar-2" style="display: none;">
+                <div class="modal-icon icon-blue">
+                    <i class="fa-solid fa-shield-cat"></i>
+                </div>
+                <h3>Ingresa el Código de 6 Dígitos</h3>
+                <p>Hemos enviado un código a tu correo electrónico. Introduce el código a continuación:</p>
+
+                <div class="timer-badge">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>El código vence en: <strong id="timerRecuperarDisplay">02:00</strong></span>
+                </div>
+
+                <form onsubmit="event.preventDefault(); verificarCodigoRecuperacion();">
+                    <div class="form-group" style="text-align: left;">
+                        <label for="recCodigoInput">Código de 6 dígitos</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="recCodigoInput" class="otp-input" placeholder="123456" maxlength="6" pattern="[0-9]{6}" autocomplete="off" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnVerificarCodigo" class="btn-primary">
+                        <i class="fa-solid fa-circle-check"></i> Verificar Código
+                    </button>
+
+                    <div style="margin-top: 14px;">
+                        <button type="button" id="btnReenviarCodigo" onclick="reenviarCodigo()" class="btn-secondary-sm" style="width: 100%; padding: 10px;">
+                            <i class="fa-solid fa-rotate-right"></i> Reenviar Código
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- PASO 3: NUEVA CONTRASEÑA Y CONFIRMACIÓN -->
+            <div id="step-recuperar-3" style="display: none;">
+                <div class="modal-icon icon-blue">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3>Nueva Contraseña</h3>
+                <p>Ingresa tu nueva contraseña y confírmala para actualizar tu acceso.</p>
+
+                <form onsubmit="event.preventDefault(); restablecerContrasena();">
+                    <div class="form-group" style="text-align: left;">
+                        <label for="recNuevaClave">Nueva Contraseña</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <input type="password" id="recNuevaClave" placeholder="••••••••" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('recNuevaClave', this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="text-align: left;">
+                        <label for="recConfirmarClave">Confirmar Contraseña</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <input type="password" id="recConfirmarClave" placeholder="••••••••" required autocomplete="new-password">
+                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('recConfirmarClave', this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnActualizarClave" class="btn-primary">
+                        <i class="fa-solid fa-floppy-disk"></i> Actualizar Contraseña
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
     <script>
         const SESSION_KEY = 'mi_sistema_sesion_activa';
         let usuarioActualEnSesion = null;
         let usuarioTemporalModal = '';
+
+        // Variables de Recuperación de Contraseña
+        let timerRecuperacionInterval = null;
+        let segundosRestantes = 120;
+        let correoRecuperacionActual = '';
 
         document.addEventListener('DOMContentLoaded', () => {
             configurarLimpiezaAlertasAlEscribir();
@@ -704,12 +884,30 @@
             msg.className = 'alert-box';
         }
 
+        function mostrarMensajeModal(texto, tipo) {
+            const msg = document.getElementById('mensajeModalRecuperar');
+            const icono = document.getElementById('alertaModalIcono');
+            const txt = document.getElementById('alertaModalTexto');
+
+            txt.innerText = texto;
+            msg.className = "alert-box " + tipo;
+            icono.className = tipo === 'exito' ? "fa-solid fa-circle-check" : "fa-solid fa-circle-exclamation";
+        }
+
+        function ocultarMensajeModal() {
+            const msg = document.getElementById('mensajeModalRecuperar');
+            msg.style.display = 'none';
+            msg.className = 'alert-box';
+        }
+
         function configurarLimpiezaAlertasAlEscribir() {
             document.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', () => {
                     input.classList.remove('input-error');
                     const msg = document.getElementById('mensajeGlobal');
                     if (msg.classList.contains('error')) ocultarMensaje();
+                    const msgModal = document.getElementById('mensajeModalRecuperar');
+                    if (msgModal.classList.contains('error')) ocultarMensajeModal();
                 });
             });
         }
@@ -738,16 +936,253 @@
             setTimeout(() => document.getElementById('loginClave').focus(), 100);
         }
 
+        // --- MANEJO DEL MODAL DE RECUPERACIÓN DE CONTRASEÑA ---
+        function abrirModalRecuperar() {
+            ocultarMensajeModal();
+            document.getElementById('step-recuperar-1').style.display = 'block';
+            document.getElementById('step-recuperar-2').style.display = 'none';
+            document.getElementById('step-recuperar-3').style.display = 'none';
+
+            // Pre-llenar correo si hay algo escrito en el login
+            const valLogin = document.getElementById('loginUsuario').value.trim();
+            if (valLogin.includes('@')) {
+                document.getElementById('recCorreoInput').value = valLogin;
+            } else {
+                document.getElementById('recCorreoInput').value = '';
+            }
+
+            document.getElementById('recCodigoInput').value = '';
+            document.getElementById('recNuevaClave').value = '';
+            document.getElementById('recConfirmarClave').value = '';
+
+            document.getElementById('modalRecuperar').classList.add('active');
+            setTimeout(() => document.getElementById('recCorreoInput').focus(), 100);
+        }
+
+        function cerrarModalRecuperar() {
+            if (timerRecuperacionInterval) {
+                clearInterval(timerRecuperacionInterval);
+                timerRecuperacionInterval = null;
+            }
+            document.getElementById('modalRecuperar').classList.remove('active');
+        }
+
+        function iniciarTimer2Minutos() {
+            if (timerRecuperacionInterval) clearInterval(timerRecuperacionInterval);
+            segundosRestantes = 120; // 2 minutos
+
+            const display = document.getElementById('timerRecuperarDisplay');
+            const btnVerificar = document.getElementById('btnVerificarCodigo');
+
+            btnVerificar.disabled = false;
+            btnVerificar.innerHTML = `<i class="fa-solid fa-circle-check"></i> Verificar Código`;
+
+            function actualizarDisplay() {
+                const minutos = Math.floor(segundosRestantes / 60);
+                const segundos = segundosRestantes % 60;
+                const mStr = minutos < 10 ? '0' + minutos : minutos;
+                const sStr = segundos < 10 ? '0' + segundos : segundos;
+                display.innerText = `${mStr}:${sStr}`;
+
+                if (segundosRestantes <= 0) {
+                    clearInterval(timerRecuperacionInterval);
+                    timerRecuperacionInterval = null;
+                    display.innerText = '00:00 (Expirado)';
+                    btnVerificar.disabled = true;
+                    mostrarMensajeModal('El código ha expirado después de 2 minutos. Haz clic en "Reenviar Código".', 'error');
+                } else {
+                    segundosRestantes--;
+                }
+            }
+
+            actualizarDisplay();
+            timerRecuperacionInterval = setInterval(actualizarDisplay, 1000);
+        }
+
+        // 1. SOLICITAR CÓDIGO POR CORREO
+        async function solicitarCodigoRecuperacion() {
+            ocultarMensajeModal();
+            limpiarErroresEntrada();
+
+            const correo = document.getElementById('recCorreoInput').value.trim();
+            if (!correo) {
+                mostrarMensajeModal("Ingresa tu correo electrónico.", "error");
+                remarcarErrorInput('recCorreoInput');
+                return;
+            }
+
+            const btn = document.getElementById('btnEnviarCodigo');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando...`;
+
+            try {
+                const response = await fetch('/api/usuarios/solicitar-codigo-recuperacion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    correoRecuperacionActual = correo;
+                    document.getElementById('step-recuperar-1').style.display = 'none';
+                    document.getElementById('step-recuperar-2').style.display = 'block';
+                    mostrarMensajeModal('Código de 6 dígitos enviado. Revisa tu correo.', 'exito');
+                    iniciarTimer2Minutos();
+                    setTimeout(() => document.getElementById('recCodigoInput').focus(), 100);
+                } else {
+                    mostrarMensajeModal(data.error || "No se pudo enviar el código.", "error");
+                    remarcarErrorInput('recCorreoInput');
+                }
+            } catch (err) {
+                mostrarMensajeModal("Error de conexión al servidor.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar Código`;
+            }
+        }
+
+        // REENVIAR CÓDIGO
+        async function reenviarCodigo() {
+            ocultarMensajeModal();
+            const btnReenviar = document.getElementById('btnReenviarCodigo');
+            btnReenviar.disabled = true;
+            btnReenviar.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Reenviando...`;
+
+            try {
+                const response = await fetch('/api/usuarios/solicitar-codigo-recuperacion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo: correoRecuperacionActual })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('recCodigoInput').value = '';
+                    mostrarMensajeModal('Nuevo código de 6 dígitos enviado. Temporizador reiniciado.', 'exito');
+                    iniciarTimer2Minutos();
+                    setTimeout(() => document.getElementById('recCodigoInput').focus(), 100);
+                } else {
+                    mostrarMensajeModal(data.error || "No se pudo reenviar el código.", "error");
+                }
+            } catch (err) {
+                mostrarMensajeModal("Error de conexión al servidor.", "error");
+            } finally {
+                btnReenviar.disabled = false;
+                btnReenviar.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Reenviar Código`;
+            }
+        }
+
+        // 2. VERIFICAR CÓDIGO
+        async function verificarCodigoRecuperacion() {
+            ocultarMensajeModal();
+            limpiarErroresEntrada();
+
+            const codigo = document.getElementById('recCodigoInput').value.trim();
+            if (!codigo || codigo.length !== 6) {
+                mostrarMensajeModal("El código debe tener 6 dígitos numéricos.", "error");
+                remarcarErrorInput('recCodigoInput');
+                return;
+            }
+
+            const btn = document.getElementById('btnVerificarCodigo');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Verificando...`;
+
+            try {
+                const response = await fetch('/api/usuarios/verificar-codigo-recuperacion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (timerRecuperacionInterval) clearInterval(timerRecuperacionInterval);
+                    document.getElementById('step-recuperar-2').style.display = 'none';
+                    document.getElementById('step-recuperar-3').style.display = 'block';
+                    mostrarMensajeModal('Código verificado con éxito. Ingresa tu nueva contraseña.', 'exito');
+                    setTimeout(() => document.getElementById('recNuevaClave').focus(), 100);
+                } else {
+                    mostrarMensajeModal(data.error || "Código incorrecto o expirado.", "error");
+                    remarcarErrorInput('recCodigoInput');
+                }
+            } catch (err) {
+                mostrarMensajeModal("Error de conexión al servidor.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Verificar Código`;
+            }
+        }
+
+        // 3. RESTABLECER CONTRASEÑA
+        async function restablecerContrasena() {
+            ocultarMensajeModal();
+            limpiarErroresEntrada();
+
+            const codigo = document.getElementById('recCodigoInput').value.trim();
+            const nuevaClave = document.getElementById('recNuevaClave').value.trim();
+            const confirmarClave = document.getElementById('recConfirmarClave').value.trim();
+
+            if (!nuevaClave) {
+                mostrarMensajeModal("Por favor ingresa la nueva contraseña.", "error");
+                remarcarErrorInput('recNuevaClave');
+                return;
+            }
+
+            if (nuevaClave !== confirmarClave) {
+                mostrarMensajeModal("Las contraseñas no coinciden. Deben ser exactamente iguales.", "error");
+                remarcarErrorInput('recNuevaClave');
+                remarcarErrorInput('recConfirmarClave');
+                return;
+            }
+
+            const btn = document.getElementById('btnActualizarClave');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+
+            try {
+                const response = await fetch('/api/usuarios/restablecer-clave', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo, nuevaClave })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    cerrarModalRecuperar();
+                    mostrarSeccion('sec-login');
+                    document.getElementById('loginUsuario').value = correoRecuperacionActual;
+                    document.getElementById('loginClave').value = '';
+                    mostrarMensaje("¡Tu contraseña se ha actualizado correctamente! Ya puedes iniciar sesión.", "exito");
+                    setTimeout(() => document.getElementById('loginClave').focus(), 100);
+                } else {
+                    mostrarMensajeModal(data.error || "Error al restablecer la contraseña.", "error");
+                }
+            } catch (err) {
+                mostrarMensajeModal("Error de conexión al servidor.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Actualizar Contraseña`;
+            }
+        }
+
         // --- API: REGISTRAR USUARIO ---
         async function registrarUsuario() {
             limpiarErroresEntrada();
 
             const usuario = document.getElementById('regUsuario').value.trim();
+            const correo = document.getElementById('regCorreo').value.trim();
             const clave = document.getElementById('regClave').value.trim();
             const telefono = document.getElementById('regTelefono').value.trim();
             const direccion = document.getElementById('regDireccion').value.trim();
 
             if (!usuario) { mostrarMensaje("Por favor ingresa un nombre de usuario.", "error"); remarcarErrorInput('regUsuario'); return; }
+            if (!correo) { mostrarMensaje("Por favor ingresa un correo electrónico válido.", "error"); remarcarErrorInput('regCorreo'); return; }
             if (!clave) { mostrarMensaje("Por favor ingresa una contraseña.", "error"); remarcarErrorInput('regClave'); return; }
             if (!telefono) { mostrarMensaje("Por favor ingresa tu número de teléfono.", "error"); remarcarErrorInput('regTelefono'); return; }
 
@@ -755,7 +1190,7 @@
                 const response = await fetch('/api/usuarios/registrar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, clave, telefono, direccion })
+                    body: JSON.stringify({ usuario, clave, correo, telefono, direccion })
                 });
 
                 const data = await response.json();
@@ -769,8 +1204,13 @@
                         document.getElementById('loginClave').focus();
                     }, 1200);
                 } else {
-                    remarcarErrorInput('regUsuario');
-                    abrirModalExiste(usuario);
+                    if (data.error && data.error.includes('correo')) {
+                        mostrarMensaje(data.error, "error");
+                        remarcarErrorInput('regCorreo');
+                    } else {
+                        remarcarErrorInput('regUsuario');
+                        abrirModalExiste(usuario);
+                    }
                 }
             } catch (err) {
                 mostrarMensaje("Error al conectar con el servidor.", "error");
@@ -784,7 +1224,7 @@
             const usuario = document.getElementById('loginUsuario').value.trim();
             const clave = document.getElementById('loginClave').value.trim();
 
-            if (!usuario) { mostrarMensaje("Por favor ingresa tu usuario.", "error"); remarcarErrorInput('loginUsuario'); return; }
+            if (!usuario) { mostrarMensaje("Por favor ingresa tu usuario o correo.", "error"); remarcarErrorInput('loginUsuario'); return; }
             if (!clave) { mostrarMensaje("Por favor ingresa tu contraseña.", "error"); remarcarErrorInput('loginClave'); return; }
 
             try {
@@ -826,6 +1266,10 @@
                     </div>
                 </div>
                 <div class="detail-row">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span><strong>Correo:</strong> ${user.correo || 'No registrado'}</span>
+                </div>
+                <div class="detail-row">
                     <i class="fa-solid fa-phone"></i>
                     <span><strong>Teléfono:</strong> ${user.telefono || 'No registrado'}</span>
                 </div>
@@ -856,6 +1300,13 @@
                         <div class="input-wrapper">
                             <i class="fa-solid fa-user field-icon"></i>
                             <input type="text" value="${u.usuario}" disabled style="background:#e2e8f0; color:#64748b; cursor:not-allowed;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editCorreo">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope field-icon"></i>
+                            <input type="email" id="editCorreo" value="${u.correo || ''}">
                         </div>
                     </div>
                     <div class="form-group">
@@ -904,17 +1355,19 @@
             limpiarErroresEntrada();
 
             const clave = document.getElementById('editClave').value.trim();
+            const correo = document.getElementById('editCorreo').value.trim();
             const telefono = document.getElementById('editTelefono').value.trim();
             const direccion = document.getElementById('editDireccion').value.trim();
 
             if (!clave) { mostrarMensaje("Ingresa la nueva contraseña.", "error"); remarcarErrorInput('editClave'); return; }
+            if (!correo) { mostrarMensaje("Ingresa el correo electrónico.", "error"); remarcarErrorInput('editCorreo'); return; }
             if (!telefono) { mostrarMensaje("Ingresa el teléfono.", "error"); remarcarErrorInput('editTelefono'); return; }
 
             try {
                 const response = await fetch('/api/usuarios/editar', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: nombreUsuario, clave, telefono, direccion })
+                    body: JSON.stringify({ usuario: nombreUsuario, clave, correo, telefono, direccion })
                 });
 
                 const data = await response.json();
@@ -1006,6 +1459,10 @@
                         <h4>${u.usuario}</h4>
                         <p>Registrado el: ${u.fechaRegistro || 'N/D'}</p>
                     </div>
+                </div>
+                <div class="detail-row">
+                    <i class="fa-solid fa-envelope"></i>
+                    <span><strong>Correo:</strong> ${u.correo || 'No registrado'}</span>
                 </div>
                 <div class="detail-row">
                     <i class="fa-solid fa-key"></i>

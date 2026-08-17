@@ -1,1 +1,33 @@
-[]
+{
+  "usuarios": [
+    {
+      "usuario": "user_1786974180256",
+      "clave": "ClaveOriginal123",
+      "correo": "test_1786974180256@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 0,
+      "codigoRecuperacion": "357104",
+      "codigoExpiracion": 1786974300613
+    },
+    {
+      "usuario": "user_1786974185000",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786974185000@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    }
+  ],
+  "administradores": [
+    {
+      "usuario": "Admin",
+      "clave": "An12345*"
+    }
+  ],
+  "descargas": []
+}

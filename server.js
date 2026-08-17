@@ -3,6 +3,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +14,55 @@ const ADMIN_DEFAULT = {
     usuario: 'Admin',
     clave: 'An12345*'
 };
+
+// Configuración de transportador de correo (si hay variables de entorno SMTP)
+let transporter = null;
+if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+    transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS
+        }
+    });
+}
+
+// Función auxiliar para enviar el código de recuperación
+async function enviarCorreoRecuperacion(correoDestino, codigo) {
+    console.log(`\n==================================================`);
+    console.log(`[CÓDIGO DE RECUPERACIÓN GENERADO]`);
+    console.log(`Para: ${correoDestino}`);
+    console.log(`Código OTP (6 dígitos): ${codigo}`);
+    console.log(`Válido durante: 2 minutos (120 segundos)`);
+    console.log(`==================================================\n`);
+
+    if (transporter) {
+        try {
+            await transporter.sendMail({
+                from: process.env.SMTP_FROM || '"Sistema de Usuarios" <no-reply@sistema.com>',
+                to: correoDestino,
+                subject: 'Código de Recuperación de Contraseña',
+                text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
+                        <h2 style="color: #4f46e5; text-align: center; margin-bottom: 8px;">Recuperación de Contraseña</h2>
+                        <p style="color: #334155; font-size: 14px;">Has solicitado restablecer tu contraseña. Utiliza el siguiente código numérico de 6 dígitos para completar el proceso:</p>
+                        <div style="background: #ffffff; border: 2px dashed #4f46e5; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
+                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #0f172a;">${codigo}</span>
+                        </div>
+                        <p style="color: #ef4444; font-size: 13px; font-weight: bold; text-align: center;">⏰ Este código vencerá en 2 minutos.</p>
+                        <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 20px;">Si no solicitaste este código, por favor ignora este correo.</p>
+                    </div>
+                `
+            });
+            console.log(`[EMAIL SUCCESS] Correo enviado exitosamente a ${correoDestino}`);
+        } catch (err) {
+            console.error('[EMAIL ERROR] Error al enviar correo vía SMTP:', err);
+        }
+    }
+}
 
 // Configuración de PostgreSQL si DATABASE_URL existe
 let pool = null;
@@ -33,11 +83,21 @@ if (process.env.DATABASE_URL) {
                 CREATE TABLE IF NOT EXISTS usuarios (
                     usuario VARCHAR(255) PRIMARY KEY,
                     clave TEXT NOT NULL,
+                    correo TEXT,
                     telefono TEXT,
                     direccion TEXT,
                     fecha_registro TEXT,
-                    contador_modificaciones INT DEFAULT 0
+                    contador_modificaciones INT DEFAULT 0,
+                    codigo_recuperacion TEXT,
+                    codigo_expiracion BIGINT
                 );
+            `);
+
+            // Asegurar que columnas nuevas existan si la tabla ya existía
+            await pool.query(`
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS correo TEXT;
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_recuperacion TEXT;
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_expiracion BIGINT;
             `);
 
             // Tabla de administradores
@@ -156,7 +216,7 @@ app.get('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
             const result = await pool.query(
-                `SELECT usuario, clave, telefono, direccion, 
+                `SELECT usuario, clave, correo, telefono, direccion, 
                         fecha_registro AS "fechaRegistro", 
                         contador_modificaciones AS "contadorModificaciones" 
                  FROM usuarios ORDER BY usuario ASC`
@@ -173,8 +233,9 @@ app.get('/api/usuarios', async (req, res) => {
 
 // API: Registrar usuario normal
 app.post('/api/usuarios/registrar', async (req, res) => {
-    const { usuario, clave, telefono, direccion } = req.body;
+    const { usuario, clave, correo, telefono, direccion } = req.body;
     if (!usuario || !clave) return res.status(400).json({ error: 'Usuario y clave requeridos' });
+    if (!correo) return res.status(400).json({ error: 'El correo electrónico es requerido' });
 
     const fechaRegistro = new Date().toLocaleDateString();
 
@@ -183,11 +244,14 @@ app.post('/api/usuarios/registrar', async (req, res) => {
             const existe = await pool.query('SELECT usuario FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [usuario]);
             if (existe.rows.length > 0) return res.status(400).json({ error: 'El usuario ya existe' });
 
+            const existeCorreo = await pool.query('SELECT usuario FROM usuarios WHERE LOWER(correo) = LOWER($1)', [correo]);
+            if (existeCorreo.rows.length > 0) return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
+
             const insertResult = await pool.query(
-                `INSERT INTO usuarios (usuario, clave, telefono, direccion, fecha_registro, contador_modificaciones)
-                 VALUES ($1, $2, $3, $4, $5, 0)
-                 RETURNING usuario, clave, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
-                [usuario, clave, telefono || '', direccion || '', fechaRegistro]
+                `INSERT INTO usuarios (usuario, clave, correo, telefono, direccion, fecha_registro, contador_modificaciones)
+                 VALUES ($1, $2, $3, $4, $5, $6, 0)
+                 RETURNING usuario, clave, correo, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
+                [usuario, clave, correo, telefono || '', direccion || '', fechaRegistro]
             );
 
             return res.json({ mensaje: 'Usuario registrado', usuario: insertResult.rows[0] });
@@ -199,8 +263,11 @@ app.post('/api/usuarios/registrar', async (req, res) => {
         if (db.usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase())) {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
+        if (db.usuarios.some(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase())) {
+            return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
+        }
 
-        const nuevoUsuario = { usuario, clave, telefono, direccion, fechaRegistro, contadorModificaciones: 0 };
+        const nuevoUsuario = { usuario, clave, correo, telefono, direccion, fechaRegistro, contadorModificaciones: 0 };
         db.usuarios.push(nuevoUsuario);
         guardarDBLocal(db);
         res.json({ mensaje: 'Usuario registrado', usuario: nuevoUsuario });
@@ -214,10 +281,10 @@ app.post('/api/usuarios/login', async (req, res) => {
     if (pool) {
         try {
             const result = await pool.query(
-                `SELECT usuario, clave, telefono, direccion, 
+                `SELECT usuario, clave, correo, telefono, direccion, 
                         fecha_registro AS "fechaRegistro", 
                         contador_modificaciones AS "contadorModificaciones" 
-                 FROM usuarios WHERE usuario = $1 AND clave = $2`,
+                 FROM usuarios WHERE (LOWER(usuario) = LOWER($1) OR LOWER(correo) = LOWER($1)) AND clave = $2`,
                 [usuario, clave]
             );
 
@@ -231,24 +298,185 @@ app.post('/api/usuarios/login', async (req, res) => {
         }
     } else {
         const db = leerDBLocal();
-        const encontrado = db.usuarios.find(u => u.usuario === usuario && u.clave === clave);
+        const encontrado = db.usuarios.find(u =>
+            (u.usuario.toLowerCase() === usuario.toLowerCase() || (u.correo && u.correo.toLowerCase() === usuario.toLowerCase())) &&
+            u.clave === clave
+        );
         if (encontrado) res.json(encontrado);
         else res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 });
 
+// --- API: RECUPERACIÓN DE CONTRASEÑA POR CORREO (CÓDIGO DE 6 DÍGITOS - 2 MINUTOS) ---
+
+// 1. Solicitar código de recuperación
+app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
+    const { correo } = req.body;
+    if (!correo) return res.status(400).json({ error: 'El correo electrónico es requerido' });
+
+    // Generar código numérico de 6 dígitos
+    const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+    // Expiración: 2 minutos a partir de este momento (120.000 ms)
+    const expiracion = Date.now() + (2 * 60 * 1000);
+
+    if (pool) {
+        try {
+            const userRes = await pool.query(
+                'SELECT usuario, correo FROM usuarios WHERE LOWER(correo) = LOWER($1)',
+                [correo]
+            );
+
+            if (userRes.rows.length === 0) {
+                return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este correo electrónico' });
+            }
+
+            await pool.query(
+                'UPDATE usuarios SET codigo_recuperacion = $1, codigo_expiracion = $2 WHERE LOWER(correo) = LOWER($3)',
+                [codigo, expiracion, correo]
+            );
+
+            await enviarCorreoRecuperacion(userRes.rows[0].correo, codigo);
+            return res.json({ ok: true, mensaje: 'Código de 6 dígitos enviado a tu correo' });
+        } catch (err) {
+            console.error('Error al solicitar código:', err);
+            return res.status(500).json({ error: 'Error interno en el servidor' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const idx = db.usuarios.findIndex(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase());
+
+        if (idx === -1) {
+            return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este correo electrónico' });
+        }
+
+        db.usuarios[idx].codigoRecuperacion = codigo;
+        db.usuarios[idx].codigoExpiracion = expiracion;
+        guardarDBLocal(db);
+
+        await enviarCorreoRecuperacion(db.usuarios[idx].correo, codigo);
+        return res.json({ ok: true, mensaje: 'Código de 6 dígitos enviado a tu correo' });
+    }
+});
+
+// 2. Verificar código de recuperación
+app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
+    const { correo, codigo } = req.body;
+    if (!correo || !codigo) return res.status(400).json({ error: 'Correo y código son requeridos' });
+
+    if (pool) {
+        try {
+            const userRes = await pool.query(
+                'SELECT codigo_recuperacion, codigo_expiracion FROM usuarios WHERE LOWER(correo) = LOWER($1)',
+                [correo]
+            );
+
+            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+            const user = userRes.rows[0];
+            if (!user.codigo_recuperacion || user.codigo_recuperacion !== codigo) {
+                return res.status(400).json({ error: 'Código de verificación incorrecto' });
+            }
+
+            if (Date.now() > parseInt(user.codigo_expiracion || 0)) {
+                return res.status(400).json({ error: 'El código ha expirado (duración máxima: 2 minutos)' });
+            }
+
+            return res.json({ ok: true, mensaje: 'Código verificado exitosamente' });
+        } catch (err) {
+            return res.status(500).json({ error: 'Error en la base de datos' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const user = db.usuarios.find(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase());
+
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        if (!user.codigoRecuperacion || user.codigoRecuperacion !== codigo) {
+            return res.status(400).json({ error: 'Código de verificación incorrecto' });
+        }
+
+        if (Date.now() > (user.codigoExpiracion || 0)) {
+            return res.status(400).json({ error: 'El código ha expirado (duración máxima: 2 minutos)' });
+        }
+
+        return res.json({ ok: true, mensaje: 'Código verificado exitosamente' });
+    }
+});
+
+// 3. Restablecer contraseña con el código
+app.post('/api/usuarios/restablecer-clave', async (req, res) => {
+    const { correo, codigo, nuevaClave } = req.body;
+    if (!correo || !codigo || !nuevaClave) {
+        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    }
+
+    if (pool) {
+        try {
+            const userRes = await pool.query(
+                'SELECT codigo_recuperacion, codigo_expiracion FROM usuarios WHERE LOWER(correo) = LOWER($1)',
+                [correo]
+            );
+
+            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+            const user = userRes.rows[0];
+            if (!user.codigo_recuperacion || user.codigo_recuperacion !== codigo) {
+                return res.status(400).json({ error: 'Código inválido' });
+            }
+
+            if (Date.now() > parseInt(user.codigo_expiracion || 0)) {
+                return res.status(400).json({ error: 'El código ha expirado. Debes solicitar uno nuevo.' });
+            }
+
+            await pool.query(
+                `UPDATE usuarios 
+                 SET clave = $1, codigo_recuperacion = NULL, codigo_expiracion = NULL, 
+                     contador_modificaciones = COALESCE(contador_modificaciones, 0) + 1 
+                 WHERE LOWER(correo) = LOWER($2)`,
+                [nuevaClave, correo]
+            );
+
+            return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
+        } catch (err) {
+            return res.status(500).json({ error: 'Error al actualizar contraseña' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const idx = db.usuarios.findIndex(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase());
+
+        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const user = db.usuarios[idx];
+        if (!user.codigoRecuperacion || user.codigoRecuperacion !== codigo) {
+            return res.status(400).json({ error: 'Código inválido' });
+        }
+
+        if (Date.now() > (user.codigoExpiracion || 0)) {
+            return res.status(400).json({ error: 'El código ha expirado. Debes solicitar uno nuevo.' });
+        }
+
+        db.usuarios[idx].clave = nuevaClave;
+        db.usuarios[idx].codigoRecuperacion = null;
+        db.usuarios[idx].codigoExpiracion = null;
+        db.usuarios[idx].contadorModificaciones = (db.usuarios[idx].contadorModificaciones || 0) + 1;
+        guardarDBLocal(db);
+
+        return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
+    }
+});
+
 // API: Editar perfil
 app.put('/api/usuarios/editar', async (req, res) => {
-    const { usuario, clave, telefono, direccion } = req.body;
+    const { usuario, clave, correo, telefono, direccion } = req.body;
 
     if (pool) {
         try {
             const updateResult = await pool.query(
                 `UPDATE usuarios 
-                 SET clave = $2, telefono = $3, direccion = $4, contador_modificaciones = COALESCE(contador_modificaciones, 0) + 1 
+                 SET clave = $2, correo = $3, telefono = $4, direccion = $5, contador_modificaciones = COALESCE(contador_modificaciones, 0) + 1 
                  WHERE LOWER(usuario) = LOWER($1)
-                 RETURNING usuario, clave, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
-                [usuario, clave, telefono, direccion]
+                 RETURNING usuario, clave, correo, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
+                [usuario, clave, correo, telefono, direccion]
             );
 
             if (updateResult.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -262,6 +490,7 @@ app.put('/api/usuarios/editar', async (req, res) => {
         if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
         db.usuarios[idx].clave = clave;
+        if (correo) db.usuarios[idx].correo = correo;
         db.usuarios[idx].telefono = telefono;
         db.usuarios[idx].direccion = direccion;
         db.usuarios[idx].contadorModificaciones = (db.usuarios[idx].contadorModificaciones || 0) + 1;
