@@ -47,7 +47,7 @@ function obtenerCredencialesEmail() {
 function crearTransporter() {
     const { user, pass } = obtenerCredencialesEmail();
     const SMTP_HOST = process.env.SMTP_HOST;
-    const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465');
+    const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
 
     if (!user || !pass) {
         console.log('\n==================================================');
@@ -66,6 +66,7 @@ function crearTransporter() {
                 host: SMTP_HOST,
                 port: SMTP_PORT,
                 secure: process.env.SMTP_SECURE === 'true' || SMTP_PORT === 465,
+                family: 4, // FORZAR IPv4 para evitar ENETUNREACH en Render
                 auth: { user, pass },
                 tls: { rejectUnauthorized: false }
             }),
@@ -73,13 +74,19 @@ function crearTransporter() {
         };
     }
 
-    // Por defecto: Servicio de Gmail optimizado para Contraseñas de Aplicación (App Passwords)
-    console.log(`[EMAIL] Configurando Nodemailer para Gmail con usuario: ${user}`);
+    // Por defecto: Servicio de Gmail optimizado para Render (Forzando IPv4 y Puerto 587 STARTTLS)
+    console.log(`[EMAIL] Configurando Nodemailer para Gmail (IPv4 / Puerto 587) con usuario: ${user}`);
     return {
         transporter: nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // STARTTLS en puerto 587
+            requireTLS: true,
+            family: 4, // FORZAR IPv4 para evitar el error ENETUNREACH de IPv6 en Render
             auth: { user, pass },
-            tls: { rejectUnauthorized: false }
+            tls: {
+                rejectUnauthorized: false
+            }
         }),
         user
     };
@@ -105,32 +112,54 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
 
     console.log(`[EMAIL DISPARANDO] Ejecutando transporter.sendMail() hacia ${correoDestino} desde ${emailRemitente}...`);
 
-    try {
-        const info = await transporter.sendMail({
-            from: process.env.EMAIL_FROM || `"Sistema de Usuarios" <${emailRemitente}>`,
-            to: correoDestino,
-            subject: '🔒 Código de Recuperación de Contraseña (6 dígitos)',
-            text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                    <div style="text-align: center; margin-bottom: 16px;">
-                        <h2 style="color: #4f46e5; font-size: 22px; margin: 0;">Recuperación de Contraseña</h2>
-                        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Código de seguridad temporal</p>
-                    </div>
-                    <p style="color: #334155; font-size: 14px; line-height: 1.5;">Has solicitado restablecer tu contraseña. Utiliza el siguiente código numérico de 6 dígitos:</p>
-                    <div style="background: #f8fafc; border: 2px dashed #4f46e5; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
-                        <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">${codigo}</span>
-                    </div>
-                    <p style="color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px;">⏰ Este código caducará en exactamente 2 minutos.</p>
-                    <p style="color: #94a3b8; font-size: 12px; text-align: center;">Si no fue solicitado por ti, puedes ignorar este mensaje o revisar la carpeta de <strong>Spam / Correo No Deseado</strong>.</p>
+    const mailOptions = {
+        from: process.env.EMAIL_FROM || `"Sistema de Usuarios" <${emailRemitente}>`,
+        to: correoDestino,
+        subject: '🔒 Código de Recuperación de Contraseña (6 dígitos)',
+        text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <div style="text-align: center; margin-bottom: 16px;">
+                    <h2 style="color: #4f46e5; font-size: 22px; margin: 0;">Recuperación de Contraseña</h2>
+                    <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Código de seguridad temporal</p>
                 </div>
-            `
-        });
+                <p style="color: #334155; font-size: 14px; line-height: 1.5;">Has solicitado restablecer tu contraseña. Utiliza el siguiente código numérico de 6 dígitos:</p>
+                <div style="background: #f8fafc; border: 2px dashed #4f46e5; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
+                    <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">${codigo}</span>
+                </div>
+                <p style="color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px;">⏰ Este código caducará en exactamente 2 minutos.</p>
+                <p style="color: #94a3b8; font-size: 12px; text-align: center;">Si no fue solicitado por ti, puedes ignorar este mensaje o revisar la carpeta de <strong>Spam / Correo No Deseado</strong>.</p>
+            </div>
+        `
+    };
+
+    try {
+        const info = await transporter.sendMail(mailOptions);
         console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente por Gmail a ${correoDestino} (Message ID: ${info.messageId})`);
         return { enviado: true, messageId: info.messageId };
     } catch (err) {
-        console.error('[EMAIL ERROR] ❌ Falló el envío del correo electrónico vía Gmail SMTP:', err);
-        throw err;
+        console.error('[EMAIL ERROR] ❌ Falló el primer intento (Puerto 587 IPv4):', err.message);
+
+        // Reintento secundario con Puerto 465 SSL forzando IPv4
+        try {
+            console.log('[EMAIL REINTENTO] Intentando conexión con Gmail SSL Puerto 465 (family: 4)...');
+            const { user, pass } = obtenerCredencialesEmail();
+            const altTransporter = nodemailer.createTransport({
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
+                family: 4, // FORZAR IPv4
+                auth: { user, pass },
+                tls: { rejectUnauthorized: false }
+            });
+
+            const info = await altTransporter.sendMail(mailOptions);
+            console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente en reintento (Message ID: ${info.messageId})`);
+            return { enviado: true, messageId: info.messageId };
+        } catch (retryErr) {
+            console.error('[EMAIL ERROR FATAL] ❌ Ambos intentos SMTP fallaron:', retryErr.message);
+            throw retryErr;
+        }
     }
 }
 
