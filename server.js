@@ -49,6 +49,35 @@ function crearTransporter() {
     const SMTP_HOST = process.env.SMTP_HOST;
     const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465');
 
+    // Detectar si la clave o el host corresponden al servicio Resend
+    const esResend = (SMTP_HOST && SMTP_HOST.includes('resend')) || (pass && pass.startsWith('re_'));
+
+    if (esResend) {
+        const hostResend = SMTP_HOST || 'smtp.resend.com';
+        const portResend = parseInt(process.env.SMTP_PORT || '465');
+        const userResend = (user && user !== '') ? user : 'resend';
+
+        console.log(`[EMAIL RESEND] Configurando Nodemailer para Resend SMTP (${hostResend}:${portResend}) con API Key: ${pass.substring(0, 8)}...`);
+
+        return {
+            transporter: nodemailer.createTransport({
+                host: hostResend,
+                port: portResend,
+                secure: portResend === 465,
+                family: 4, // FORZAR IPv4 para compatibilidad total en Render
+                auth: {
+                    user: userResend,
+                    pass: pass
+                },
+                tls: {
+                    rejectUnauthorized: false
+                }
+            }),
+            user: userResend,
+            esResend: true
+        };
+    }
+
     if (!user || !pass) {
         console.log('\n==================================================');
         console.log('[CONFIGURACIÓN SMTP INCOMPLETA EN PROCESS.ENV]');
@@ -70,25 +99,27 @@ function crearTransporter() {
                 auth: { user, pass },
                 tls: { rejectUnauthorized: false }
             }),
-            user
+            user,
+            esResend: false
         };
     }
 
-    // Servicio Gmail optimizado para Render con SSL en Puerto 465 y forzado IPv4 (family: 4)
+    // Servicio Gmail por defecto
     console.log(`[EMAIL] Configurando Nodemailer para Gmail (SSL Puerto 465 / IPv4) con usuario: ${user}`);
     return {
         transporter: nodemailer.createTransport({
             service: 'gmail',
             host: 'smtp.gmail.com',
             port: 465,
-            secure: true, // Usa SSL directamente desde el primer milisegundo
-            family: 4, // FORZA A USAR IPv4 (Evita el error ENETUNREACH de IPv6 en Render)
+            secure: true,
+            family: 4, // FORZAR IPv4
             auth: { user, pass },
             tls: {
                 rejectUnauthorized: false
             }
         }),
-        user
+        user,
+        esResend: false
     };
 }
 
@@ -108,12 +139,23 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
         return { enviado: false, motivo: 'no_credentials', codigo };
     }
 
-    const { transporter, user: emailRemitente } = transportObj;
+    const { transporter, user: emailRemitente, esResend } = transportObj;
 
-    console.log(`[EMAIL DISPARANDO] Ejecutando transporter.sendMail() hacia ${correoDestino} desde ${emailRemitente}...`);
+    // Determinar dirección del remitente (from) válida
+    let remitenteFinal = process.env.EMAIL_FROM;
+    if (!remitenteFinal) {
+        if (esResend || !emailRemitente.includes('@')) {
+            // Resend exige un remitente con formato de correo válido (onboarding@resend.dev por defecto)
+            remitenteFinal = '"Sistema de Usuarios" <onboarding@resend.dev>';
+        } else {
+            remitenteFinal = `"Sistema de Usuarios" <${emailRemitente}>`;
+        }
+    }
+
+    console.log(`[EMAIL DISPARANDO] Ejecutando transporter.sendMail() hacia ${correoDestino} desde ${remitenteFinal}...`);
 
     const mailOptions = {
-        from: process.env.EMAIL_FROM || `"Sistema de Usuarios" <${emailRemitente}>`,
+        from: remitenteFinal,
         to: correoDestino,
         subject: '🔒 Código de Recuperación de Contraseña (6 dígitos)',
         text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
@@ -135,10 +177,10 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente por Gmail a ${correoDestino} (Message ID: ${info.messageId})`);
+        console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente a ${correoDestino} (Message ID: ${info.messageId})`);
         return { enviado: true, messageId: info.messageId };
     } catch (err) {
-        console.error('[EMAIL ERROR] ❌ Falló el envío por Gmail SMTP:', err.message);
+        console.error('[EMAIL ERROR] ❌ Falló el envío del correo electrónico:', err.message);
         throw err;
     }
 }
