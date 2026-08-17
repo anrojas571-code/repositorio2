@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -15,21 +17,75 @@ const ADMIN_DEFAULT = {
     clave: 'An12345*'
 };
 
-// Configuración de transportador de correo (si hay variables de entorno SMTP)
-let transporter = null;
-if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-    transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-        }
-    });
+// Función dinámica para obtener credenciales de correo desde process.env en cada petición
+function obtenerCredencialesEmail() {
+    const user = (
+        process.env.EMAIL_USER ||
+        process.env.GMAIL_USER ||
+        process.env.SMTP_USER ||
+        process.env.MAIL_USER ||
+        process.env.USER_EMAIL ||
+        ''
+    ).trim();
+
+    const rawPass = (
+        process.env.EMAIL_PASS ||
+        process.env.GMAIL_PASS ||
+        process.env.SMTP_PASS ||
+        process.env.MAIL_PASS ||
+        process.env.USER_PASS ||
+        ''
+    ).trim();
+
+    // Limpiar espacios de la Contraseña de Aplicación de Google (ej: "abcd efgh ijkl mnop" -> "abcdefghijklmnop")
+    const pass = rawPass.replace(/\s+/g, '');
+
+    return { user, pass };
 }
 
-// Función auxiliar para enviar el código de recuperación
+// Función creadora del transportador de Nodemailer
+function crearTransporter() {
+    const { user, pass } = obtenerCredencialesEmail();
+    const SMTP_HOST = process.env.SMTP_HOST;
+    const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465');
+
+    if (!user || !pass) {
+        console.log('\n==================================================');
+        console.log('[CONFIGURACIÓN SMTP INCOMPLETA EN PROCESS.ENV]');
+        console.log('⚠️ No se han detectado EMAIL_USER / EMAIL_PASS en las variables de entorno de Render/Servidor.');
+        console.log('Variables de entorno buscadas: EMAIL_USER, EMAIL_PASS, GMAIL_USER, GMAIL_PASS, SMTP_USER, SMTP_PASS');
+        console.log('==================================================\n');
+        return null;
+    }
+
+    // Servidor SMTP personalizado (ej. Mailtrap, SendGrid, Outlook SMTP personalizado)
+    if (SMTP_HOST) {
+        console.log(`[EMAIL] Configurando Nodemailer con SMTP personalizado: ${SMTP_HOST}:${SMTP_PORT} para usuario: ${user}`);
+        return {
+            transporter: nodemailer.createTransport({
+                host: SMTP_HOST,
+                port: SMTP_PORT,
+                secure: process.env.SMTP_SECURE === 'true' || SMTP_PORT === 465,
+                auth: { user, pass },
+                tls: { rejectUnauthorized: false }
+            }),
+            user
+        };
+    }
+
+    // Por defecto: Servicio de Gmail optimizado para Contraseñas de Aplicación (App Passwords)
+    console.log(`[EMAIL] Configurando Nodemailer para Gmail con usuario: ${user}`);
+    return {
+        transporter: nodemailer.createTransport({
+            service: 'gmail',
+            auth: { user, pass },
+            tls: { rejectUnauthorized: false }
+        }),
+        user
+    };
+}
+
+// Función auxiliar para enviar el correo de recuperación
 async function enviarCorreoRecuperacion(correoDestino, codigo) {
     console.log(`\n==================================================`);
     console.log(`[CÓDIGO DE RECUPERACIÓN GENERADO]`);
@@ -38,29 +94,43 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     console.log(`Válido durante: 2 minutos (120 segundos)`);
     console.log(`==================================================\n`);
 
-    if (transporter) {
-        try {
-            await transporter.sendMail({
-                from: process.env.SMTP_FROM || '"Sistema de Usuarios" <no-reply@sistema.com>',
-                to: correoDestino,
-                subject: 'Código de Recuperación de Contraseña',
-                text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.`,
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc;">
-                        <h2 style="color: #4f46e5; text-align: center; margin-bottom: 8px;">Recuperación de Contraseña</h2>
-                        <p style="color: #334155; font-size: 14px;">Has solicitado restablecer tu contraseña. Utiliza el siguiente código numérico de 6 dígitos para completar el proceso:</p>
-                        <div style="background: #ffffff; border: 2px dashed #4f46e5; border-radius: 8px; padding: 16px; text-align: center; margin: 20px 0;">
-                            <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #0f172a;">${codigo}</span>
-                        </div>
-                        <p style="color: #ef4444; font-size: 13px; font-weight: bold; text-align: center;">⏰ Este código vencerá en 2 minutos.</p>
-                        <p style="color: #64748b; font-size: 12px; text-align: center; margin-top: 20px;">Si no solicitaste este código, por favor ignora este correo.</p>
+    const transportObj = crearTransporter();
+
+    if (!transportObj || !transportObj.transporter) {
+        console.warn(`[EMAIL ADVERTENCIA] No se ejecutó sendMail() porque faltan las credenciales EMAIL_USER/EMAIL_PASS en Render.`);
+        return { enviado: false, motivo: 'no_credentials', codigo };
+    }
+
+    const { transporter, user: emailRemitente } = transportObj;
+
+    console.log(`[EMAIL DISPARANDO] Ejecutando transporter.sendMail() hacia ${correoDestino} desde ${emailRemitente}...`);
+
+    try {
+        const info = await transporter.sendMail({
+            from: process.env.EMAIL_FROM || `"Sistema de Usuarios" <${emailRemitente}>`,
+            to: correoDestino,
+            subject: '🔒 Código de Recuperación de Contraseña (6 dígitos)',
+            text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <h2 style="color: #4f46e5; font-size: 22px; margin: 0;">Recuperación de Contraseña</h2>
+                        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Código de seguridad temporal</p>
                     </div>
-                `
-            });
-            console.log(`[EMAIL SUCCESS] Correo enviado exitosamente a ${correoDestino}`);
-        } catch (err) {
-            console.error('[EMAIL ERROR] Error al enviar correo vía SMTP:', err);
-        }
+                    <p style="color: #334155; font-size: 14px; line-height: 1.5;">Has solicitado restablecer tu contraseña. Utiliza el siguiente código numérico de 6 dígitos:</p>
+                    <div style="background: #f8fafc; border: 2px dashed #4f46e5; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
+                        <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">${codigo}</span>
+                    </div>
+                    <p style="color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px;">⏰ Este código caducará en exactamente 2 minutos.</p>
+                    <p style="color: #94a3b8; font-size: 12px; text-align: center;">Si no fue solicitado por ti, puedes ignorar este mensaje o revisar la carpeta de <strong>Spam / Correo No Deseado</strong>.</p>
+                </div>
+            `
+        });
+        console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente por Gmail a ${correoDestino} (Message ID: ${info.messageId})`);
+        return { enviado: true, messageId: info.messageId };
+    } catch (err) {
+        console.error('[EMAIL ERROR] ❌ Falló el envío del correo electrónico vía Gmail SMTP:', err);
+        throw err;
     }
 }
 
@@ -319,6 +389,8 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
     // Expiración: 2 minutos a partir de este momento (120.000 ms)
     const expiracion = Date.now() + (2 * 60 * 1000);
 
+    let usuarioEncontrado = null;
+
     if (pool) {
         try {
             const userRes = await pool.query(
@@ -329,17 +401,15 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
             if (userRes.rows.length === 0) {
                 return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este correo electrónico' });
             }
+            usuarioEncontrado = userRes.rows[0];
 
             await pool.query(
                 'UPDATE usuarios SET codigo_recuperacion = $1, codigo_expiracion = $2 WHERE LOWER(correo) = LOWER($3)',
                 [codigo, expiracion, correo]
             );
-
-            await enviarCorreoRecuperacion(userRes.rows[0].correo, codigo);
-            return res.json({ ok: true, mensaje: 'Código de 6 dígitos enviado a tu correo' });
         } catch (err) {
-            console.error('Error al solicitar código:', err);
-            return res.status(500).json({ error: 'Error interno en el servidor' });
+            console.error('Error al actualizar código en PostgreSQL:', err);
+            return res.status(500).json({ error: 'Error al actualizar código en la base de datos' });
         }
     } else {
         const db = leerDBLocal();
@@ -348,13 +418,34 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
         if (idx === -1) {
             return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este correo electrónico' });
         }
+        usuarioEncontrado = db.usuarios[idx];
 
         db.usuarios[idx].codigoRecuperacion = codigo;
         db.usuarios[idx].codigoExpiracion = expiracion;
         guardarDBLocal(db);
+    }
 
-        await enviarCorreoRecuperacion(db.usuarios[idx].correo, codigo);
-        return res.json({ ok: true, mensaje: 'Código de 6 dígitos enviado a tu correo' });
+    // DISPARAR EL ENVÍO REAL DEL CORREO MEDIANTE NODEMAILER
+    try {
+        const resultadoEnvio = await enviarCorreoRecuperacion(usuarioEncontrado.correo, codigo);
+
+        if (resultadoEnvio && resultadoEnvio.enviado === false) {
+            return res.status(400).json({
+                error: 'No se detectaron las variables EMAIL_USER y EMAIL_PASS en el servidor (Render). Configúralas en Environment Variables.',
+                modoDev: true
+            });
+        }
+
+        return res.json({
+            ok: true,
+            mensaje: 'Código de 6 dígitos enviado exitosamente. Revisa también tu carpeta de Spam / Correo No Deseado.'
+        });
+    } catch (emailErr) {
+        console.error('[CAPTURA ERROR ENVÍO CORREO]:', emailErr);
+        return res.status(500).json({
+            error: 'Falló el envío del correo por Gmail. Verifica que EMAIL_USER y EMAIL_PASS (Contraseña de Aplicación de 16 letras) estén bien configuradas en Render.',
+            detalle: emailErr.message || 'Error de autenticación SMTP'
+        });
     }
 });
 
