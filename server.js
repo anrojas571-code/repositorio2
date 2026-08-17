@@ -47,7 +47,7 @@ function obtenerCredencialesEmail() {
 function crearTransporter() {
     const { user, pass } = obtenerCredencialesEmail();
     const SMTP_HOST = process.env.SMTP_HOST;
-    const SMTP_PORT = parseInt(process.env.SMTP_PORT || '587');
+    const SMTP_PORT = parseInt(process.env.SMTP_PORT || '465');
 
     if (!user || !pass) {
         console.log('\n==================================================');
@@ -74,15 +74,15 @@ function crearTransporter() {
         };
     }
 
-    // Por defecto: Servicio de Gmail optimizado para Render (Forzando IPv4 y Puerto 587 STARTTLS)
-    console.log(`[EMAIL] Configurando Nodemailer para Gmail (IPv4 / Puerto 587) con usuario: ${user}`);
+    // Servicio Gmail optimizado para Render con SSL en Puerto 465 y forzado IPv4 (family: 4)
+    console.log(`[EMAIL] Configurando Nodemailer para Gmail (SSL Puerto 465 / IPv4) con usuario: ${user}`);
     return {
         transporter: nodemailer.createTransport({
+            service: 'gmail',
             host: 'smtp.gmail.com',
-            port: 587,
-            secure: false, // STARTTLS en puerto 587
-            requireTLS: true,
-            family: 4, // FORZAR IPv4 para evitar el error ENETUNREACH de IPv6 en Render
+            port: 465,
+            secure: true, // Usa SSL directamente desde el primer milisegundo
+            family: 4, // FORZA A USAR IPv4 (Evita el error ENETUNREACH de IPv6 en Render)
             auth: { user, pass },
             tls: {
                 rejectUnauthorized: false
@@ -138,28 +138,8 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
         console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente por Gmail a ${correoDestino} (Message ID: ${info.messageId})`);
         return { enviado: true, messageId: info.messageId };
     } catch (err) {
-        console.error('[EMAIL ERROR] ❌ Falló el primer intento (Puerto 587 IPv4):', err.message);
-
-        // Reintento secundario con Puerto 465 SSL forzando IPv4
-        try {
-            console.log('[EMAIL REINTENTO] Intentando conexión con Gmail SSL Puerto 465 (family: 4)...');
-            const { user, pass } = obtenerCredencialesEmail();
-            const altTransporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 465,
-                secure: true,
-                family: 4, // FORZAR IPv4
-                auth: { user, pass },
-                tls: { rejectUnauthorized: false }
-            });
-
-            const info = await altTransporter.sendMail(mailOptions);
-            console.log(`[EMAIL EXITO] ✅ Correo enviado exitosamente en reintento (Message ID: ${info.messageId})`);
-            return { enviado: true, messageId: info.messageId };
-        } catch (retryErr) {
-            console.error('[EMAIL ERROR FATAL] ❌ Ambos intentos SMTP fallaron:', retryErr.message);
-            throw retryErr;
-        }
+        console.error('[EMAIL ERROR] ❌ Falló el envío por Gmail SMTP:', err.message);
+        throw err;
     }
 }
 
