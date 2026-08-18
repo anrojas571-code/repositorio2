@@ -637,7 +637,8 @@
                         </div>
 
                         <div style="text-align: right; margin-bottom: 16px;">
-                            <a href="javascript:void(0)" onclick="abrirModalRecuperar()" style="color: var(--primary); font-size: 12.5px; font-weight: 700; text-decoration: none;">
+                            <a href="javascript:void(0)" onclick="abrirModalRecuperar()"
+                                style="color: var(--primary); font-size: 12.5px; font-weight: 700; text-decoration: none;">
                                 <i class="fa-solid fa-key"></i> ¿Olvidaste tu contraseña?
                             </a>
                         </div>
@@ -674,8 +675,8 @@
                             <label for="adminUsuario">Usuario Credencial</label>
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-user field-icon"></i>
-                                <input type="text" id="adminUsuario" placeholder="Tu usuario registrado"
-                                    autocomplete="username">
+                                <input type="text" id="adminUsuario"
+                                    placeholder="Tu Usuario Registrado o Correo Electrónico" autocomplete="username">
                             </div>
                         </div>
 
@@ -744,7 +745,8 @@
                         <label for="recCorreoInput">Correo Electrónico</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="recCorreoInput" placeholder="tu@correo.com" required autocomplete="email">
+                            <input type="email" id="recCorreoInput" placeholder="tu@correo.com" required
+                                autocomplete="email">
                         </div>
                     </div>
                     <button type="submit" id="btnEnviarCodigo" class="btn-primary">
@@ -763,14 +765,15 @@
 
                 <div class="timer-badge">
                     <i class="fa-solid fa-clock"></i>
-                    <span>El código vence en: <strong id="timerRecuperarDisplay">02:00</strong></span>
+                    <span>El código vence en: <strong id="timerRecuperarDisplay">15:00</strong></span>
                 </div>
 
                 <form onsubmit="event.preventDefault(); verificarCodigoRecuperacion();">
                     <div class="form-group" style="text-align: left;">
                         <label for="recCodigoInput">Código de 6 dígitos</label>
                         <div class="input-wrapper">
-                            <input type="text" id="recCodigoInput" class="otp-input" placeholder="123456" maxlength="6" pattern="[0-9]{6}" autocomplete="off" required>
+                            <input type="text" id="recCodigoInput" class="otp-input" placeholder="123456" maxlength="6"
+                                pattern="[0-9]{6}" autocomplete="off" required>
                         </div>
                     </div>
 
@@ -779,7 +782,8 @@
                     </button>
 
                     <div style="margin-top: 14px;">
-                        <button type="button" id="btnReenviarCodigo" onclick="reenviarCodigo()" class="btn-secondary-sm" style="width: 100%; padding: 10px;">
+                        <button type="button" id="btnReenviarCodigo" onclick="reenviarCodigo()" class="btn-secondary-sm"
+                            style="width: 100%; padding: 10px;">
                             <i class="fa-solid fa-rotate-right"></i> Reenviar Código
                         </button>
                     </div>
@@ -799,8 +803,10 @@
                         <label for="recNuevaClave">Nueva Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="recNuevaClave" placeholder="••••••••" required autocomplete="new-password">
-                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('recNuevaClave', this)">
+                            <input type="password" id="recNuevaClave" placeholder="••••••••" required
+                                autocomplete="new-password">
+                            <button type="button" class="btn-toggle-pwd"
+                                onclick="togglePasswordVisibility('recNuevaClave', this)">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
@@ -810,8 +816,10 @@
                         <label for="recConfirmarClave">Confirmar Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="recConfirmarClave" placeholder="••••••••" required autocomplete="new-password">
-                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('recConfirmarClave', this)">
+                            <input type="password" id="recConfirmarClave" placeholder="••••••••" required
+                                autocomplete="new-password">
+                            <button type="button" class="btn-toggle-pwd"
+                                onclick="togglePasswordVisibility('recConfirmarClave', this)">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
