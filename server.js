@@ -38,7 +38,7 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     console.log(`[CÓDIGO DE RECUPERACIÓN GENERADO]`);
     console.log(`Para: ${correoDestino}`);
     console.log(`Código OTP (6 dígitos): ${codigo}`);
-    console.log(`Válido durante: 2 minutos (120 segundos)`);
+    console.log(`Válido durante: 15 minutos (900 segundos)`);
     console.log(`==================================================\n`);
 
     const apiKey = obtenerApiKeyResend();
@@ -60,7 +60,7 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
             from: remitenteFinal,
             to: correoDestino,
             subject: '🔒 Código de Recuperación de Contraseña (6 dígitos)',
-            text: `Tu código de recuperación es: ${codigo}. Este código vence en 2 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
+            text: `Tu código de recuperación es: ${codigo}. Este código vence en 15 minutos.\nRevisa también tu carpeta de Spam / Correo No Deseado.`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
                     <div style="text-align: center; margin-bottom: 16px;">
@@ -71,7 +71,7 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
                     <div style="background: #f8fafc; border: 2px dashed #4f46e5; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
                         <span style="font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #0f172a;">${codigo}</span>
                     </div>
-                    <p style="color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px;">⏰ Este código caducará en exactamente 2 minutos.</p>
+                    <p style="color: #ef4444; font-size: 13px; font-weight: 700; text-align: center; margin-bottom: 8px;">⏰ Este código caducará en exactamente 15 minutos.</p>
                     <p style="color: #94a3b8; font-size: 12px; text-align: center;">Si no fue solicitado por ti, puedes ignorar este mensaje o revisar la carpeta de <strong>Spam / Correo No Deseado</strong>.</p>
                 </div>
             `
@@ -342,8 +342,8 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
 
     // Generar código numérico de 6 dígitos
     const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-    // Expiración: 2 minutos a partir de este momento (120.000 ms)
-    const expiracion = Date.now() + (2 * 60 * 1000);
+    // Expiración: 15 minutos a partir de este momento (900.000 ms)
+    const expiracion = Date.now() + (15 * 60 * 1000);
 
     let usuarioEncontrado = null;
 
@@ -425,7 +425,7 @@ app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
             }
 
             if (Date.now() > parseInt(user.codigo_expiracion || 0)) {
-                return res.status(400).json({ error: 'El código ha expirado (duración máxima: 2 minutos)' });
+                return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos)' });
             }
 
             return res.json({ ok: true, mensaje: 'Código verificado exitosamente' });
@@ -443,7 +443,7 @@ app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
         }
 
         if (Date.now() > (user.codigoExpiracion || 0)) {
-            return res.status(400).json({ error: 'El código ha expirado (duración máxima: 2 minutos)' });
+            return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos)' });
         }
 
         return res.json({ ok: true, mensaje: 'Código verificado exitosamente' });

@@ -841,7 +841,7 @@
 
         // Variables de Recuperación de Contraseña
         let timerRecuperacionInterval = null;
-        let segundosRestantes = 120;
+        let segundosRestantes = 900;
         let correoRecuperacionActual = '';
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -975,9 +975,9 @@
             document.getElementById('modalRecuperar').classList.remove('active');
         }
 
-        function iniciarTimer2Minutos() {
+        function iniciarTimer15Minutos() {
             if (timerRecuperacionInterval) clearInterval(timerRecuperacionInterval);
-            segundosRestantes = 120; // 2 minutos
+            segundosRestantes = 900; // 15 minutos
 
             const display = document.getElementById('timerRecuperarDisplay');
             const btnVerificar = document.getElementById('btnVerificarCodigo');
@@ -997,7 +997,7 @@
                     timerRecuperacionInterval = null;
                     display.innerText = '00:00 (Expirado)';
                     btnVerificar.disabled = true;
-                    mostrarMensajeModal('El código ha expirado después de 2 minutos. Haz clic en "Reenviar Código".', 'error');
+                    mostrarMensajeModal('El código ha expirado después de 15 minutos. Haz clic en "Reenviar Código".', 'error');
                 } else {
                     segundosRestantes--;
                 }
