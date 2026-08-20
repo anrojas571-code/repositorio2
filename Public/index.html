@@ -213,7 +213,8 @@
             transition: color 0.2s ease;
         }
 
-        .input-wrapper input {
+        .input-wrapper input,
+        .input-wrapper select {
             width: 100%;
             padding: 12px 14px 12px 40px;
             font-size: 14px;
@@ -225,7 +226,8 @@
             transition: all 0.2s ease;
         }
 
-        .input-wrapper input:focus {
+        .input-wrapper input:focus,
+        .input-wrapper select:focus {
             border-color: var(--primary);
             background: #ffffff;
             box-shadow: 0 0 0 4px var(--primary-light);
@@ -400,13 +402,6 @@
             text-align: center;
         }
 
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -516,6 +511,16 @@
             text-align: center;
             padding-left: 20px !important;
         }
+
+        .phone-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .phone-group select {
+            width: 120px;
+            padding-left: 10px;
+        }
     </style>
 </head>
 
@@ -532,15 +537,13 @@
                 <p>Plataforma de registro y gestión con servidor en la nube</p>
             </div>
 
+            <!-- Navegación sin la opción Lista -->
             <div class="nav-tabs">
-                <button id="tab-registro" class="active" onclick="mostrarSeccion('sec-registro')">
-                    <i class="fa-solid fa-user-plus"></i> Registrar
-                </button>
-                <button id="tab-login" onclick="mostrarSeccion('sec-login')">
+                <button id="tab-login" class="active" onclick="mostrarSeccion('sec-login')">
                     <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
                 </button>
-                <button id="tab-admin" onclick="mostrarSeccion('sec-admin')">
-                    <i class="fa-solid fa-users"></i> Lista
+                <button id="tab-registro" onclick="mostrarSeccion('sec-registro')">
+                    <i class="fa-solid fa-user-plus"></i> Registro
                 </button>
             </div>
 
@@ -549,65 +552,8 @@
                 <span id="alertaTexto"></span>
             </div>
 
-            <!-- 1. SECCIÓN: REGISTRO -->
-            <div id="sec-registro" class="section active">
-                <div class="section-title">
-                    <i class="fa-solid fa-id-card"></i> Crear nueva cuenta
-                </div>
-
-                <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
-                    <div class="form-group">
-                        <label for="regUsuario">Nombre de Usuario</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-user field-icon"></i>
-                            <input type="text" id="regUsuario" placeholder="Ej. AngelRojas" autocomplete="username">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="regCorreo">Correo Electrónico</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="regCorreo" placeholder="ejemplo@correo.com" autocomplete="email">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="regClave">Contraseña</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="regClave" placeholder="••••••••" autocomplete="new-password">
-                            <button type="button" class="btn-toggle-pwd"
-                                onclick="togglePasswordVisibility('regClave', this)">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="regTelefono">Teléfono</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-phone field-icon"></i>
-                            <input type="tel" id="regTelefono" placeholder="Ej. 04141234567">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="regDireccion">Dirección (Opcional)</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-location-dot field-icon"></i>
-                            <input type="text" id="regDireccion" placeholder="Ej. Av. Bolívar Norte">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-primary">
-                        <i class="fa-solid fa-user-plus"></i> Registrar Usuario
-                    </button>
-                </form>
-            </div>
-
-            <!-- 2. SECCIÓN: INICIO DE SESIÓN -->
-            <div id="sec-login" class="section">
+            <!-- 1. SECCIÓN: INICIO DE SESIÓN -->
+            <div id="sec-login" class="section active">
                 <div id="formLoginWrapper">
                     <div class="section-title">
                         <i class="fa-solid fa-key"></i> Acceder a tu cuenta
@@ -636,10 +582,17 @@
                             </div>
                         </div>
 
-                        <div style="text-align: right; margin-bottom: 16px;">
+                        <div style="text-align: right; margin-bottom: 6px;">
                             <a href="javascript:void(0)" onclick="abrirModalRecuperar()"
                                 style="color: var(--primary); font-size: 12.5px; font-weight: 700; text-decoration: none;">
                                 <i class="fa-solid fa-key"></i> ¿Olvidaste tu contraseña?
+                            </a>
+                        </div>
+
+                        <div style="text-align: right; margin-bottom: 16px;">
+                            <a href="javascript:void(0)" onclick="mostrarSeccion('sec-registro')"
+                                style="color: var(--primary); font-size: 12.5px; font-weight: 700; text-decoration: none;">
+                                <i class="fa-solid fa-user-plus"></i> ¿No estás Registrado Aún?
                             </a>
                         </div>
 
@@ -660,46 +613,70 @@
                 </div>
             </div>
 
-            <!-- 3. SECCIÓN: CONSULTA -->
-            <div id="sec-admin" class="section">
-                <div id="formAdminWrapper">
-                    <div class="section-title">
-                        <i class="fa-solid fa-user-check"></i> Consulta de Registro
-                    </div>
-                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-                        Ingresa tus credenciales para consultar tu tarjeta de registro individual.
-                    </p>
-
-                    <form id="formAdmin" onsubmit="event.preventDefault(); verListaUsuarios();">
-                        <div class="form-group">
-                            <label for="adminUsuario">Usuario Credencial</label>
-                            <div class="input-wrapper">
-                                <i class="fa-solid fa-user field-icon"></i>
-                                <input type="text" id="adminUsuario"
-                                    placeholder="Tu Usuario Registrado o Correo Electrónico" autocomplete="username">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="adminClave">Contraseña</label>
-                            <div class="input-wrapper">
-                                <i class="fa-solid fa-lock field-icon"></i>
-                                <input type="password" id="adminClave" placeholder="••••••••"
-                                    autocomplete="current-password">
-                                <button type="button" class="btn-toggle-pwd"
-                                    onclick="togglePasswordVisibility('adminClave', this)">
-                                    <i class="fa-solid fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-primary">
-                            <i class="fa-solid fa-magnifying-glass"></i> Consultar Mi Registro
-                        </button>
-                    </form>
+            <!-- 2. SECCIÓN: REGISTRO -->
+            <div id="sec-registro" class="section">
+                <div class="section-title">
+                    <i class="fa-solid fa-id-card"></i> Crear nueva cuenta
                 </div>
 
-                <div id="listaContenedor"></div>
+                <form id="formRegistro" onsubmit="event.preventDefault(); registrarUsuario();">
+                    <div class="form-group">
+                        <label for="regUsuario">Nombre de Usuario</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user field-icon"></i>
+                            <input type="text" id="regUsuario" placeholder="Ej. AngelRojas" autocomplete="username">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regCorreo">Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope field-icon"></i>
+                            <input type="email" id="regCorreo" placeholder="ejemplo@correo.com" autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regClave">Contraseña (Min 4 letras, números y caracteres | Max 15)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <input type="password" id="regClave" placeholder="••••••••" maxlength="15"
+                                autocomplete="new-password">
+                            <button type="button" class="btn-toggle-pwd"
+                                onclick="togglePasswordVisibility('regClave', this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regTelefono">Teléfono</label>
+                        <div class="phone-group">
+                            <select id="regPais" onchange="actualizarPlaceholderTelefono()">
+                                <option value="VE">🇻🇪 +58</option>
+                                <option value="CO">🇨🇴 +57</option>
+                                <option value="US">🇺🇸 +1</option>
+                                <option value="ES">🇪🇸 +34</option>
+                            </select>
+                            <div class="input-wrapper" style="flex:1;">
+                                <i class="fa-solid fa-phone field-icon"></i>
+                                <input type="tel" id="regTelefono" placeholder="Ej. 04141234567 (11 dígitos)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="regDireccion">Dirección (Opcional)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-location-dot field-icon"></i>
+                            <input type="text" id="regDireccion" placeholder="Ej. Av. Bolívar Norte">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary">
+                        <i class="fa-solid fa-user-plus"></i> Registrar Usuario
+                    </button>
+                </form>
             </div>
 
         </div>
@@ -719,6 +696,20 @@
         </div>
     </div>
 
+    <!-- MODAL DE USUARIO NO REGISTRADO -->
+    <div id="modalNoExiste" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <i class="fa-solid fa-user-slash"></i>
+            </div>
+            <h3>¡Atención!</h3>
+            <p>Usuario No registrado</p>
+            <button onclick="cerrarModalEIrARegistro()" class="btn-primary">
+                Ir a registrarse
+            </button>
+        </div>
+    </div>
+
     <!-- MODAL RECUPERACIÓN DE CONTRASEÑA EN 3 PASOS -->
     <div id="modalRecuperar" class="modal-overlay">
         <div class="modal-box">
@@ -726,13 +717,12 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <!-- MENSAJE DE ALERTA INTERNO DEL MODAL -->
             <div id="mensajeModalRecuperar" class="alert-box" style="margin-bottom: 14px;">
                 <i id="alertaModalIcono" class="fa-solid fa-circle-info"></i>
                 <span id="alertaModalTexto"></span>
             </div>
 
-            <!-- PASO 1: INGRESAR CORREO -->
+            <!-- PASO 1 -->
             <div id="step-recuperar-1">
                 <div class="modal-icon icon-blue">
                     <i class="fa-solid fa-envelope-open-text"></i>
@@ -755,7 +745,7 @@
                 </form>
             </div>
 
-            <!-- PASO 2: VERIFICAR CÓDIGO DE 6 DÍGITOS (2 MINUTOS) -->
+            <!-- PASO 2 -->
             <div id="step-recuperar-2" style="display: none;">
                 <div class="modal-icon icon-blue">
                     <i class="fa-solid fa-shield-cat"></i>
@@ -790,7 +780,7 @@
                 </form>
             </div>
 
-            <!-- PASO 3: NUEVA CONTRASEÑA Y CONFIRMACIÓN -->
+            <!-- PASO 3 -->
             <div id="step-recuperar-3" style="display: none;">
                 <div class="modal-icon icon-blue">
                     <i class="fa-solid fa-lock"></i>
@@ -839,15 +829,28 @@
         let usuarioActualEnSesion = null;
         let usuarioTemporalModal = '';
 
-        // Variables de Recuperación de Contraseña
         let timerRecuperacionInterval = null;
         let segundosRestantes = 900;
         let correoRecuperacionActual = '';
+
+        // Reglas de longitud mínima de número telefónico por país
+        const MIN_TELEFONO_PAIS = {
+            'VE': 11, // Venezuela
+            'CO': 10, // Colombia
+            'US': 10, // Estados Unidos
+            'ES': 9   // España
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             configurarLimpiezaAlertasAlEscribir();
             verificarSesionGuardada();
         });
+
+        function actualizarPlaceholderTelefono() {
+            const pais = document.getElementById('regPais').value;
+            const min = MIN_TELEFONO_PAIS[pais] || 10;
+            document.getElementById('regTelefono').placeholder = `Ej. Número de min. ${min} dígitos`;
+        }
 
         function limpiarErroresEntrada() {
             document.querySelectorAll('input').forEach(inp => inp.classList.remove('input-error'));
@@ -863,7 +866,6 @@
 
         function mostrarSeccion(seccionId) {
             limpiarErroresEntrada();
-            if (seccionId !== 'sec-admin') cerrarVistaLista();
             if (seccionId !== 'sec-login') cerrarSesionSilenciosa();
 
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
@@ -944,6 +946,15 @@
             setTimeout(() => document.getElementById('loginClave').focus(), 100);
         }
 
+        function abrirModalNoExiste() {
+            document.getElementById('modalNoExiste').classList.add('active');
+        }
+
+        function cerrarModalEIrARegistro() {
+            document.getElementById('modalNoExiste').classList.remove('active');
+            mostrarSeccion('sec-registro');
+        }
+
         // --- MANEJO DEL MODAL DE RECUPERACIÓN DE CONTRASEÑA ---
         function abrirModalRecuperar() {
             ocultarMensajeModal();
@@ -951,7 +962,6 @@
             document.getElementById('step-recuperar-2').style.display = 'none';
             document.getElementById('step-recuperar-3').style.display = 'none';
 
-            // Pre-llenar correo si hay algo escrito en el login
             const valLogin = document.getElementById('loginUsuario').value.trim();
             if (valLogin.includes('@')) {
                 document.getElementById('recCorreoInput').value = valLogin;
@@ -977,7 +987,7 @@
 
         function iniciarTimer15Minutos() {
             if (timerRecuperacionInterval) clearInterval(timerRecuperacionInterval);
-            segundosRestantes = 900; // 15 minutos
+            segundosRestantes = 900;
 
             const display = document.getElementById('timerRecuperarDisplay');
             const btnVerificar = document.getElementById('btnVerificarCodigo');
@@ -1037,7 +1047,7 @@
                     document.getElementById('step-recuperar-1').style.display = 'none';
                     document.getElementById('step-recuperar-2').style.display = 'block';
                     mostrarMensajeModal('Código de 6 dígitos enviado. Revisa tu correo.', 'exito');
-                    iniciarTimer2Minutos();
+                    iniciarTimer15Minutos();
                     setTimeout(() => document.getElementById('recCodigoInput').focus(), 100);
                 } else {
                     mostrarMensajeModal(data.error || "No se pudo enviar el código.", "error");
@@ -1070,7 +1080,7 @@
                 if (response.ok) {
                     document.getElementById('recCodigoInput').value = '';
                     mostrarMensajeModal('Nuevo código de 6 dígitos enviado. Temporizador reiniciado.', 'exito');
-                    iniciarTimer2Minutos();
+                    iniciarTimer15Minutos();
                     setTimeout(() => document.getElementById('recCodigoInput').focus(), 100);
                 } else {
                     mostrarMensajeModal(data.error || "No se pudo reenviar el código.", "error");
@@ -1141,6 +1151,14 @@
                 return;
             }
 
+            // Validar restricción de contraseña (Min 4, Max 15, contenga letras, números y caracteres)
+            const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{4,15}$/;
+            if (!passwordRegex.test(nuevaClave)) {
+                mostrarMensajeModal("La contraseña debe tener entre 4 y 15 caracteres e incluir al menos una letra, un número y un carácter especial.", "error");
+                remarcarErrorInput('recNuevaClave');
+                return;
+            }
+
             if (nuevaClave !== confirmarClave) {
                 mostrarMensajeModal("Las contraseñas no coinciden. Deben ser exactamente iguales.", "error");
                 remarcarErrorInput('recNuevaClave');
@@ -1187,12 +1205,28 @@
             const correo = document.getElementById('regCorreo').value.trim();
             const clave = document.getElementById('regClave').value.trim();
             const telefono = document.getElementById('regTelefono').value.trim();
+            const pais = document.getElementById('regPais').value;
             const direccion = document.getElementById('regDireccion').value.trim();
 
             if (!usuario) { mostrarMensaje("Por favor ingresa un nombre de usuario.", "error"); remarcarErrorInput('regUsuario'); return; }
             if (!correo) { mostrarMensaje("Por favor ingresa un correo electrónico válido.", "error"); remarcarErrorInput('regCorreo'); return; }
-            if (!clave) { mostrarMensaje("Por favor ingresa una contraseña.", "error"); remarcarErrorInput('regClave'); return; }
-            if (!telefono) { mostrarMensaje("Por favor ingresa tu número de teléfono.", "error"); remarcarErrorInput('regTelefono'); return; }
+
+            // Validar complejidad de Contraseña (mínimo 4, máximo 15, con letras, números y caracteres especiales)
+            const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{4,15}$/;
+            if (!clave || !passwordRegex.test(clave)) {
+                mostrarMensaje("La contraseña debe tener entre 4 y 15 caracteres e incluir al menos una letra, un número y un carácter especial.", "error");
+                remarcarErrorInput('regClave');
+                return;
+            }
+
+            // Validar longitud mínima de Teléfono según el país seleccionado
+            const minDigits = MIN_TELEFONO_PAIS[pais] || 10;
+            const soloNumerosTel = telefono.replace(/\D/g, '');
+            if (!telefono || soloNumerosTel.length < minDigits) {
+                mostrarMensaje(`El teléfono debe tener un mínimo de ${minDigits} dígitos para el país seleccionado.`, "error");
+                remarcarErrorInput('regTelefono');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/usuarios/registrar', {
@@ -1249,9 +1283,13 @@
                     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
                     renderizarPerfil(data);
                 } else {
-                    mostrarMensaje("Credenciales incorrectas.", "error");
-                    remarcarErrorInput('loginUsuario');
-                    remarcarErrorInput('loginClave');
+                    if (response.status === 404) {
+                        abrirModalNoExiste();
+                    } else {
+                        mostrarMensaje("Credenciales incorrectas.", "error");
+                        remarcarErrorInput('loginUsuario');
+                        remarcarErrorInput('loginClave');
+                    }
                 }
             } catch (err) {
                 mostrarMensaje("Error de conexión al servidor.", "error");
@@ -1286,110 +1324,7 @@
                     <span><strong>Dirección:</strong> ${user.direccion || 'No registrada'}</span>
                 </div>
             </div>
-            <button onclick="mostrarFormularioEditar()" class="btn-primary" style="background: linear-gradient(135deg, var(--secondary), #0891b2); margin-bottom: 10px;">
-                <i class="fa-solid fa-user-pen"></i> Editar Mi Perfil
-            </button>
-            <div id="contenedorEdicionPerfil"></div>
             `;
-        }
-
-        function mostrarFormularioEditar() {
-            if (!usuarioActualEnSesion) return;
-            const u = usuarioActualEnSesion;
-            const contenedor = document.getElementById('contenedorEdicionPerfil');
-
-            contenedor.innerHTML = `
-                <form id="formEditarPerfil" onsubmit="event.preventDefault(); guardarEdicionPerfil('${u.usuario}');" style="background:#f8fafc; padding:16px; border-radius:12px; border:1px solid var(--border-color); margin-bottom:12px; animation: fadeIn 0.25s;">
-                    <div style="font-weight:700; font-size:14px; margin-bottom:12px; color:#0f172a;">
-                        <i class="fa-solid fa-pen-to-square"></i> Modificar Datos
-                    </div>
-                    <div class="form-group">
-                        <label>Usuario (No modificable)</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-user field-icon"></i>
-                            <input type="text" value="${u.usuario}" disabled style="background:#e2e8f0; color:#64748b; cursor:not-allowed;">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="editCorreo">Correo Electrónico</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="editCorreo" value="${u.correo || ''}">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="editClave">Nueva Contraseña</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="editClave" value="${u.clave}" autocomplete="current-password">
-                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('editClave', this)">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="editTelefono">Teléfono</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-phone field-icon"></i>
-                            <input type="tel" id="editTelefono" value="${u.telefono || ''}">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="editDireccion">Dirección (Opcional)</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-location-dot field-icon"></i>
-                            <input type="text" id="editDireccion" value="${u.direccion || ''}">
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <button type="submit" class="btn-primary" style="margin-top:0; flex:1;">
-                            <i class="fa-solid fa-floppy-disk"></i> Guardar
-                        </button>
-                        <button type="button" class="btn-secondary-sm" onclick="cancelarEdicionPerfil()" style="padding:10px 14px;">
-                            <i class="fa-solid fa-xmark"></i> Cancelar
-                        </button>
-                    </div>
-                </form>
-            `;
-            configurarLimpiezaAlertasAlEscribir();
-        }
-
-        function cancelarEdicionPerfil() {
-            document.getElementById('contenedorEdicionPerfil').innerHTML = '';
-        }
-
-        // --- API: EDITAR PERFIL ---
-        async function guardarEdicionPerfil(nombreUsuario) {
-            limpiarErroresEntrada();
-
-            const clave = document.getElementById('editClave').value.trim();
-            const correo = document.getElementById('editCorreo').value.trim();
-            const telefono = document.getElementById('editTelefono').value.trim();
-            const direccion = document.getElementById('editDireccion').value.trim();
-
-            if (!clave) { mostrarMensaje("Ingresa la nueva contraseña.", "error"); remarcarErrorInput('editClave'); return; }
-            if (!correo) { mostrarMensaje("Ingresa el correo electrónico.", "error"); remarcarErrorInput('editCorreo'); return; }
-            if (!telefono) { mostrarMensaje("Ingresa el teléfono.", "error"); remarcarErrorInput('editTelefono'); return; }
-
-            try {
-                const response = await fetch('/api/usuarios/editar', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: nombreUsuario, clave, correo, telefono, direccion })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    localStorage.setItem(SESSION_KEY, JSON.stringify(data.usuario));
-                    renderizarPerfil(data.usuario);
-                    mostrarMensaje("¡Perfil actualizado con éxito!", "exito");
-                } else {
-                    mostrarMensaje(data.error || "Error al actualizar perfil.", "error");
-                }
-            } catch (err) {
-                mostrarMensaje("Error al conectar con el servidor.", "error");
-            }
         }
 
         function cerrarSesionSilenciosa() {
@@ -1414,84 +1349,6 @@
                     renderizarPerfil(user);
                 }
             } catch (e) { console.error(e); }
-        }
-
-        // --- API: CONSULTAR REGISTRO UNICO ---
-        async function verListaUsuarios() {
-            limpiarErroresEntrada();
-
-            const usuario = document.getElementById('adminUsuario').value.trim();
-            const clave = document.getElementById('adminClave').value.trim();
-
-            if (!usuario) { mostrarMensaje("Ingresa tu usuario.", "error"); remarcarErrorInput('adminUsuario'); return; }
-            if (!clave) { mostrarMensaje("Ingresa tu contraseña.", "error"); remarcarErrorInput('adminClave'); return; }
-
-            try {
-                const response = await fetch('/api/usuarios/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, clave })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    ocultarMensaje();
-                    renderizarUsuarioUnico(data);
-                } else {
-                    mostrarMensaje("Acceso denegado: Credenciales no válidas.", "error");
-                    remarcarErrorInput('adminUsuario');
-                    remarcarErrorInput('adminClave');
-                }
-            } catch (err) {
-                mostrarMensaje("Error al conectar con el servidor.", "error");
-            }
-        }
-
-        function renderizarUsuarioUnico(u) {
-            const contenedor = document.getElementById('listaContenedor');
-            document.getElementById('formAdminWrapper').style.display = 'none';
-            const inicial = u.usuario.charAt(0).toUpperCase();
-
-            contenedor.innerHTML = `
-            <div class="admin-header">
-                <span style="font-weight:700; font-size:14px; color:#0f172a;">Registro Encontrado</span>
-                <button onclick="cerrarVistaLista()" class="btn-secondary-sm">
-                    <i class="fa-solid fa-arrow-left"></i> Volver
-                </button>
-            </div>
-            <div class="user-card">
-                <div class="user-card-header">
-                    <div class="avatar">${inicial}</div>
-                    <div class="user-info">
-                        <h4>${u.usuario}</h4>
-                        <p>Registrado el: ${u.fechaRegistro || 'N/D'}</p>
-                    </div>
-                </div>
-                <div class="detail-row">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span><strong>Correo:</strong> ${u.correo || 'No registrado'}</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fa-solid fa-key"></i>
-                    <span><strong>Clave:</strong> ${u.clave}</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fa-solid fa-phone"></i>
-                    <span><strong>Teléfono:</strong> ${u.telefono || 'No registrado'}</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span><strong>Dirección:</strong> ${u.direccion || 'No registrada'}</span>
-                </div>
-            </div>
-            `;
-        }
-
-        function cerrarVistaLista() {
-            document.getElementById('formAdminWrapper').style.display = 'block';
-            document.getElementById('listaContenedor').innerHTML = '';
-            document.getElementById('formAdmin').reset();
         }
     </script>
 </body>
