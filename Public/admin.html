@@ -781,7 +781,7 @@
             const csvContent = [encabezados.join(','), ...filas.map(f => f.join(','))].join('\r\n');
 
             // \uFEFF fuerza a los visores móviles y de escritorio a abrir en UTF-8 correcto
-            descargarArchivo('\uFEFF' + csvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
+            descargarArchivo('\uFEFF' + csvContent, 'Reporte de usuarios.csv', 'text/csv;charset=utf-8;');
             registrarLogDescarga('CSV');
         }
 
