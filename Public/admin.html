@@ -13,7 +13,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Librería para generar .xlsx nativo real compatible con móviles y PC -->
+    <!-- Librería para generar .xlsx nativo real -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -30,6 +30,8 @@
             --danger: #ef4444;
             --warning-bg: #fef3c7;
             --warning-text: #b45309;
+            --success-bg: #dcfce7;
+            --success-text: #15803d;
         }
 
         * {
@@ -106,7 +108,8 @@
             font-size: 15px;
         }
 
-        .input-wrapper input {
+        .input-wrapper input,
+        .input-wrapper select {
             width: 100%;
             padding: 12px 14px 12px 40px;
             font-size: 14px;
@@ -117,7 +120,8 @@
             outline: none;
         }
 
-        .input-wrapper input:focus {
+        .input-wrapper input:focus,
+        .input-wrapper select:focus {
             border-color: var(--primary);
             background: #ffffff;
         }
@@ -333,6 +337,9 @@
             font-size: 15px;
             font-weight: 700;
             color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .user-data p {
@@ -366,17 +373,64 @@
             font-weight: 700;
         }
 
-        .btn-delete-user {
+        /* BADGES ROL Y ESTADO */
+        .badge-role-admin {
+            background: #f3e8ff;
+            color: #6b21a8;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-role-client {
+            background: #e0f2fe;
+            color: #0369a1;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-status-active {
+            background: var(--success-bg);
+            color: var(--success-text);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .btn-action-user {
             background: transparent;
             color: #94a3b8;
             border: none;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 15px;
             padding: 8px;
             border-radius: 6px;
+            transition: all 0.2s ease;
         }
 
-        .btn-delete-user:hover {
+        .btn-action-user.edit:hover {
+            color: var(--primary);
+            background: #e0e7ff;
+        }
+
+        .btn-action-user.delete:hover {
             color: var(--danger);
             background: #fee2e2;
         }
@@ -393,7 +447,7 @@
             margin-bottom: 12px;
         }
 
-        /* MODAL DE HISTORIAL DE DESCARGAS */
+        /* MODALES GENERICS */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -462,11 +516,11 @@
         }
 
         .modal-body {
-            max-height: 350px;
+            max-height: 380px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .download-item {
@@ -515,6 +569,70 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        /* CONTENEDOR DE TOASTS */
+        #toastContainer {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 2000;
+        }
+
+        .toast {
+            min-width: 280px;
+            padding: 12px 18px;
+            border-radius: var(--radius-md);
+            background: #ffffff;
+            color: var(--text-main);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            border-left: 5px solid var(--primary);
+            animation: slideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: all 0.3s ease;
+        }
+
+        .toast.success {
+            border-left-color: #10b981;
+        }
+
+        .toast.success i {
+            color: #10b981;
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.error i {
+            color: var(--danger);
+        }
+
+        .toast.info {
+            border-left-color: var(--primary);
+        }
+
+        .toast.info i {
+            color: var(--primary);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
     </style>
 </head>
@@ -607,6 +725,73 @@
 
     </div>
 
+    <!-- MODAL EDICIÓN DE USUARIO -->
+    <div id="modalEdicion" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-user-pen"></i> Editar Usuario</h2>
+                <button onclick="cerrarModalEdicion()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="event.preventDefault(); guardarCambiosUsuario();">
+                <div class="modal-body">
+                    <input type="hidden" id="editOriginalUsuario">
+
+                    <div class="form-group">
+                        <label>Correo Electrónico</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope field-icon"></i>
+                            <input type="email" id="editCorreo" placeholder="correo@ejemplo.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone field-icon"></i>
+                            <input type="text" id="editTelefono" placeholder="Número de contacto">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-key field-icon"></i>
+                            <input type="text" id="editClave" placeholder="Nueva contraseña" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rol</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user-gear field-icon"></i>
+                            <select id="editRol">
+                                <option value="Cliente">Cliente</option>
+                                <option value="Admin">Admin</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-toggle-on field-icon"></i>
+                            <select id="editEstado">
+                                <option value="Activo">Activo</option>
+                                <option value="Inactivo">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="cerrarModalEdicion()" class="btn btn-refresh">Cancelar</button>
+                    <button type="submit" class="btn btn-export-excel">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL HISTORIAL DE DESCARGAS -->
     <div id="modalDescargas" class="modal-overlay">
         <div class="modal-card">
@@ -624,17 +809,38 @@
         </div>
     </div>
 
+    <!-- CONTENEDOR DE TOASTS -->
+    <div id="toastContainer"></div>
+
     <script>
         const ADMIN_SESSION_KEY = 'admin_session_active';
         let usuariosCargados = [];
 
-        // Al cargar la página (incluye F5 / Recargar), borramos cualquier sesión previa para obligar al login
         document.addEventListener('DOMContentLoaded', () => {
             sessionStorage.removeItem(ADMIN_SESSION_KEY);
-            // Nos aseguramos de mostrar únicamente el formulario de login
             document.getElementById('vistaPanelAdmin').style.display = 'none';
             document.getElementById('vistaLoginAdmin').style.display = 'block';
         });
+
+        // --- SISTEMA DE TOASTS ---
+        function showToast(mensaje, tipo = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+
+            let iconClass = 'fa-circle-info';
+            if (tipo === 'success') iconClass = 'fa-circle-check';
+            if (tipo === 'error') iconClass = 'fa-circle-exclamation';
+
+            toast.innerHTML = `<i class="fa-solid ${iconClass}"></i> <span>${mensaje}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
 
         async function iniciarSesionAdmin() {
             const usuario = document.getElementById('adminUser').value.trim();
@@ -653,11 +859,13 @@
                 if (response.ok) {
                     sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
                     mostrarPanelAdmin();
+                    showToast('Sesión iniciada con éxito', 'success');
                 } else {
                     errorElem.style.display = 'block';
+                    showToast('Credenciales inválidas', 'error');
                 }
             } catch (err) {
-                alert("Error al conectar con el servidor.");
+                showToast('Error al conectar con el servidor', 'error');
             }
         }
 
@@ -673,6 +881,7 @@
             document.getElementById('vistaLoginAdmin').style.display = 'block';
             document.getElementById('adminUser').value = '';
             document.getElementById('adminPass').value = '';
+            showToast('Sesión cerrada', 'info');
         }
 
         async function cargarDatos() {
@@ -699,13 +908,22 @@
                 usuariosCargados.forEach((u, index) => {
                     const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
                     const ediciones = u.contadorModificaciones || 0;
+                    const rol = u.rol || 'Cliente';
+                    const estado = u.estado || 'Activo';
+
+                    const roleBadgeClass = rol === 'Admin' ? 'badge-role-admin' : 'badge-role-client';
+                    const statusBadgeClass = estado === 'Activo' ? 'badge-status-active' : 'badge-status-inactive';
 
                     html += `
                     <div class="user-item">
                         <div class="user-detail">
                             <div class="avatar">${inicial}</div>
                             <div class="user-data">
-                                <h3>#${index + 1} - ${u.usuario}</h3>
+                                <h3>
+                                    #${index + 1} - ${u.usuario}
+                                    <span class="${roleBadgeClass}">${rol}</span>
+                                    <span class="${statusBadgeClass}">${estado}</span>
+                                </h3>
                                 <p><i class="fa-solid fa-envelope"></i> Correo: ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'}</p>
                                 <p><i class="fa-solid fa-key"></i> Clave: ${u.clave} ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
                             </div>
@@ -715,7 +933,10 @@
                                 <i class="fa-solid fa-pen-to-square"></i> ${ediciones} ${ediciones === 1 ? 'edición' : 'ediciones'}
                             </span>
                             <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
-                            <button onclick="eliminarUsuario('${u.usuario}')" class="btn-delete-user" title="Eliminar usuario">
+                            <button onclick="abrirModalEdicion('${u.usuario}')" class="btn-action-user edit" title="Editar usuario">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="eliminarUsuario('${u.usuario}')" class="btn-action-user delete" title="Eliminar usuario">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
@@ -725,17 +946,70 @@
 
                 contenedor.innerHTML = html;
             } catch (err) {
-                console.error("Error al cargar los usuarios:", err);
+                showToast('Error al cargar la lista de usuarios', 'error');
+            }
+        }
+
+        // --- EDICIÓN DE USUARIOS ---
+        function abrirModalEdicion(nombreUsuario) {
+            const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
+            if (!usuario) return;
+
+            document.getElementById('editOriginalUsuario').value = usuario.usuario;
+            document.getElementById('editCorreo').value = usuario.correo || '';
+            document.getElementById('editTelefono').value = usuario.telefono || '';
+            document.getElementById('editClave').value = usuario.clave || '';
+            document.getElementById('editRol').value = usuario.rol || 'Cliente';
+            document.getElementById('editEstado').value = usuario.estado || 'Activo';
+
+            document.getElementById('modalEdicion').classList.add('active');
+        }
+
+        function cerrarModalEdicion() {
+            document.getElementById('modalEdicion').classList.remove('active');
+        }
+
+        async function guardarCambiosUsuario() {
+            const usuarioOriginal = document.getElementById('editOriginalUsuario').value;
+            const payload = {
+                correo: document.getElementById('editCorreo').value.trim(),
+                telefono: document.getElementById('editTelefono').value.trim(),
+                clave: document.getElementById('editClave').value.trim(),
+                rol: document.getElementById('editRol').value,
+                estado: document.getElementById('editEstado').value
+            };
+
+            try {
+                const response = await fetch(`/api/usuarios/${encodeURIComponent(usuarioOriginal)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    showToast(`Usuario "${usuarioOriginal}" actualizado`, 'success');
+                    cerrarModalEdicion();
+                    cargarDatos();
+                } else {
+                    showToast('No se pudieron guardar los cambios', 'error');
+                }
+            } catch (err) {
+                showToast('Error de servidor al editar usuario', 'error');
             }
         }
 
         async function eliminarUsuario(nombre) {
             if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombre}"?`)) {
                 try {
-                    await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
-                    cargarDatos();
+                    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        showToast(`Usuario "${nombre}" eliminado`, 'success');
+                        cargarDatos();
+                    } else {
+                        showToast('Error al eliminar usuario', 'error');
+                    }
                 } catch (err) {
-                    alert("Error al eliminar el usuario");
+                    showToast('Error de conexión al eliminar', 'error');
                 }
             }
         }
@@ -743,16 +1017,20 @@
         async function vaciarBaseDeDatos() {
             if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios?")) {
                 try {
-                    await fetch('/api/usuarios', { method: 'DELETE' });
-                    cargarDatos();
+                    const res = await fetch('/api/usuarios', { method: 'DELETE' });
+                    if (res.ok) {
+                        showToast('Base de datos vaciada con éxito', 'success');
+                        cargarDatos();
+                    } else {
+                        showToast('No se pudo vaciar la base de datos', 'error');
+                    }
                 } catch (err) {
-                    alert("Error al vaciar la base de datos");
+                    showToast('Error de conexión', 'error');
                 }
             }
         }
 
         // --- EXPORTAR Y REGISTRAR DESCARGA ---
-
         async function registrarLogDescarga(formato) {
             try {
                 await fetch('/api/descargas', {
@@ -767,13 +1045,16 @@
 
         function exportarExcel() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
-                alert("No hay datos disponibles para exportar.");
+                showToast('No hay datos para exportar', 'error');
                 return;
             }
 
             const datosExcel = usuariosCargados.map(u => ({
                 "Usuario": u.usuario || '',
+                "Rol": u.rol || 'Cliente',
+                "Estado": u.estado || 'Activo',
                 "Contraseña": u.clave || '',
+                "Correo": u.correo || '',
                 "Teléfono": u.telefono || '',
                 "Dirección": u.direccion || '',
                 "Fecha Registro": u.fechaRegistro || '',
@@ -781,34 +1062,29 @@
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(datosExcel);
-
-            const colWidths = [
-                { wch: 20 },
-                { wch: 18 },
-                { wch: 16 },
-                { wch: 25 },
-                { wch: 18 },
-                { wch: 15 }
+            worksheet['!cols'] = [
+                { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 16 },
+                { wch: 25 }, { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 15 }
             ];
-            worksheet['!cols'] = colWidths;
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
-
             XLSX.writeFile(workbook, "Reporte_de_usuarios.xlsx");
 
             registrarLogDescarga('Excel');
+            showToast('Reporte de Excel exportado', 'success');
         }
 
         function exportarJSON() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
-                alert("No hay datos disponibles para exportar.");
+                showToast('No hay datos para exportar', 'error');
                 return;
             }
 
             const jsonString = JSON.stringify(usuariosCargados, null, 2);
             descargarArchivo(jsonString, 'usuarios_sistema.json', 'application/json');
             registrarLogDescarga('JSON');
+            showToast('Archivo JSON exportado', 'success');
         }
 
         function descargarArchivo(contenido, nombreArchivo, mimeType) {
@@ -824,7 +1100,6 @@
         }
 
         // --- HISTORIAL DE DESCARGAS (MODAL) ---
-
         function abrirModalDescargas() {
             document.getElementById('modalDescargas').classList.add('active');
             cargarHistorialDescargas();
@@ -864,7 +1139,7 @@
                                 <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
                             </div>
                         </div>
-                        <button onclick="eliminarDescarga('${d.id}')" class="btn-delete-user" title="Eliminar este registro">
+                        <button onclick="eliminarDescarga('${d.id}')" class="btn-action-user delete" title="Eliminar registro">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
@@ -879,20 +1154,26 @@
 
         async function eliminarDescarga(id) {
             try {
-                await fetch(`/api/descargas/${id}`, { method: 'DELETE' });
-                cargarHistorialDescargas();
+                const res = await fetch(`/api/descargas/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Registro de descarga eliminado', 'success');
+                    cargarHistorialDescargas();
+                }
             } catch (err) {
-                alert("Error al eliminar el registro.");
+                showToast('Error al eliminar registro', 'error');
             }
         }
 
         async function vaciarHistorialDescargas() {
             if (confirm("¿Estás seguro de vaciar todo el historial de descargas?")) {
                 try {
-                    await fetch('/api/descargas', { method: 'DELETE' });
-                    cargarHistorialDescargas();
+                    const res = await fetch('/api/descargas', { method: 'DELETE' });
+                    if (res.ok) {
+                        showToast('Historial vaciado', 'success');
+                        cargarHistorialDescargas();
+                    }
                 } catch (err) {
-                    alert("Error al vaciar el historial.");
+                    showToast('Error al vaciar historial', 'error');
                 }
             }
         }
