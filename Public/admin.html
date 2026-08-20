@@ -580,8 +580,9 @@
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
                             <i class="fa-solid fa-rotate-right"></i>
                         </button>
-                        <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xls)">
-                            <i class="fa-solid fa-file-excel"></i> Excel
+                        <button onclick="exportarExcel()" class="btn btn-export-excel"
+                            title="Exportar reporte CSV/Excel">
+                            <i class="fa-solid fa-file-excel"></i> Excel / CSV
                         </button>
                         <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
                             <i class="fa-solid fa-file-code"></i> JSON
@@ -766,62 +767,22 @@
                 return;
             }
 
-            let excelContent = `
-            <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-            <head>
-                <meta charset="utf-8">
-                <!--[if gte mso 9]>
-                <xml>
-                    <x:ExcelWorkbook>
-                        <x:ExcelWorksheets>
-                            <x:ExcelWorksheet>
-                                <x:Name>Usuarios del Sistema</x:Name>
-                                <x:WorksheetOptions>
-                                    <x:DisplayGridlines/>
-                                </x:WorksheetOptions>
-                            </x:ExcelWorksheet>
-                        </x:ExcelWorksheets>
-                    </x:ExcelWorkbook>
-                </xml>
-                <![endif]-->
-                <style>
-                    table { border-collapse: collapse; width: 100%; font-family: Calibri, Arial, sans-serif; }
-                    th { background-color: #0f172a; color: #ffffff; border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-weight: bold; }
-                    td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; mso-number-format:"\\@"; }
-                    tr:nth-child(even) { background-color: #f8fafc; }
-                </style>
-            </head>
-            <body>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Contraseña</th>
-                            <th>Teléfono</th>
-                            <th>Dirección</th>
-                            <th>Fecha Registro</th>
-                            <th>Modificaciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${usuariosCargados.map(u => `
-                            <tr>
-                                <td>${u.usuario || ''}</td>
-                                <td>${u.clave || ''}</td>
-                                <td>${u.telefono || ''}</td>
-                                <td>${u.direccion || ''}</td>
-                                <td>${u.fechaRegistro || ''}</td>
-                                <td>${u.contadorModificaciones || 0}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </body>
-            </html>
-            `;
+            const encabezados = ["Usuario", "Contraseña", "Teléfono", "Dirección", "Fecha Registro", "Modificaciones"];
 
-            descargarArchivo(excelContent, 'usuarios_sistema.xls', 'application/vnd.ms-excel;charset=utf-8');
-            registrarLogDescarga('Excel');
+            const filas = usuariosCargados.map(u => [
+                `"${(u.usuario || '').replace(/"/g, '""')}"`,
+                `"${(u.clave || '').replace(/"/g, '""')}"`,
+                `"${(u.telefono || '').replace(/"/g, '""')}"`,
+                `"${(u.direccion || '').replace(/"/g, '""')}"`,
+                `"${(u.fechaRegistro || '').replace(/"/g, '""')}"`,
+                `"${u.contadorModificaciones || 0}"`
+            ]);
+
+            const csvContent = [encabezados.join(','), ...filas.map(f => f.join(','))].join('\r\n');
+
+            // \uFEFF fuerza a los visores móviles y de escritorio a abrir en UTF-8 correcto
+            descargarArchivo('\uFEFF' + csvContent, 'usuarios_sistema.csv', 'text/csv;charset=utf-8;');
+            registrarLogDescarga('CSV');
         }
 
         function exportarJSON() {
