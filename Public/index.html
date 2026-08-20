@@ -561,16 +561,6 @@
             line-height: 1.4;
         }
 
-        .phone-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .phone-group select {
-            width: 110px;
-            padding-left: 10px;
-        }
-
         .profile-actions {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -745,17 +735,9 @@
 
                     <div class="form-group">
                         <label for="regTelefono">Teléfono</label>
-                        <div class="phone-group">
-                            <select id="regPais">
-                                <option value="VE">🇻🇪 +58</option>
-                                <option value="CO">🇨🇴 +57</option>
-                                <option value="US">🇺🇸 +1</option>
-                                <option value="ES">🇪🇸 +34</option>
-                            </select>
-                            <div class="input-wrapper" style="flex:1;">
-                                <i class="fa-solid fa-phone field-icon"></i>
-                                <input type="tel" id="regTelefono" placeholder="04141234567">
-                            </div>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone field-icon"></i>
+                            <input type="tel" id="regTelefono" placeholder="04121234567">
                         </div>
                     </div>
 
@@ -776,7 +758,7 @@
         </div>
     </div>
 
-    <!-- MODAL EDITAR PERFIL (Usuario bloqueado, Correo editable) -->
+    <!-- MODAL EDITAR PERFIL -->
     <div id="modalEditarPerfil" class="modal-overlay">
         <div class="modal-box">
             <button class="modal-close-btn" onclick="cerrarModal('modalEditarPerfil')"><i
@@ -865,21 +847,18 @@
                     class="fa-solid fa-xmark"></i></button>
             <div class="modal-icon icon-danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
             <h3>¿Eliminar Cuenta?</h3>
-            <p>Esta acción es permanente. Para confirmar, escribe la palabra <strong>ELIMINAR</strong> a continuación:
-            </p>
+            <p style="font-size: 15px; font-weight: 600; color: var(--text-main);">¿Estás seguro que quieres borrar tu
+                cuenta?</p>
+            <p>Esta acción es permanente y no se podrá recuperar tu información.</p>
 
-            <form onsubmit="event.preventDefault(); confirmarEliminarCuenta();">
-                <div class="form-group">
-                    <div class="input-wrapper">
-                        <input type="text" id="confirmEliminarInput" placeholder="Escribe ELIMINAR"
-                            style="text-align: center; font-weight: 700;">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-primary btn-danger">
-                    <i class="fa-solid fa-trash-can"></i> Confirmar BBDD
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="button" class="btn-primary btn-secondary" onclick="cerrarModal('modalEliminarCuenta')">
+                    Cancelar
                 </button>
-            </form>
+                <button type="button" class="btn-primary btn-danger" onclick="confirmarEliminarCuenta()">
+                    <i class="fa-solid fa-trash-can"></i> Sí, Eliminar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1230,28 +1209,43 @@
 
         // --- ELIMINAR CUENTA ---
         function abrirModalEliminarCuenta() {
-            document.getElementById('confirmEliminarInput').value = '';
             abrirModal('modalEliminarCuenta');
         }
 
         async function confirmarEliminarCuenta() {
-            const val = document.getElementById('confirmEliminarInput').value.trim();
-            if (val !== 'ELIMINAR') {
-                mostrarToast('Confirmación requerida', 'Debes escribir exactamente la palabra ELIMINAR', 'advertencia');
-                return;
-            }
+            if (!usuarioActualEnSesion) return;
+
+            const identificador = usuarioActualEnSesion.usuario || usuarioActualEnSesion.id;
 
             try {
-                const response = await fetch(`/api/usuarios/eliminar/${usuarioActualEnSesion.id}`, { method: 'DELETE' });
+                // Primer intento con DELETE
+                const response = await fetch(`/api/usuarios/eliminar/${identificador}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
                 if (response.ok) {
                     cerrarModal('modalEliminarCuenta');
                     cerrarSesion();
-                    mostrarToast('Cuenta Eliminada', 'Tu usuario ha sido eliminado definitivamente.', 'exito');
+                    mostrarToast('Cuenta Eliminada', 'Tu cuenta ha sido eliminada definitivamente.', 'exito');
                 } else {
-                    mostrarToast('Error', 'No se pudo eliminar la cuenta.', 'error');
+                    // Segundo intento con POST por si tu backend usa req.body en lugar de params
+                    const altResponse = await fetch('/api/usuarios/eliminar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usuario: usuarioActualEnSesion.usuario, id: usuarioActualEnSesion.id })
+                    });
+
+                    if (altResponse.ok) {
+                        cerrarModal('modalEliminarCuenta');
+                        cerrarSesion();
+                        mostrarToast('Cuenta Eliminada', 'Tu cuenta ha sido eliminada definitivamente.', 'exito');
+                    } else {
+                        mostrarToast('Error', 'No se pudo eliminar la cuenta desde el servidor.', 'error');
+                    }
                 }
             } catch (e) {
-                mostrarToast('Error', 'Error al procesar la eliminación.', 'error');
+                mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
             }
         }
 
