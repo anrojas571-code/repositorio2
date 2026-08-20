@@ -371,6 +371,14 @@
             border-radius: 20px;
             font-size: 11px;
             font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+            user-select: none;
+        }
+
+        .badge-mods:hover {
+            transform: scale(1.05);
+            background: #fde68a;
         }
 
         /* BADGES ROL Y ESTADO */
@@ -414,6 +422,16 @@
             text-transform: uppercase;
         }
 
+        .badge-status-blocked {
+            background: #475569;
+            color: #ffffff;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
         .btn-action-user {
             background: transparent;
             color: #94a3b8;
@@ -447,7 +465,7 @@
             margin-bottom: 12px;
         }
 
-        /* MODALES GENERICS */
+        /* MODALES */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -521,6 +539,45 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+        }
+
+        .history-item {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 13px;
+        }
+
+        .history-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .history-change {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 4px;
+            font-size: 12px;
+        }
+
+        .history-change .field-name {
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: capitalize;
+        }
+
+        .history-change .old-val {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+
+        .history-change .new-val {
+            font-weight: 700;
+            color: #15803d;
         }
 
         .download-item {
@@ -778,6 +835,7 @@
                             <select id="editEstado">
                                 <option value="Activo">Activo</option>
                                 <option value="Inactivo">Inactivo</option>
+                                <option value="Bloqueado">Bloqueado</option>
                             </select>
                         </div>
                     </div>
@@ -789,6 +847,21 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL DETALLE DE EDICIONES / HISTORIAL -->
+    <div id="modalHistorialEdiciones" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-clock-rotate-left"></i> Auditoría de Modificaciones</h2>
+                <button onclick="cerrarModalHistorialEdiciones()" class="modal-close"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="listaHistorialEdiciones" class="modal-body"></div>
+            <div class="modal-footer">
+                <button onclick="cerrarModalHistorialEdiciones()" class="btn btn-refresh">Cerrar</button>
+            </div>
         </div>
     </div>
 
@@ -912,7 +985,10 @@
                     const estado = u.estado || 'Activo';
 
                     const roleBadgeClass = rol === 'Admin' ? 'badge-role-admin' : 'badge-role-client';
-                    const statusBadgeClass = estado === 'Activo' ? 'badge-status-active' : 'badge-status-inactive';
+
+                    let statusBadgeClass = 'badge-status-active';
+                    if (estado === 'Inactivo') statusBadgeClass = 'badge-status-inactive';
+                    if (estado === 'Bloqueado') statusBadgeClass = 'badge-status-blocked';
 
                     html += `
                     <div class="user-item">
@@ -929,7 +1005,7 @@
                             </div>
                         </div>
                         <div class="badges-group">
-                            <span class="badge-mods" title="Ediciones realizadas">
+                            <span class="badge-mods" onclick="verHistorialModificaciones('${u.usuario}')" title="Haz clic para ver qué se ha modificado">
                                 <i class="fa-solid fa-pen-to-square"></i> ${ediciones} ${ediciones === 1 ? 'edición' : 'ediciones'}
                             </span>
                             <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
@@ -948,6 +1024,58 @@
             } catch (err) {
                 showToast('Error al cargar la lista de usuarios', 'error');
             }
+        }
+
+        // --- VER DETALLE DE HISTORIAL DE MODIFICACIONES ---
+        function verHistorialModificaciones(nombreUsuario) {
+            const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
+            if (!usuario) return;
+
+            const contenedor = document.getElementById('listaHistorialEdiciones');
+            const historial = usuario.historialEdiciones || [];
+
+            if (historial.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-file-circle-question"></i>
+                        <p>El usuario <strong>${usuario.usuario}</strong> no posee registros de cambios o aún no ha sido editado.</p>
+                    </div>
+                `;
+            } else {
+                let html = '';
+                historial.forEach((log, index) => {
+                    html += `
+                        <div class="history-item">
+                            <div class="history-date">
+                                <i class="fa-regular fa-clock"></i> ${log.fecha || 'Sin fecha'}
+                            </div>
+                    `;
+
+                    if (log.cambios && Array.isArray(log.cambios)) {
+                        log.cambios.forEach(c => {
+                            html += `
+                                <div class="history-change">
+                                    <span class="field-name">${c.campo}:</span>
+                                    <span class="old-val">${c.valorAnterior || 'Vacío'}</span>
+                                    <i class="fa-solid fa-arrow-right-long" style="font-size: 10px; color: #94a3b8;"></i>
+                                    <span class="new-val">${c.valorNuevo || 'Vacío'}</span>
+                                </div>
+                            `;
+                        });
+                    } else if (log.detalle) {
+                        html += `<div style="color: #475569;">${log.detalle}</div>`;
+                    }
+
+                    html += `</div>`;
+                });
+                contenedor.innerHTML = html;
+            }
+
+            document.getElementById('modalHistorialEdiciones').classList.add('active');
+        }
+
+        function cerrarModalHistorialEdiciones() {
+            document.getElementById('modalHistorialEdiciones').classList.remove('active');
         }
 
         // --- EDICIÓN DE USUARIOS ---
