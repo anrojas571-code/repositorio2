@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Usuarios</title>
+    <title>Sistema Avanzado de Gestión de Usuarios</title>
 
     <!-- Google Fonts & Font Awesome Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
     <style>
         :root {
             --primary: #0000ff;
-            --primary-hover: #4338ca;
+            --primary-hover: #312e81;
             --primary-light: #eef2ff;
             --secondary: #06b6d4;
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #adadad 50%, #0f172a 100%);
@@ -24,12 +24,8 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-            --success-bg: #dcfce7;
-            --success-text: #15803d;
-            --success-border: #86efac;
-            --error-bg: #fef2f2;
-            --error-text: #b91c1c;
-            --error-border: #fca5a5;
+            --input-bg: #f8fafc;
+            --modal-bg: #ffffff;
             --radius-lg: 20px;
             --radius-md: 12px;
             --radius-sm: 8px;
@@ -37,11 +33,27 @@
             --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.25);
         }
 
+        [data-theme="dark"] {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: rgba(99, 102, 241, 0.2);
+            --secondary: #22d3ee;
+            --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%);
+            --card-bg: rgba(15, 23, 42, 0.92);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --input-bg: #1e293b;
+            --modal-bg: #0f172a;
+            --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body {
@@ -52,8 +64,155 @@
             align-items: center;
             padding: 20px;
             color: var(--text-main);
+            position: relative;
         }
 
+        /* --- BOTÓN TEMA OSCURO/CLARO --- */
+        .theme-toggle-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+        }
+
+        .theme-toggle-btn:hover {
+            transform: scale(1.08);
+        }
+
+        /* --- CONTENEDOR DE NOTIFICACIONES TOAST --- */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 340px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            background: var(--modal-bg);
+            color: var(--text-main);
+            border-left: 5px solid var(--primary);
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .toast.exito {
+            border-left-color: #22c55e;
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        .toast.advertencia {
+            border-left-color: #f59e0b;
+        }
+
+        .toast i.toast-icon {
+            font-size: 18px;
+            margin-top: 2px;
+        }
+
+        .toast.exito i.toast-icon {
+            color: #22c55e;
+        }
+
+        .toast.error i.toast-icon {
+            color: #ef4444;
+        }
+
+        .toast.advertencia i.toast-icon {
+            color: #f59e0b;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-content h5 {
+            font-size: 13.5px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .toast-content p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .toast-progress-bar {
+            height: 100%;
+            background: currentColor;
+            width: 100%;
+            animation: toastProgress 4s linear forwards;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastProgress {
+            from {
+                width: 100%;
+            }
+
+            to {
+                width: 0%;
+            }
+        }
+
+        /* --- TARJETA PRINCIPAL --- */
         .main-container {
             background: var(--card-bg);
             backdrop-filter: blur(12px);
@@ -62,28 +221,10 @@
             border-radius: var(--radius-lg);
             padding: 36px 30px;
             box-shadow: var(--shadow-card), var(--shadow-glow);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             position: relative;
             overflow: hidden;
-        }
-
-        .main-container::before {
-            content: '';
-            position: absolute;
-            top: -60px;
-            right: -60px;
-            width: 140px;
-            height: 140px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 50%;
-            filter: blur(40px);
-            opacity: 0.25;
-            z-index: 0;
-        }
-
-        .content-wrapper {
-            position: relative;
-            z-index: 1;
+            margin-top: 40px;
         }
 
         .app-header {
@@ -109,7 +250,6 @@
             font-size: 22px;
             font-weight: 800;
             letter-spacing: -0.5px;
-            color: #0f172a;
         }
 
         .app-header p {
@@ -120,11 +260,12 @@
 
         .nav-tabs {
             display: flex;
-            background-color: #f1f5f9;
+            background-color: var(--input-bg);
             padding: 5px;
             border-radius: var(--radius-md);
             margin-bottom: 24px;
             gap: 4px;
+            border: 1px solid var(--border-color);
         }
 
         .nav-tabs button {
@@ -145,22 +286,18 @@
         }
 
         .nav-tabs button.active {
-            background-color: #ffffff;
+            background-color: var(--modal-bg);
             color: var(--primary);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
-        .nav-tabs button:hover:not(.active) {
-            color: var(--text-main);
-        }
-
         .section {
             display: none;
-            animation: fadeIn 0.35s ease-in-out;
         }
 
         .section.active {
             display: block;
+            animation: fadeIn 0.35s ease-in-out;
         }
 
         @keyframes fadeIn {
@@ -179,7 +316,6 @@
             font-size: 17px;
             font-weight: 700;
             margin-bottom: 18px;
-            color: #0f172a;
             display: flex;
             align-items: center;
             gap: 8px;
@@ -195,7 +331,7 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #475569;
+            color: var(--text-muted);
             margin-bottom: 6px;
         }
 
@@ -208,9 +344,8 @@
         .input-wrapper i.field-icon {
             position: absolute;
             left: 14px;
-            color: #94a3b8;
+            color: var(--text-muted);
             font-size: 15px;
-            transition: color 0.2s ease;
         }
 
         .input-wrapper input,
@@ -220,23 +355,16 @@
             font-size: 14px;
             border: 1.5px solid var(--border-color);
             border-radius: var(--radius-md);
-            background: #f8fafc;
+            background: var(--input-bg);
             color: var(--text-main);
             outline: none;
-            transition: all 0.2s ease;
         }
 
         .input-wrapper input:focus,
         .input-wrapper select:focus {
             border-color: var(--primary);
-            background: #ffffff;
+            background: var(--modal-bg);
             box-shadow: 0 0 0 4px var(--primary-light);
-        }
-
-        .input-wrapper input.input-error {
-            border-color: #ef4444 !important;
-            background-color: #fef2f2 !important;
-            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2) !important;
         }
 
         .btn-toggle-pwd {
@@ -244,15 +372,34 @@
             right: 12px;
             background: none;
             border: none;
-            color: #94a3b8;
+            color: var(--text-muted);
             cursor: pointer;
             padding: 4px;
             font-size: 14px;
-            transition: color 0.2s ease;
         }
 
-        .btn-toggle-pwd:hover {
-            color: var(--primary);
+        /* --- BARRA DE FUERZA DE CONTRASEÑA --- */
+        .strength-meter {
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .strength-meter-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .strength-text {
+            font-size: 11.5px;
+            font-weight: 700;
+            margin-top: 4px;
+            text-align: right;
+            color: var(--text-muted);
         }
 
         .btn-primary {
@@ -265,100 +412,43 @@
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
             margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
         }
 
         .btn-primary:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
         }
 
         .btn-primary:disabled {
             background: #cbd5e1;
-            box-shadow: none;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         .btn-danger {
             background: linear-gradient(135deg, #ef4444, #dc2626);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
         }
 
         .btn-warning {
             background: linear-gradient(135deg, #f59e0b, #d97706);
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
         }
 
-        .btn-secondary-sm {
-            background: #f1f5f9;
-            color: #475569;
-            border: 1px solid var(--border-color);
-            padding: 6px 12px;
-            border-radius: var(--radius-sm);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .btn-secondary-sm:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
-
-        .alert-box {
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: none;
-            align-items: center;
-            gap: 10px;
-            animation: slideDown 0.25s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .alert-box.exito {
-            display: flex;
-            background-color: var(--success-bg);
-            color: var(--success-text);
-            border: 1px solid var(--success-border);
-        }
-
-        .alert-box.error {
-            display: flex;
-            background-color: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid var(--error-border);
+        .btn-secondary {
+            background: #64748b;
         }
 
         .user-card {
-            background: #ffffff;
+            background: var(--modal-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             padding: 16px;
             margin-bottom: 12px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-            transition: all 0.2s ease;
         }
 
         .user-card-header {
@@ -369,8 +459,8 @@
         }
 
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
@@ -378,18 +468,7 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            font-size: 16px;
-        }
-
-        .user-info h4 {
-            font-size: 15px;
-            font-weight: 700;
-            color: #0f172a;
-        }
-
-        .user-info p {
-            font-size: 12px;
-            color: var(--text-muted);
+            font-size: 18px;
         }
 
         .detail-row {
@@ -397,14 +476,12 @@
             align-items: center;
             gap: 8px;
             font-size: 13px;
-            color: #334155;
             margin-top: 6px;
         }
 
         .detail-row i {
             color: var(--primary);
             width: 16px;
-            text-align: center;
         }
 
         .modal-overlay {
@@ -430,22 +507,17 @@
         }
 
         .modal-box {
-            background: #ffffff;
+            background: var(--modal-bg);
             width: 90%;
             max-width: 420px;
             padding: 24px;
             border-radius: var(--radius-lg);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
             text-align: center;
-            transform: scale(0.9);
-            transition: transform 0.25s ease;
             position: relative;
             max-height: 90vh;
             overflow-y: auto;
-        }
-
-        .modal-overlay.active .modal-box {
-            transform: scale(1);
+            border: 1px solid var(--border-color);
         }
 
         .modal-close-btn {
@@ -455,39 +527,31 @@
             background: none;
             border: none;
             font-size: 16px;
-            color: #94a3b8;
+            color: var(--text-muted);
             cursor: pointer;
-            padding: 4px;
-            transition: color 0.2s;
-        }
-
-        .modal-close-btn:hover {
-            color: #0f172a;
         }
 
         .modal-icon {
-            width: 60px;
-            height: 60px;
-            background: #fef3c7;
-            color: #d97706;
+            width: 56px;
+            height: 56px;
+            background: var(--primary-light);
+            color: var(--primary);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
+            font-size: 24px;
             margin: 0 auto 16px auto;
         }
 
-        .modal-icon.icon-blue {
-            background: #e0e7ff;
-            color: var(--primary);
+        .modal-icon.icon-danger {
+            background: #fef2f2;
+            color: #ef4444;
         }
 
         .modal-box h3 {
             font-size: 18px;
-            color: #0f172a;
             margin-bottom: 8px;
-            font-weight: 800;
         }
 
         .modal-box p {
@@ -497,51 +561,52 @@
             line-height: 1.4;
         }
 
-        .timer-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fca5a5;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .otp-input {
-            letter-spacing: 12px;
-            font-size: 22px !important;
-            font-weight: 800;
-            text-align: center;
-            padding-left: 20px !important;
-        }
-
         .phone-group {
             display: flex;
             gap: 8px;
         }
 
         .phone-group select {
-            width: 120px;
+            width: 110px;
             padding-left: 10px;
         }
 
-        .action-buttons {
-            display: flex;
+        .profile-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
-            margin-top: 12px;
+            margin-top: 14px;
         }
 
-        .action-buttons button {
+        .profile-actions button {
             margin-top: 0;
+            font-size: 12.5px;
+        }
+
+        .lockout-banner {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #b91c1c;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            font-size: 12.5px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-align: center;
+            display: none;
         }
     </style>
 </head>
 
 <body>
+
+    <!-- BOTÓN TEMA OSCURO/CLARO -->
+    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar Tema">
+        <i id="themeIcon" class="fa-solid fa-moon"></i>
+    </button>
+
+    <!-- CONTENEDOR DE TOASTS -->
+    <div id="toastContainer"></div>
 
     <div class="main-container">
         <div class="content-wrapper">
@@ -550,11 +615,11 @@
                 <div class="logo-icon">
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <h2>Sistema Web de Usuarios</h2>
-                <p>Plataforma de registro y gestión con servidor en la nube</p>
+                <h2>Gestión de Usuarios</h2>
+                <p>Plataforma web segura con servidor en la nube</p>
             </div>
 
-            <!-- Navegación -->
+            <!-- TABS -->
             <div class="nav-tabs">
                 <button id="tab-login" class="active" onclick="mostrarSeccion('sec-login')">
                     <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
@@ -564,21 +629,21 @@
                 </button>
             </div>
 
-            <div id="mensajeGlobal" class="alert-box">
-                <i id="alertaIcono" class="fa-solid fa-circle-info"></i>
-                <span id="alertaTexto"></span>
-            </div>
-
-            <!-- 1. SECCIÓN: INICIO DE SESIÓN -->
+            <!-- 1. SECCIÓN: LOGIN -->
             <div id="sec-login" class="section active">
                 <div id="formLoginWrapper">
                     <div class="section-title">
                         <i class="fa-solid fa-key"></i> Acceder a tu cuenta
                     </div>
 
+                    <div id="lockoutBanner" class="lockout-banner">
+                        <i class="fa-solid fa-lock"></i> Demasiados intentos fallidos. Espera <span
+                            id="lockoutTimer">60</span>s.
+                    </div>
+
                     <form id="formLogin" onsubmit="event.preventDefault(); iniciarSesion();">
                         <div class="form-group">
-                            <label for="loginUsuario">Usuario o Correo Electrónico</label>
+                            <label for="loginUsuario">Usuario o Correo</label>
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-user field-icon"></i>
                                 <input type="text" id="loginUsuario" placeholder="Usuario o tu@correo.com"
@@ -599,21 +664,14 @@
                             </div>
                         </div>
 
-                        <div style="text-align: right; margin-bottom: 6px;">
+                        <div style="text-align: right; margin-bottom: 16px;">
                             <a href="javascript:void(0)" onclick="abrirModalRecuperar()"
                                 style="color: var(--primary); font-size: 12.5px; font-weight: 700; text-decoration: none;">
                                 <i class="fa-solid fa-key"></i> ¿Olvidaste tu contraseña?
                             </a>
                         </div>
 
-                        <div style="text-align: right; margin-bottom: 16px;">
-                            <a href="javascript:void(0)" onclick="mostrarSeccion('sec-registro')"
-                                style="color: var(--primary); font-size: 12.5px; font-weight: 700; text-decoration: none;">
-                                <i class="fa-solid fa-user-plus"></i> ¿No estás Registrado Aún?
-                            </a>
-                        </div>
-
-                        <button type="submit" class="btn-primary">
+                        <button type="submit" id="btnLoginSubmit" class="btn-primary">
                             <i class="fa-solid fa-right-to-bracket"></i> Entrar al Sistema
                         </button>
                     </form>
@@ -625,12 +683,21 @@
                     </div>
                     <div id="datosPerfil"></div>
 
-                    <div class="action-buttons">
+                    <div class="profile-actions">
                         <button onclick="abrirModalEditarPerfil()" class="btn-primary btn-warning">
                             <i class="fa-solid fa-pen-to-square"></i> Editar Perfil
                         </button>
-                        <button onclick="cerrarSesion()" class="btn-primary btn-danger">
-                            <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                        <button onclick="abrirModalCambiarClave()" class="btn-primary btn-secondary">
+                            <i class="fa-solid fa-lock-open"></i> Nueva Clave
+                        </button>
+                    </div>
+
+                    <div class="profile-actions" style="margin-top: 10px;">
+                        <button onclick="cerrarSesion()" class="btn-primary">
+                            <i class="fa-solid fa-right-from-bracket"></i> Salir
+                        </button>
+                        <button onclick="abrirModalEliminarCuenta()" class="btn-primary btn-danger">
+                            <i class="fa-solid fa-user-xmark"></i> Eliminar
                         </button>
                     </div>
                 </div>
@@ -660,22 +727,26 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="regClave">Contraseña (Min 4 letras, números y caracteres | Max 15)</label>
+                        <label for="regClave">Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
                             <input type="password" id="regClave" placeholder="••••••••" maxlength="15"
-                                autocomplete="new-password">
+                                autocomplete="new-password" oninput="evaluarFuerzaClave(this.value)">
                             <button type="button" class="btn-toggle-pwd"
                                 onclick="togglePasswordVisibility('regClave', this)">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
+                        <div class="strength-meter">
+                            <div id="strengthBar" class="strength-meter-bar"></div>
+                        </div>
+                        <div id="strengthText" class="strength-text">Escribe una contraseña</div>
                     </div>
 
                     <div class="form-group">
                         <label for="regTelefono">Teléfono</label>
                         <div class="phone-group">
-                            <select id="regPais" onchange="actualizarPlaceholderTelefono()">
+                            <select id="regPais">
                                 <option value="VE">🇻🇪 +58</option>
                                 <option value="CO">🇨🇴 +57</option>
                                 <option value="US">🇺🇸 +1</option>
@@ -683,7 +754,7 @@
                             </select>
                             <div class="input-wrapper" style="flex:1;">
                                 <i class="fa-solid fa-phone field-icon"></i>
-                                <input type="tel" id="regTelefono" placeholder="Ej. 04141234567">
+                                <input type="tel" id="regTelefono" placeholder="04141234567">
                             </div>
                         </div>
                     </div>
@@ -692,7 +763,7 @@
                         <label for="regDireccion">Dirección (Opcional)</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-location-dot field-icon"></i>
-                            <input type="text" id="regDireccion" placeholder="Ej. Av. Bolívar Norte">
+                            <input type="text" id="regDireccion" placeholder="Ej. Av. Bolívar">
                         </div>
                     </div>
 
@@ -705,38 +776,29 @@
         </div>
     </div>
 
-    <!-- MODAL EDITAR PERFIL -->
+    <!-- MODAL EDITAR PERFIL (Usuario bloqueado, Correo editable) -->
     <div id="modalEditarPerfil" class="modal-overlay">
         <div class="modal-box">
-            <button class="modal-close-btn" onclick="cerrarModalEditarPerfil()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="modal-icon icon-blue">
-                <i class="fa-solid fa-user-pen"></i>
-            </div>
-            <h3>Editar Datos de Usuario</h3>
-            <p style="margin-bottom: 12px;">Modifica la información de tu perfil a continuación:</p>
-
-            <div id="mensajeModalEdit" class="alert-box" style="margin-bottom: 14px;">
-                <i id="alertaModalEditIcono" class="fa-solid fa-circle-info"></i>
-                <span id="alertaModalEditTexto"></span>
-            </div>
+            <button class="modal-close-btn" onclick="cerrarModal('modalEditarPerfil')"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <div class="modal-icon"><i class="fa-solid fa-user-pen"></i></div>
+            <h3>Editar Perfil</h3>
+            <p>Modifica los datos de tu cuenta:</p>
 
             <form onsubmit="event.preventDefault(); guardarCambiosPerfil();">
                 <div class="form-group" style="text-align: left;">
-                    <label for="editUsuario">Nombre de Usuario</label>
+                    <label>Nombre de Usuario (No modificable)</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-user field-icon"></i>
-                        <input type="text" id="editUsuario" required>
+                        <input type="text" id="editUsuario" disabled style="opacity:0.6; cursor:not-allowed;">
                     </div>
                 </div>
 
                 <div class="form-group" style="text-align: left;">
-                    <label for="editCorreo">Correo Electrónico (No modificable)</label>
+                    <label for="editCorreo">Correo Electrónico</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-envelope field-icon"></i>
-                        <input type="email" id="editCorreo" disabled style="opacity:0.7; cursor:not-allowed;">
+                        <input type="email" id="editCorreo" required>
                     </div>
                 </div>
 
@@ -763,259 +825,254 @@
         </div>
     </div>
 
-    <!-- MODAL DE USUARIO EXISTENTE -->
-    <div id="modalExiste" class="modal-overlay">
+    <!-- MODAL CAMBIAR CONTRASEÑA -->
+    <div id="modalCambiarClave" class="modal-overlay">
         <div class="modal-box">
-            <div class="modal-icon">
-                <i class="fa-solid fa-user-check"></i>
-            </div>
-            <h3>¡Atención!</h3>
-            <p>Usted ya está registrado en el sistema.</p>
-            <button onclick="cerrarModalEIrALogin()" class="btn-primary">
-                Okey
-            </button>
+            <button class="modal-close-btn" onclick="cerrarModal('modalCambiarClave')"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <div class="modal-icon"><i class="fa-solid fa-key"></i></div>
+            <h3>Cambiar Contraseña</h3>
+            <p>Ingresa tu clave actual y la nueva que deseas usar:</p>
+
+            <form onsubmit="event.preventDefault(); cambiarContrasenaPerfil();">
+                <div class="form-group" style="text-align: left;">
+                    <label for="changeClaveActual">Contraseña Actual</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock field-icon"></i>
+                        <input type="password" id="changeClaveActual" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="text-align: left;">
+                    <label for="changeClaveNueva">Nueva Contraseña</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-lock field-icon"></i>
+                        <input type="password" id="changeClaveNueva" required>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnGuardarClave" class="btn-primary">
+                    <i class="fa-solid fa-rotate"></i> Actualizar Clave
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- MODAL DE USUARIO NO REGISTRADO -->
-    <div id="modalNoExiste" class="modal-overlay">
+    <!-- MODAL ELIMINAR CUENTA -->
+    <div id="modalEliminarCuenta" class="modal-overlay">
         <div class="modal-box">
-            <div class="modal-icon">
-                <i class="fa-solid fa-user-slash"></i>
-            </div>
-            <h3>¡Atención!</h3>
-            <p>Usuario No registrado</p>
-            <button onclick="cerrarModalEIrARegistro()" class="btn-primary">
-                Ir a registrarse
-            </button>
+            <button class="modal-close-btn" onclick="cerrarModal('modalEliminarCuenta')"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <div class="modal-icon icon-danger"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3>¿Eliminar Cuenta?</h3>
+            <p>Esta acción es permanente. Para confirmar, escribe la palabra <strong>ELIMINAR</strong> a continuación:
+            </p>
+
+            <form onsubmit="event.preventDefault(); confirmarEliminarCuenta();">
+                <div class="form-group">
+                    <div class="input-wrapper">
+                        <input type="text" id="confirmEliminarInput" placeholder="Escribe ELIMINAR"
+                            style="text-align: center; font-weight: 700;">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary btn-danger">
+                    <i class="fa-solid fa-trash-can"></i> Confirmar BBDD
+                </button>
+            </form>
         </div>
     </div>
 
-    <!-- MODAL RECUPERACIÓN DE CONTRASEÑA -->
+    <!-- MODAL RECUPERACIÓN CONTRASEÑA -->
     <div id="modalRecuperar" class="modal-overlay">
         <div class="modal-box">
-            <button class="modal-close-btn" onclick="cerrarModalRecuperar()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <button class="modal-close-btn" onclick="cerrarModal('modalRecuperar')"><i
+                    class="fa-solid fa-xmark"></i></button>
 
-            <div id="mensajeModalRecuperar" class="alert-box" style="margin-bottom: 14px;">
-                <i id="alertaModalIcono" class="fa-solid fa-circle-info"></i>
-                <span id="alertaModalTexto"></span>
-            </div>
-
-            <!-- PASO 1 -->
             <div id="step-recuperar-1">
-                <div class="modal-icon icon-blue">
-                    <i class="fa-solid fa-envelope-open-text"></i>
-                </div>
+                <div class="modal-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
                 <h3>Recuperar Contraseña</h3>
-                <p>Ingresa el correo electrónico asociado a tu cuenta para enviarte un código de 6 dígitos.</p>
-
+                <p>Te enviaremos un código de 6 dígitos a tu correo.</p>
                 <form onsubmit="event.preventDefault(); solicitarCodigoRecuperacion();">
                     <div class="form-group" style="text-align: left;">
                         <label for="recCorreoInput">Correo Electrónico</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="recCorreoInput" placeholder="tu@correo.com" required
-                                autocomplete="email">
+                            <input type="email" id="recCorreoInput" required>
                         </div>
                     </div>
-                    <button type="submit" id="btnEnviarCodigo" class="btn-primary">
-                        <i class="fa-solid fa-paper-plane"></i> Enviar Código
-                    </button>
+                    <button type="submit" id="btnEnviarCodigo" class="btn-primary">Enviar Código</button>
                 </form>
             </div>
 
-            <!-- PASO 2 -->
             <div id="step-recuperar-2" style="display: none;">
-                <div class="modal-icon icon-blue">
-                    <i class="fa-solid fa-shield-cat"></i>
-                </div>
-                <h3>Ingresa el Código de 6 Dígitos</h3>
-                <p>Hemos enviado un código a tu correo electrónico. Introduce el código a continuación:</p>
-
-                <div class="timer-badge">
-                    <i class="fa-solid fa-clock"></i>
-                    <span>El código vence en: <strong id="timerRecuperarDisplay">15:00</strong></span>
-                </div>
-
+                <div class="modal-icon"><i class="fa-solid fa-shield-cat"></i></div>
+                <h3>Ingresa el Código</h3>
+                <p>Escribe el código enviado a tu correo.</p>
                 <form onsubmit="event.preventDefault(); verificarCodigoRecuperacion();">
-                    <div class="form-group" style="text-align: left;">
-                        <label for="recCodigoInput">Código de 6 dígitos</label>
-                        <div class="input-wrapper">
-                            <input type="text" id="recCodigoInput" class="otp-input" placeholder="123456" maxlength="6"
-                                pattern="[0-9]{6}" autocomplete="off" required>
-                        </div>
+                    <div class="form-group">
+                        <input type="text" id="recCodigoInput"
+                            style="letter-spacing: 8px; font-size:20px; text-align:center;" maxlength="6" required>
                     </div>
-
-                    <button type="submit" id="btnVerificarCodigo" class="btn-primary">
-                        <i class="fa-solid fa-circle-check"></i> Verificar Código
-                    </button>
-
-                    <div style="margin-top: 14px;">
-                        <button type="button" id="btnReenviarCodigo" onclick="reenviarCodigo()" class="btn-secondary-sm"
-                            style="width: 100%; padding: 10px;">
-                            <i class="fa-solid fa-rotate-right"></i> Reenviar Código
-                        </button>
-                    </div>
+                    <button type="submit" id="btnVerificarCodigo" class="btn-primary">Verificar Código</button>
                 </form>
             </div>
 
-            <!-- PASO 3 -->
             <div id="step-recuperar-3" style="display: none;">
-                <div class="modal-icon icon-blue">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
+                <div class="modal-icon"><i class="fa-solid fa-lock"></i></div>
                 <h3>Nueva Contraseña</h3>
-                <p>Ingresa tu nueva contraseña y confírmala para actualizar tu acceso.</p>
-
                 <form onsubmit="event.preventDefault(); restablecerContrasena();">
                     <div class="form-group" style="text-align: left;">
-                        <label for="recNuevaClave">Nueva Contraseña</label>
+                        <label>Nueva Clave</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="recNuevaClave" placeholder="••••••••" required
-                                autocomplete="new-password">
-                            <button type="button" class="btn-toggle-pwd"
-                                onclick="togglePasswordVisibility('recNuevaClave', this)">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
+                            <input type="password" id="recNuevaClave" required>
                         </div>
                     </div>
-
-                    <div class="form-group" style="text-align: left;">
-                        <label for="recConfirmarClave">Confirmar Contraseña</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="recConfirmarClave" placeholder="••••••••" required
-                                autocomplete="new-password">
-                            <button type="button" class="btn-toggle-pwd"
-                                onclick="togglePasswordVisibility('recConfirmarClave', this)">
-                                <i class="fa-solid fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <button type="submit" id="btnActualizarClave" class="btn-primary">
-                        <i class="fa-solid fa-floppy-disk"></i> Actualizar Contraseña
-                    </button>
+                    <button type="submit" id="btnActualizarClave" class="btn-primary">Restablecer Clave</button>
                 </form>
             </div>
-
         </div>
     </div>
 
     <script>
         const SESSION_KEY = 'mi_sistema_sesion_activa';
         let usuarioActualEnSesion = null;
-        let usuarioTemporalModal = '';
-
-        let timerRecuperacionInterval = null;
-        let segundosRestantes = 900;
+        let intentosFallidos = 0;
+        let estaBloqueado = false;
         let correoRecuperacionActual = '';
 
-        const MIN_TELEFONO_PAIS = {
-            'VE': 11,
-            'CO': 10,
-            'US': 10,
-            'ES': 9
-        };
-
         document.addEventListener('DOMContentLoaded', () => {
-            configurarLimpiezaAlertasAlEscribir();
+            cargarTemaGuardado();
             verificarSesionGuardada();
         });
 
-        function actualizarPlaceholderTelefono() {
-            const pais = document.getElementById('regPais').value;
-            const min = MIN_TELEFONO_PAIS[pais] || 10;
-            document.getElementById('regTelefono').placeholder = `Ej. Número de min. ${min} dígitos`;
+        // --- SISTEMA DE TOAST NOTIFICATIONS ---
+        function mostrarToast(titulo, mensaje, tipo = 'exito') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+
+            const iconoMap = {
+                exito: 'fa-circle-check',
+                error: 'fa-circle-xmark',
+                advertencia: 'fa-triangle-exclamation'
+            };
+
+            toast.innerHTML = `
+                <i class="fa-solid ${iconoMap[tipo]} toast-icon"></i>
+                <div class="toast-content">
+                    <h5>${titulo}</h5>
+                    <p>${mensaje}</p>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentElement) toast.remove();
+            }, 4000);
         }
 
-        function limpiarErroresEntrada() {
-            document.querySelectorAll('input').forEach(inp => inp.classList.remove('input-error'));
+        // --- MODO OSCURO / CLARO ---
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('app_theme', newTheme);
+
+            const icon = document.getElementById('themeIcon');
+            icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
-        function remarcarErrorInput(elementId) {
-            const input = document.getElementById(elementId);
-            if (input) {
-                input.classList.add('input-error');
-                input.focus();
+        function cargarTemaGuardado() {
+            const savedTheme = localStorage.getItem('app_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        // --- INDICADOR DE FUERZA DE CONTRASEÑA ---
+        function evaluarFuerzaClave(clave) {
+            const bar = document.getElementById('strengthBar');
+            const text = document.getElementById('strengthText');
+
+            if (!clave) {
+                bar.style.width = '0%';
+                text.innerText = 'Escribe una contraseña';
+                return;
+            }
+
+            let score = 0;
+            if (clave.length >= 6) score++;
+            if (/[A-Z]/.test(clave)) score++;
+            if (/[0-9]/.test(clave)) score++;
+            if (/[^A-Za-z0-9]/.test(clave)) score++;
+
+            if (score <= 1) {
+                bar.style.width = '33%';
+                bar.style.backgroundColor = '#ef4444';
+                text.innerText = 'Fuerza: Débil';
+                text.style.color = '#ef4444';
+            } else if (score === 2 || score === 3) {
+                bar.style.width = '66%';
+                bar.style.backgroundColor = '#f59e0b';
+                text.innerText = 'Fuerza: Media';
+                text.style.color = '#f59e0b';
+            } else {
+                bar.style.width = '100%';
+                bar.style.backgroundColor = '#22c55e';
+                text.innerText = 'Fuerza: Fuerte';
+                text.style.color = '#22c55e';
             }
         }
 
-        function mostrarSeccion(seccionId) {
-            limpiarErroresEntrada();
-            if (seccionId !== 'sec-login') cerrarSesionSilenciosa();
+        // --- CONTROL DE INTENTOS FALLIDOS ---
+        function registrarIntentoFallido() {
+            intentosFallidos++;
+            if (intentosFallidos >= 3) {
+                estaBloqueado = true;
+                const banner = document.getElementById('lockoutBanner');
+                const timerSpan = document.getElementById('lockoutTimer');
+                const btnSubmit = document.getElementById('btnLoginSubmit');
 
-            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-            document.querySelectorAll('.nav-tabs button').forEach(btn => btn.classList.remove('active'));
+                banner.style.display = 'block';
+                btnSubmit.disabled = true;
 
-            document.getElementById(seccionId).classList.add('active');
-            const tabElem = document.getElementById(seccionId.replace('sec-', 'tab-'));
-            if (tabElem) tabElem.classList.add('active');
+                let segundos = 60;
+                timerSpan.innerText = segundos;
 
-            ocultarMensaje();
+                const interval = setInterval(() => {
+                    segundos--;
+                    timerSpan.innerText = segundos;
+                    if (segundos <= 0) {
+                        clearInterval(interval);
+                        estaBloqueado = false;
+                        intentosFallidos = 0;
+                        banner.style.display = 'none';
+                        btnSubmit.disabled = false;
+                    }
+                }, 1000);
+
+                mostrarToast('Cuenta Bloqueada', 'Demasiados intentos fallidos. Espera 60 segundos.', 'error');
+            } else {
+                mostrarToast('Error de Acceso', `Credenciales incorrectas. Intento ${intentosFallidos} de 3.`, 'advertencia');
+            }
         }
 
-        function mostrarMensaje(texto, tipo) {
-            const msg = document.getElementById('mensajeGlobal');
-            const icono = document.getElementById('alertaIcono');
-            const txt = document.getElementById('alertaTexto');
+        // --- NAVEGACIÓN Y MODALES ---
+        function mostrarSeccion(secId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
 
-            txt.innerText = texto;
-            msg.className = "alert-box " + tipo;
-            icono.className = tipo === 'exito' ? "fa-solid fa-circle-check" : "fa-solid fa-circle-exclamation";
+            document.getElementById(secId).classList.add('active');
+            const tab = document.getElementById(secId.replace('sec-', 'tab-'));
+            if (tab) tab.classList.add('active');
         }
 
-        function ocultarMensaje() {
-            const msg = document.getElementById('mensajeGlobal');
-            msg.style.display = 'none';
-            msg.className = 'alert-box';
-        }
-
-        function mostrarMensajeModal(texto, tipo) {
-            const msg = document.getElementById('mensajeModalRecuperar');
-            const icono = document.getElementById('alertaModalIcono');
-            const txt = document.getElementById('alertaModalTexto');
-
-            txt.innerText = texto;
-            msg.className = "alert-box " + tipo;
-            icono.className = tipo === 'exito' ? "fa-solid fa-circle-check" : "fa-solid fa-circle-exclamation";
-        }
-
-        function ocultarMensajeModal() {
-            const msg = document.getElementById('mensajeModalRecuperar');
-            msg.style.display = 'none';
-            msg.className = 'alert-box';
-        }
-
-        function mostrarMensajeEditModal(texto, tipo) {
-            const msg = document.getElementById('mensajeModalEdit');
-            const icono = document.getElementById('alertaModalEditIcono');
-            const txt = document.getElementById('alertaModalEditTexto');
-
-            txt.innerText = texto;
-            msg.className = "alert-box " + tipo;
-            icono.className = tipo === 'exito' ? "fa-solid fa-circle-check" : "fa-solid fa-circle-exclamation";
-        }
-
-        function ocultarMensajeEditModal() {
-            const msg = document.getElementById('mensajeModalEdit');
-            msg.style.display = 'none';
-            msg.className = 'alert-box';
-        }
-
-        function configurarLimpiezaAlertasAlEscribir() {
-            document.querySelectorAll('input').forEach(input => {
-                input.addEventListener('input', () => {
-                    input.classList.remove('input-error');
-                    if (document.getElementById('mensajeGlobal').classList.contains('error')) ocultarMensaje();
-                    if (document.getElementById('mensajeModalRecuperar').classList.contains('error')) ocultarMensajeModal();
-                    if (document.getElementById('mensajeModalEdit').classList.contains('error')) ocultarMensajeEditModal();
-                });
-            });
-        }
+        function abrirModal(id) { document.getElementById(id).classList.add('active'); }
+        function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
 
         function togglePasswordVisibility(inputId, btn) {
             const input = document.getElementById(inputId);
@@ -1029,407 +1086,17 @@
             }
         }
 
-        function abrirModalExiste(usuario) {
-            usuarioTemporalModal = usuario;
-            document.getElementById('modalExiste').classList.add('active');
-        }
-
-        function cerrarModalEIrALogin() {
-            document.getElementById('modalExiste').classList.remove('active');
-            document.getElementById('loginUsuario').value = usuarioTemporalModal;
-            mostrarSeccion('sec-login');
-            setTimeout(() => document.getElementById('loginClave').focus(), 100);
-        }
-
-        function abrirModalNoExiste() {
-            document.getElementById('modalNoExiste').classList.add('active');
-        }
-
-        function cerrarModalEIrARegistro() {
-            document.getElementById('modalNoExiste').classList.remove('active');
-            mostrarSeccion('sec-registro');
-        }
-
-        // --- EDITAR PERFIL ---
-        function abrirModalEditarPerfil() {
-            if (!usuarioActualEnSesion) return;
-
-            ocultarMensajeEditModal();
-            document.getElementById('editUsuario').value = usuarioActualEnSesion.usuario || '';
-            document.getElementById('editCorreo').value = usuarioActualEnSesion.correo || '';
-            document.getElementById('editTelefono').value = usuarioActualEnSesion.telefono || '';
-            document.getElementById('editDireccion').value = usuarioActualEnSesion.direccion || '';
-
-            document.getElementById('modalEditarPerfil').classList.add('active');
-            setTimeout(() => document.getElementById('editUsuario').focus(), 100);
-        }
-
-        function cerrarModalEditarPerfil() {
-            document.getElementById('modalEditarPerfil').classList.remove('active');
-        }
-
-        async function guardarCambiosPerfil() {
-            ocultarMensajeEditModal();
-            limpiarErroresEntrada();
-
-            const nuevoUsuario = document.getElementById('editUsuario').value.trim();
-            const nuevoTelefono = document.getElementById('editTelefono').value.trim();
-            const nuevaDireccion = document.getElementById('editDireccion').value.trim();
-            const idUsuario = usuarioActualEnSesion.id;
-
-            if (!nuevoUsuario) {
-                mostrarMensajeEditModal("El nombre de usuario no puede estar vacío.", "error");
-                remarcarErrorInput('editUsuario');
-                return;
-            }
-
-            const btn = document.getElementById('btnGuardarEdit');
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
-
-            try {
-                const response = await fetch('/api/usuarios/actualizar', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: idUsuario,
-                        usuario: nuevoUsuario,
-                        telefono: nuevoTelefono,
-                        direccion: nuevaDireccion
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    const usuarioActualizado = {
-                        ...usuarioActualEnSesion,
-                        usuario: nuevoUsuario,
-                        telefono: nuevoTelefono,
-                        direccion: nuevaDireccion
-                    };
-
-                    localStorage.setItem(SESSION_KEY, JSON.stringify(usuarioActualizado));
-                    renderizarPerfil(usuarioActualizado);
-
-                    cerrarModalEditarPerfil();
-                    mostrarMensaje("Perfil actualizado correctamente.", "exito");
-                } else {
-                    mostrarMensajeEditModal(data.error || "No se pudieron guardar los cambios.", "error");
-                }
-            } catch (err) {
-                mostrarMensajeEditModal("Error de conexión con el servidor.", "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios`;
-            }
-        }
-
-        // --- RECUPERACIÓN DE CONTRASEÑA ---
-        function abrirModalRecuperar() {
-            ocultarMensajeModal();
-            document.getElementById('step-recuperar-1').style.display = 'block';
-            document.getElementById('step-recuperar-2').style.display = 'none';
-            document.getElementById('step-recuperar-3').style.display = 'none';
-
-            const valLogin = document.getElementById('loginUsuario').value.trim();
-            if (valLogin.includes('@')) {
-                document.getElementById('recCorreoInput').value = valLogin;
-            } else {
-                document.getElementById('recCorreoInput').value = '';
-            }
-
-            document.getElementById('recCodigoInput').value = '';
-            document.getElementById('recNuevaClave').value = '';
-            document.getElementById('recConfirmarClave').value = '';
-
-            document.getElementById('modalRecuperar').classList.add('active');
-            setTimeout(() => document.getElementById('recCorreoInput').focus(), 100);
-        }
-
-        function cerrarModalRecuperar() {
-            if (timerRecuperacionInterval) {
-                clearInterval(timerRecuperacionInterval);
-                timerRecuperacionInterval = null;
-            }
-            document.getElementById('modalRecuperar').classList.remove('active');
-        }
-
-        function iniciarTimer15Minutos() {
-            if (timerRecuperacionInterval) clearInterval(timerRecuperacionInterval);
-            segundosRestantes = 900;
-
-            const display = document.getElementById('timerRecuperarDisplay');
-            const btnVerificar = document.getElementById('btnVerificarCodigo');
-
-            btnVerificar.disabled = false;
-            btnVerificar.innerHTML = `<i class="fa-solid fa-circle-check"></i> Verificar Código`;
-
-            function actualizarDisplay() {
-                const minutos = Math.floor(segundosRestantes / 60);
-                const segundos = segundosRestantes % 60;
-                const mStr = minutos < 10 ? '0' + minutos : minutos;
-                const sStr = segundos < 10 ? '0' + segundos : segundos;
-                display.innerText = `${mStr}:${sStr}`;
-
-                if (segundosRestantes <= 0) {
-                    clearInterval(timerRecuperacionInterval);
-                    timerRecuperacionInterval = null;
-                    display.innerText = '00:00 (Expirado)';
-                    btnVerificar.disabled = true;
-                    mostrarMensajeModal('El código ha expirado después de 15 minutos. Haz clic en "Reenviar Código".', 'error');
-                } else {
-                    segundosRestantes--;
-                }
-            }
-
-            actualizarDisplay();
-            timerRecuperacionInterval = setInterval(actualizarDisplay, 1000);
-        }
-
-        async function solicitarCodigoRecuperacion() {
-            ocultarMensajeModal();
-            limpiarErroresEntrada();
-
-            const correo = document.getElementById('recCorreoInput').value.trim();
-            if (!correo) {
-                mostrarMensajeModal("Ingresa tu correo electrónico.", "error");
-                remarcarErrorInput('recCorreoInput');
-                return;
-            }
-
-            const btn = document.getElementById('btnEnviarCodigo');
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando...`;
-
-            try {
-                const response = await fetch('/api/usuarios/solicitar-codigo-recuperacion', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    correoRecuperacionActual = correo;
-                    document.getElementById('step-recuperar-1').style.display = 'none';
-                    document.getElementById('step-recuperar-2').style.display = 'block';
-                    mostrarMensajeModal('Código de 6 dígitos enviado. Revisa tu correo.', 'exito');
-                    iniciarTimer15Minutos();
-                    setTimeout(() => document.getElementById('recCodigoInput').focus(), 100);
-                } else {
-                    mostrarMensajeModal(data.error || "No se pudo enviar el código.", "error");
-                    remarcarErrorInput('recCorreoInput');
-                }
-            } catch (err) {
-                mostrarMensajeModal("Error de conexión al servidor.", "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar Código`;
-            }
-        }
-
-        async function reenviarCodigo() {
-            ocultarMensajeModal();
-            const btnReenviar = document.getElementById('btnReenviarCodigo');
-            btnReenviar.disabled = true;
-            btnReenviar.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Reenviando...`;
-
-            try {
-                const response = await fetch('/api/usuarios/solicitar-codigo-recuperacion', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo: correoRecuperacionActual })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('recCodigoInput').value = '';
-                    mostrarMensajeModal('Nuevo código de 6 dígitos enviado. Temporizador reiniciado.', 'exito');
-                    iniciarTimer15Minutos();
-                    setTimeout(() => document.getElementById('recCodigoInput').focus(), 100);
-                } else {
-                    mostrarMensajeModal(data.error || "No se pudo reenviar el código.", "error");
-                }
-            } catch (err) {
-                mostrarMensajeModal("Error de conexión al servidor.", "error");
-            } finally {
-                btnReenviar.disabled = false;
-                btnReenviar.innerHTML = `<i class="fa-solid fa-rotate-right"></i> Reenviar Código`;
-            }
-        }
-
-        async function verificarCodigoRecuperacion() {
-            ocultarMensajeModal();
-            limpiarErroresEntrada();
-
-            const codigo = document.getElementById('recCodigoInput').value.trim();
-            if (!codigo || codigo.length !== 6) {
-                mostrarMensajeModal("El código debe tener 6 dígitos numéricos.", "error");
-                remarcarErrorInput('recCodigoInput');
-                return;
-            }
-
-            const btn = document.getElementById('btnVerificarCodigo');
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Verificando...`;
-
-            try {
-                const response = await fetch('/api/usuarios/verificar-codigo-recuperacion', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    if (timerRecuperacionInterval) clearInterval(timerRecuperacionInterval);
-                    document.getElementById('step-recuperar-2').style.display = 'none';
-                    document.getElementById('step-recuperar-3').style.display = 'block';
-                    mostrarMensajeModal('Código verificado con éxito. Ingresa tu nueva contraseña.', 'exito');
-                    setTimeout(() => document.getElementById('recNuevaClave').focus(), 100);
-                } else {
-                    mostrarMensajeModal(data.error || "Código incorrecto o expirado.", "error");
-                    remarcarErrorInput('recCodigoInput');
-                }
-            } catch (err) {
-                mostrarMensajeModal("Error de conexión al servidor.", "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-circle-check"></i> Verificar Código`;
-            }
-        }
-
-        async function restablecerContrasena() {
-            ocultarMensajeModal();
-            limpiarErroresEntrada();
-
-            const codigo = document.getElementById('recCodigoInput').value.trim();
-            const nuevaClave = document.getElementById('recNuevaClave').value.trim();
-            const confirmarClave = document.getElementById('recConfirmarClave').value.trim();
-
-            if (!nuevaClave) {
-                mostrarMensajeModal("Por favor ingresa la nueva contraseña.", "error");
-                remarcarErrorInput('recNuevaClave');
-                return;
-            }
-
-            const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{4,15}$/;
-            if (!passwordRegex.test(nuevaClave)) {
-                mostrarMensajeModal("La contraseña debe tener entre 4 y 15 caracteres e incluir al menos una letra, un número y un carácter especial.", "error");
-                remarcarErrorInput('recNuevaClave');
-                return;
-            }
-
-            if (nuevaClave !== confirmarClave) {
-                mostrarMensajeModal("Las contraseñas no coinciden. Deben ser exactamente iguales.", "error");
-                remarcarErrorInput('recNuevaClave');
-                remarcarErrorInput('recConfirmarClave');
-                return;
-            }
-
-            const btn = document.getElementById('btnActualizarClave');
-            btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
-
-            try {
-                const response = await fetch('/api/usuarios/restablecer-clave', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo, nuevaClave })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    cerrarModalRecuperar();
-                    mostrarSeccion('sec-login');
-                    document.getElementById('loginUsuario').value = correoRecuperacionActual;
-                    document.getElementById('loginClave').value = '';
-                    mostrarMensaje("¡Tu contraseña se ha actualizado correctamente! Ya puedes iniciar sesión.", "exito");
-                    setTimeout(() => document.getElementById('loginClave').focus(), 100);
-                } else {
-                    mostrarMensajeModal(data.error || "Error al restablecer la contraseña.", "error");
-                }
-            } catch (err) {
-                mostrarMensajeModal("Error de conexión al servidor.", "error");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Actualizar Contraseña`;
-            }
-        }
-
-        // --- REGISTRO Y LOGIN ---
-        async function registrarUsuario() {
-            limpiarErroresEntrada();
-
-            const usuario = document.getElementById('regUsuario').value.trim();
-            const correo = document.getElementById('regCorreo').value.trim();
-            const clave = document.getElementById('regClave').value.trim();
-            const telefono = document.getElementById('regTelefono').value.trim();
-            const pais = document.getElementById('regPais').value;
-            const direccion = document.getElementById('regDireccion').value.trim();
-
-            if (!usuario) { mostrarMensaje("Por favor ingresa un nombre de usuario.", "error"); remarcarErrorInput('regUsuario'); return; }
-            if (!correo) { mostrarMensaje("Por favor ingresa un correo electrónico válido.", "error"); remarcarErrorInput('regCorreo'); return; }
-
-            const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{4,15}$/;
-            if (!clave || !passwordRegex.test(clave)) {
-                mostrarMensaje("La contraseña debe tener entre 4 y 15 caracteres e incluir al menos una letra, un número y un carácter especial.", "error");
-                remarcarErrorInput('regClave');
-                return;
-            }
-
-            const minDigits = MIN_TELEFONO_PAIS[pais] || 10;
-            const soloNumerosTel = telefono.replace(/\D/g, '');
-            if (!telefono || soloNumerosTel.length < minDigits) {
-                mostrarMensaje(`El teléfono debe tener un mínimo de ${minDigits} dígitos para el país seleccionado.`, "error");
-                remarcarErrorInput('regTelefono');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/usuarios/registrar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario, clave, correo, telefono, direccion })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    mostrarMensaje(`¡Cuenta '${usuario}' creada con éxito!`, "exito");
-                    document.getElementById('formRegistro').reset();
-                    setTimeout(() => {
-                        document.getElementById('loginUsuario').value = usuario;
-                        mostrarSeccion('sec-login');
-                        document.getElementById('loginClave').focus();
-                    }, 1200);
-                } else {
-                    if (data.error && data.error.includes('correo')) {
-                        mostrarMensaje(data.error, "error");
-                        remarcarErrorInput('regCorreo');
-                    } else {
-                        remarcarErrorInput('regUsuario');
-                        abrirModalExiste(usuario);
-                    }
-                }
-            } catch (err) {
-                mostrarMensaje("Error al conectar con el servidor.", "error");
-            }
-        }
-
+        // --- AUTENTICACIÓN Y PERFIL ---
         async function iniciarSesion() {
-            limpiarErroresEntrada();
+            if (estaBloqueado) return;
 
             const usuario = document.getElementById('loginUsuario').value.trim();
             const clave = document.getElementById('loginClave').value.trim();
 
-            if (!usuario) { mostrarMensaje("Por favor ingresa tu usuario o correo.", "error"); remarcarErrorInput('loginUsuario'); return; }
-            if (!clave) { mostrarMensaje("Por favor ingresa tu contraseña.", "error"); remarcarErrorInput('loginClave'); return; }
+            if (!usuario || !clave) {
+                mostrarToast('Campos vacíos', 'Ingresa tu usuario y contraseña.', 'advertencia');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/usuarios/login', {
@@ -1441,20 +1108,15 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    ocultarMensaje();
+                    intentosFallidos = 0;
                     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
                     renderizarPerfil(data);
+                    mostrarToast('¡Bienvenido!', `Sesión iniciada como ${data.usuario}`, 'exito');
                 } else {
-                    if (response.status === 404) {
-                        abrirModalNoExiste();
-                    } else {
-                        mostrarMensaje("Credenciales incorrectas.", "error");
-                        remarcarErrorInput('loginUsuario');
-                        remarcarErrorInput('loginClave');
-                    }
+                    registrarIntentoFallido();
                 }
-            } catch (err) {
-                mostrarMensaje("Error de conexión al servidor.", "error");
+            } catch (e) {
+                mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
             }
         }
 
@@ -1465,52 +1127,234 @@
 
             const inicial = user.usuario.charAt(0).toUpperCase();
             document.getElementById('datosPerfil').innerHTML = `
-            <div class="user-card">
-                <div class="user-card-header">
-                    <div class="avatar">${inicial}</div>
-                    <div class="user-info">
-                        <h4>Bienvenido, ${user.usuario}</h4>
-                        <p>Estado: Sesión Activa</p>
+                <div class="user-card">
+                    <div class="user-card-header">
+                        <div class="avatar">${inicial}</div>
+                        <div>
+                            <h4>${user.usuario}</h4>
+                            <p style="font-size:12px; color:var(--text-muted);">Usuario Activo</p>
+                        </div>
                     </div>
+                    <div class="detail-row"><i class="fa-solid fa-envelope"></i> <span>${user.correo || 'N/A'}</span></div>
+                    <div class="detail-row"><i class="fa-solid fa-phone"></i> <span>${user.telefono || 'N/A'}</span></div>
+                    <div class="detail-row"><i class="fa-solid fa-location-dot"></i> <span>${user.direccion || 'N/A'}</span></div>
                 </div>
-                <div class="detail-row">
-                    <i class="fa-solid fa-envelope"></i>
-                    <span><strong>Correo:</strong> ${user.correo || 'No registrado'}</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fa-solid fa-phone"></i>
-                    <span><strong>Teléfono:</strong> ${user.telefono || 'No registrado'}</span>
-                </div>
-                <div class="detail-row">
-                    <i class="fa-solid fa-location-dot"></i>
-                    <span><strong>Dirección:</strong> ${user.direccion || 'No registrada'}</span>
-                </div>
-            </div>
             `;
         }
 
-        function cerrarSesionSilenciosa() {
+        function cerrarSesion() {
             localStorage.removeItem(SESSION_KEY);
             usuarioActualEnSesion = null;
             document.getElementById('formLoginWrapper').style.display = 'block';
             document.getElementById('perfilUsuario').style.display = 'none';
-            document.getElementById('datosPerfil').innerHTML = '';
             document.getElementById('formLogin').reset();
-        }
-
-        function cerrarSesion() {
-            cerrarSesionSilenciosa();
-            mostrarMensaje("Has cerrado sesión exitosamente.", "exito");
+            mostrarToast('Sesión Cerrada', 'Has salido del sistema correctamente.', 'exito');
         }
 
         function verificarSesionGuardada() {
+            const sesion = localStorage.getItem(SESSION_KEY);
+            if (sesion) {
+                try { renderizarPerfil(JSON.parse(sesion)); } catch (e) { }
+            }
+        }
+
+        // --- EDICIÓN DE PERFIL ---
+        function abrirModalEditarPerfil() {
+            if (!usuarioActualEnSesion) return;
+            document.getElementById('editUsuario').value = usuarioActualEnSesion.usuario || '';
+            document.getElementById('editCorreo').value = usuarioActualEnSesion.correo || '';
+            document.getElementById('editTelefono').value = usuarioActualEnSesion.telefono || '';
+            document.getElementById('editDireccion').value = usuarioActualEnSesion.direccion || '';
+            abrirModal('modalEditarPerfil');
+        }
+
+        async function guardarCambiosPerfil() {
+            const nuevoCorreo = document.getElementById('editCorreo').value.trim();
+            const nuevoTelefono = document.getElementById('editTelefono').value.trim();
+            const nuevaDireccion = document.getElementById('editDireccion').value.trim();
+
             try {
-                const sesion = localStorage.getItem(SESSION_KEY);
-                if (sesion) {
-                    const user = JSON.parse(sesion);
-                    renderizarPerfil(user);
+                const response = await fetch('/api/usuarios/actualizar', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: usuarioActualEnSesion.id,
+                        correo: nuevoCorreo,
+                        telefono: nuevoTelefono,
+                        direccion: nuevaDireccion
+                    })
+                });
+
+                if (response.ok) {
+                    const actualizado = { ...usuarioActualEnSesion, correo: nuevoCorreo, telefono: nuevoTelefono, direccion: nuevaDireccion };
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(actualizado));
+                    renderizarPerfil(actualizado);
+                    cerrarModal('modalEditarPerfil');
+                    mostrarToast('Perfil Actualizado', 'Tus datos se han guardado con éxito.', 'exito');
+                } else {
+                    mostrarToast('Error', 'No se pudieron actualizar los datos.', 'error');
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                mostrarToast('Error de Red', 'Error al conectar con el servidor.', 'error');
+            }
+        }
+
+        // --- CAMBIAR CONTRASEÑA ---
+        function abrirModalCambiarClave() {
+            document.getElementById('changeClaveActual').value = '';
+            document.getElementById('changeClaveNueva').value = '';
+            abrirModal('modalCambiarClave');
+        }
+
+        async function cambiarContrasenaPerfil() {
+            const claveActual = document.getElementById('changeClaveActual').value.trim();
+            const claveNueva = document.getElementById('changeClaveNueva').value.trim();
+
+            try {
+                const response = await fetch('/api/usuarios/cambiar-clave', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: usuarioActualEnSesion.id, claveActual, claveNueva })
+                });
+
+                if (response.ok) {
+                    cerrarModal('modalCambiarClave');
+                    mostrarToast('Clave Actualizada', 'Tu contraseña ha sido cambiada.', 'exito');
+                } else {
+                    mostrarToast('Error', 'La contraseña actual no es correcta.', 'error');
+                }
+            } catch (e) {
+                mostrarToast('Error', 'Error al procesar la solicitud.', 'error');
+            }
+        }
+
+        // --- ELIMINAR CUENTA ---
+        function abrirModalEliminarCuenta() {
+            document.getElementById('confirmEliminarInput').value = '';
+            abrirModal('modalEliminarCuenta');
+        }
+
+        async function confirmarEliminarCuenta() {
+            const val = document.getElementById('confirmEliminarInput').value.trim();
+            if (val !== 'ELIMINAR') {
+                mostrarToast('Confirmación requerida', 'Debes escribir exactamente la palabra ELIMINAR', 'advertencia');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/usuarios/eliminar/${usuarioActualEnSesion.id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cerrarModal('modalEliminarCuenta');
+                    cerrarSesion();
+                    mostrarToast('Cuenta Eliminada', 'Tu usuario ha sido eliminado definitivamente.', 'exito');
+                } else {
+                    mostrarToast('Error', 'No se pudo eliminar la cuenta.', 'error');
+                }
+            } catch (e) {
+                mostrarToast('Error', 'Error al procesar la eliminación.', 'error');
+            }
+        }
+
+        // --- REGISTRO DE USUARIOS ---
+        async function registrarUsuario() {
+            const usuario = document.getElementById('regUsuario').value.trim();
+            const correo = document.getElementById('regCorreo').value.trim();
+            const clave = document.getElementById('regClave').value.trim();
+            const telefono = document.getElementById('regTelefono').value.trim();
+            const direccion = document.getElementById('regDireccion').value.trim();
+
+            if (!usuario || !correo || !clave) {
+                mostrarToast('Formulario Incompleto', 'Por favor llena los campos obligatorios.', 'advertencia');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/usuarios/registrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, clave, correo, telefono, direccion })
+                });
+
+                if (response.ok) {
+                    mostrarToast('Registro Exitoso', 'Cuenta creada. Ya puedes iniciar sesión.', 'exito');
+                    document.getElementById('formRegistro').reset();
+                    evaluarFuerzaClave('');
+                    mostrarSeccion('sec-login');
+                } else {
+                    mostrarToast('Error de Registro', 'El usuario o correo ya existe.', 'error');
+                }
+            } catch (e) {
+                mostrarToast('Error', 'No se pudo completar el registro.', 'error');
+            }
+        }
+
+        // --- RECUPERACIÓN DE CONTRASEÑA ---
+        function abrirModalRecuperar() {
+            document.getElementById('step-recuperar-1').style.display = 'block';
+            document.getElementById('step-recuperar-2').style.display = 'none';
+            document.getElementById('step-recuperar-3').style.display = 'none';
+            abrirModal('modalRecuperar');
+        }
+
+        async function solicitarCodigoRecuperacion() {
+            const correo = document.getElementById('recCorreoInput').value.trim();
+            correoRecuperacionActual = correo;
+
+            try {
+                const response = await fetch('/api/usuarios/solicitar-codigo-recuperacion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo })
+                });
+
+                if (response.ok) {
+                    document.getElementById('step-recuperar-1').style.display = 'none';
+                    document.getElementById('step-recuperar-2').style.display = 'block';
+                    mostrarToast('Código Enviado', 'Revisa tu correo electrónico.', 'exito');
+                } else {
+                    mostrarToast('Error', 'Correo no encontrado.', 'error');
+                }
+            } catch (e) { mostrarToast('Error', 'Error de red.', 'error'); }
+        }
+
+        async function verificarCodigoRecuperacion() {
+            const codigo = document.getElementById('recCodigoInput').value.trim();
+
+            try {
+                const response = await fetch('/api/usuarios/verificar-codigo-recuperacion', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo })
+                });
+
+                if (response.ok) {
+                    document.getElementById('step-recuperar-2').style.display = 'none';
+                    document.getElementById('step-recuperar-3').style.display = 'block';
+                    mostrarToast('Código Correcto', 'Ingresa tu nueva clave.', 'exito');
+                } else {
+                    mostrarToast('Código Inválido', 'El código es incorrecto o expiró.', 'error');
+                }
+            } catch (e) { mostrarToast('Error', 'Error de red.', 'error'); }
+        }
+
+        async function restablecerContrasena() {
+            const codigo = document.getElementById('recCodigoInput').value.trim();
+            const nuevaClave = document.getElementById('recNuevaClave').value.trim();
+
+            try {
+                const response = await fetch('/api/usuarios/restablecer-clave', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo, nuevaClave })
+                });
+
+                if (response.ok) {
+                    cerrarModal('modalRecuperar');
+                    mostrarToast('Clave Actualizada', 'Ya puedes iniciar sesión con tu nueva clave.', 'exito');
+                } else {
+                    mostrarToast('Error', 'No se pudo restablecer la clave.', 'error');
+                }
+            } catch (e) { mostrarToast('Error', 'Error de red.', 'error'); }
         }
     </script>
 </body>
