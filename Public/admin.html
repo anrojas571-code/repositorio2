@@ -13,6 +13,9 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Librería para generar .xlsx nativo real compatible con móviles y PC -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
     <style>
         :root {
             --primary: #4f46e5;
@@ -580,9 +583,8 @@
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
                             <i class="fa-solid fa-rotate-right"></i>
                         </button>
-                        <button onclick="exportarExcel()" class="btn btn-export-excel"
-                            title="Exportar reporte CSV/Excel">
-                            <i class="fa-solid fa-file-excel"></i> Excel / CSV
+                        <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xlsx)">
+                            <i class="fa-solid fa-file-excel"></i> Excel
                         </button>
                         <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
                             <i class="fa-solid fa-file-code"></i> JSON
@@ -767,22 +769,37 @@
                 return;
             }
 
-            const encabezados = ["Usuario", "Contraseña", "Teléfono", "Dirección", "Fecha Registro", "Modificaciones"];
+            // Mapeo de datos para Excel
+            const datosExcel = usuariosCargados.map(u => ({
+                "Usuario": u.usuario || '',
+                "Contraseña": u.clave || '',
+                "Teléfono": u.telefono || '',
+                "Dirección": u.direccion || '',
+                "Fecha Registro": u.fechaRegistro || '',
+                "Modificaciones": u.contadorModificaciones || 0
+            }));
 
-            const filas = usuariosCargados.map(u => [
-                `"${(u.usuario || '').replace(/"/g, '""')}"`,
-                `"${(u.clave || '').replace(/"/g, '""')}"`,
-                `"${(u.telefono || '').replace(/"/g, '""')}"`,
-                `"${(u.direccion || '').replace(/"/g, '""')}"`,
-                `"${(u.fechaRegistro || '').replace(/"/g, '""')}"`,
-                `"${u.contadorModificaciones || 0}"`
-            ]);
+            // Generar libro de trabajo y hoja nativa de Excel (.xlsx)
+            const worksheet = XLSX.utils.json_to_sheet(datosExcel);
 
-            const csvContent = [encabezados.join(','), ...filas.map(f => f.join(','))].join('\r\n');
+            // Auto-ajustar ancho de las columnas
+            const colWidths = [
+                { wch: 20 }, // Usuario
+                { wch: 18 }, // Contraseña
+                { wch: 16 }, // Teléfono
+                { wch: 25 }, // Dirección
+                { wch: 18 }, // Fecha Registro
+                { wch: 15 }  // Modificaciones
+            ];
+            worksheet['!cols'] = colWidths;
 
-            // \uFEFF fuerza a los visores móviles y de escritorio a abrir en UTF-8 correcto
-            descargarArchivo('\uFEFF' + csvContent, 'Reporte de usuarios.csv', 'text/csv;charset=utf-8;');
-            registrarLogDescarga('CSV');
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
+
+            // Generar la descarga del archivo .xlsx
+            XLSX.writeFile(workbook, "Reporte_de_usuarios.xlsx");
+
+            registrarLogDescarga('Excel');
         }
 
         function exportarJSON() {
