@@ -628,10 +628,12 @@
         const ADMIN_SESSION_KEY = 'admin_session_active';
         let usuariosCargados = [];
 
+        // Al cargar la página (incluye F5 / Recargar), borramos cualquier sesión previa para obligar al login
         document.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem(ADMIN_SESSION_KEY)) {
-                mostrarPanelAdmin();
-            }
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            // Nos aseguramos de mostrar únicamente el formulario de login
+            document.getElementById('vistaPanelAdmin').style.display = 'none';
+            document.getElementById('vistaLoginAdmin').style.display = 'block';
         });
 
         async function iniciarSesionAdmin() {
@@ -685,11 +687,11 @@
 
                 if (!usuariosCargados || usuariosCargados.length === 0) {
                     contenedor.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fa-solid fa-users-slash"></i>
-                            <p>No hay usuarios registrados en la base de datos.</p>
-                        </div>
-                    `;
+                    <div class="empty-state">
+                        <i class="fa-solid fa-users-slash"></i>
+                        <p>No hay usuarios registrados en la base de datos.</p>
+                    </div>
+                `;
                     return;
                 }
 
@@ -699,26 +701,26 @@
                     const ediciones = u.contadorModificaciones || 0;
 
                     html += `
-                        <div class="user-item">
-                            <div class="user-detail">
-                                <div class="avatar">${inicial}</div>
-                                <div class="user-data">
-                                    <h3>#${index + 1} - ${u.usuario}</h3>
-                                    <p><i class="fa-solid fa-envelope"></i> Correo: ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'}</p>
-                                    <p><i class="fa-solid fa-key"></i> Clave: ${u.clave} ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
-                                </div>
-                            </div>
-                            <div class="badges-group">
-                                <span class="badge-mods" title="Ediciones realizadas">
-                                    <i class="fa-solid fa-pen-to-square"></i> ${ediciones} ${ediciones === 1 ? 'edición' : 'ediciones'}
-                                </span>
-                                <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
-                                <button onclick="eliminarUsuario('${u.usuario}')" class="btn-delete-user" title="Eliminar usuario">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
+                    <div class="user-item">
+                        <div class="user-detail">
+                            <div class="avatar">${inicial}</div>
+                            <div class="user-data">
+                                <h3>#${index + 1} - ${u.usuario}</h3>
+                                <p><i class="fa-solid fa-envelope"></i> Correo: ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'}</p>
+                                <p><i class="fa-solid fa-key"></i> Clave: ${u.clave} ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
                             </div>
                         </div>
-                    `;
+                        <div class="badges-group">
+                            <span class="badge-mods" title="Ediciones realizadas">
+                                <i class="fa-solid fa-pen-to-square"></i> ${ediciones} ${ediciones === 1 ? 'edición' : 'ediciones'}
+                            </span>
+                            <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
+                            <button onclick="eliminarUsuario('${u.usuario}')" class="btn-delete-user" title="Eliminar usuario">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
                 });
 
                 contenedor.innerHTML = html;
@@ -769,7 +771,6 @@
                 return;
             }
 
-            // Mapeo de datos para Excel
             const datosExcel = usuariosCargados.map(u => ({
                 "Usuario": u.usuario || '',
                 "Contraseña": u.clave || '',
@@ -779,24 +780,21 @@
                 "Modificaciones": u.contadorModificaciones || 0
             }));
 
-            // Generar libro de trabajo y hoja nativa de Excel (.xlsx)
             const worksheet = XLSX.utils.json_to_sheet(datosExcel);
 
-            // Auto-ajustar ancho de las columnas
             const colWidths = [
-                { wch: 20 }, // Usuario
-                { wch: 18 }, // Contraseña
-                { wch: 16 }, // Teléfono
-                { wch: 25 }, // Dirección
-                { wch: 18 }, // Fecha Registro
-                { wch: 15 }  // Modificaciones
+                { wch: 20 },
+                { wch: 18 },
+                { wch: 16 },
+                { wch: 25 },
+                { wch: 18 },
+                { wch: 15 }
             ];
             worksheet['!cols'] = colWidths;
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
 
-            // Generar la descarga del archivo .xlsx
             XLSX.writeFile(workbook, "Reporte_de_usuarios.xlsx");
 
             registrarLogDescarga('Excel');
@@ -844,11 +842,11 @@
 
                 if (!descargas || descargas.length === 0) {
                     contenedor.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fa-solid fa-folder-open"></i>
-                            <p>No se han realizado descargas de reportes.</p>
-                        </div>
-                    `;
+                    <div class="empty-state">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <p>No se han realizado descargas de reportes.</p>
+                    </div>
+                `;
                     return;
                 }
 
@@ -859,18 +857,18 @@
                     if (d.formato === 'Excel') badgeClass = 'badge-excel';
 
                     html += `
-                        <div class="download-item">
-                            <div class="download-info">
-                                <span class="${badgeClass}">${d.formato}</span>
-                                <div class="download-time">
-                                    <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
-                                </div>
+                    <div class="download-item">
+                        <div class="download-info">
+                            <span class="${badgeClass}">${d.formato}</span>
+                            <div class="download-time">
+                                <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
                             </div>
-                            <button onclick="eliminarDescarga('${d.id}')" class="btn-delete-user" title="Eliminar este registro">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
                         </div>
-                    `;
+                        <button onclick="eliminarDescarga('${d.id}')" class="btn-delete-user" title="Eliminar este registro">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                `;
                 });
 
                 contenedor.innerHTML = html;
@@ -899,7 +897,6 @@
             }
         }
     </script>
-
 </body>
 
 </html>
