@@ -1042,6 +1042,11 @@
 
         // --- NAVEGACIÓN Y MODALES ---
         function mostrarSeccion(secId) {
+            // Cierra la sesión automáticamente si el usuario decide cambiar de pestaña teniendo sesión iniciada
+            if (usuarioActualEnSesion) {
+                cerrarSesion();
+            }
+
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
 
@@ -1218,7 +1223,6 @@
             const identificador = usuarioActualEnSesion.usuario || usuarioActualEnSesion.id;
 
             try {
-                // Primer intento con DELETE
                 const response = await fetch(`/api/usuarios/eliminar/${identificador}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' }
@@ -1229,7 +1233,6 @@
                     cerrarSesion();
                     mostrarToast('Cuenta Eliminada', 'Tu cuenta ha sido eliminada definitivamente.', 'exito');
                 } else {
-                    // Segundo intento con POST por si tu backend usa req.body en lugar de params
                     const altResponse = await fetch('/api/usuarios/eliminar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
