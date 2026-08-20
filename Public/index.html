@@ -291,6 +291,11 @@
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
         }
 
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+        }
+
         .btn-secondary-sm {
             background: #f1f5f9;
             color: #475569;
@@ -427,7 +432,7 @@
         .modal-box {
             background: #ffffff;
             width: 90%;
-            max-width: 400px;
+            max-width: 420px;
             padding: 24px;
             border-radius: var(--radius-lg);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
@@ -435,6 +440,8 @@
             transform: scale(0.9);
             transition: transform 0.25s ease;
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal-overlay.active .modal-box {
@@ -521,6 +528,16 @@
             width: 120px;
             padding-left: 10px;
         }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .action-buttons button {
+            margin-top: 0;
+        }
     </style>
 </head>
 
@@ -537,7 +554,7 @@
                 <p>Plataforma de registro y gestión con servidor en la nube</p>
             </div>
 
-            <!-- Navegación sin la opción Lista -->
+            <!-- Navegación -->
             <div class="nav-tabs">
                 <button id="tab-login" class="active" onclick="mostrarSeccion('sec-login')">
                     <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
@@ -607,9 +624,15 @@
                         <i class="fa-solid fa-circle-user"></i> Tu Perfil
                     </div>
                     <div id="datosPerfil"></div>
-                    <button onclick="cerrarSesion()" class="btn-primary btn-danger">
-                        <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
-                    </button>
+
+                    <div class="action-buttons">
+                        <button onclick="abrirModalEditarPerfil()" class="btn-primary btn-warning">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar Perfil
+                        </button>
+                        <button onclick="cerrarSesion()" class="btn-primary btn-danger">
+                            <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -660,7 +683,7 @@
                             </select>
                             <div class="input-wrapper" style="flex:1;">
                                 <i class="fa-solid fa-phone field-icon"></i>
-                                <input type="tel" id="regTelefono" placeholder="Ej. 04141234567 (11 dígitos)">
+                                <input type="tel" id="regTelefono" placeholder="Ej. 04141234567">
                             </div>
                         </div>
                     </div>
@@ -679,6 +702,64 @@
                 </form>
             </div>
 
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR PERFIL -->
+    <div id="modalEditarPerfil" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close-btn" onclick="cerrarModalEditarPerfil()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="modal-icon icon-blue">
+                <i class="fa-solid fa-user-pen"></i>
+            </div>
+            <h3>Editar Datos de Usuario</h3>
+            <p style="margin-bottom: 12px;">Modifica la información de tu perfil a continuación:</p>
+
+            <div id="mensajeModalEdit" class="alert-box" style="margin-bottom: 14px;">
+                <i id="alertaModalEditIcono" class="fa-solid fa-circle-info"></i>
+                <span id="alertaModalEditTexto"></span>
+            </div>
+
+            <form onsubmit="event.preventDefault(); guardarCambiosPerfil();">
+                <div class="form-group" style="text-align: left;">
+                    <label for="editUsuario">Nombre de Usuario</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user field-icon"></i>
+                        <input type="text" id="editUsuario" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="text-align: left;">
+                    <label for="editCorreo">Correo Electrónico (No modificable)</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-envelope field-icon"></i>
+                        <input type="email" id="editCorreo" disabled style="opacity:0.7; cursor:not-allowed;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="text-align: left;">
+                    <label for="editTelefono">Teléfono</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-phone field-icon"></i>
+                        <input type="tel" id="editTelefono">
+                    </div>
+                </div>
+
+                <div class="form-group" style="text-align: left;">
+                    <label for="editDireccion">Dirección</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-location-dot field-icon"></i>
+                        <input type="text" id="editDireccion">
+                    </div>
+                </div>
+
+                <button type="submit" id="btnGuardarEdit" class="btn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                </button>
+            </form>
         </div>
     </div>
 
@@ -710,7 +791,7 @@
         </div>
     </div>
 
-    <!-- MODAL RECUPERACIÓN DE CONTRASEÑA EN 3 PASOS -->
+    <!-- MODAL RECUPERACIÓN DE CONTRASEÑA -->
     <div id="modalRecuperar" class="modal-overlay">
         <div class="modal-box">
             <button class="modal-close-btn" onclick="cerrarModalRecuperar()">
@@ -833,12 +914,11 @@
         let segundosRestantes = 900;
         let correoRecuperacionActual = '';
 
-        // Reglas de longitud mínima de número telefónico por país
         const MIN_TELEFONO_PAIS = {
-            'VE': 11, // Venezuela
-            'CO': 10, // Colombia
-            'US': 10, // Estados Unidos
-            'ES': 9   // España
+            'VE': 11,
+            'CO': 10,
+            'US': 10,
+            'ES': 9
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -910,14 +990,29 @@
             msg.className = 'alert-box';
         }
 
+        function mostrarMensajeEditModal(texto, tipo) {
+            const msg = document.getElementById('mensajeModalEdit');
+            const icono = document.getElementById('alertaModalEditIcono');
+            const txt = document.getElementById('alertaModalEditTexto');
+
+            txt.innerText = texto;
+            msg.className = "alert-box " + tipo;
+            icono.className = tipo === 'exito' ? "fa-solid fa-circle-check" : "fa-solid fa-circle-exclamation";
+        }
+
+        function ocultarMensajeEditModal() {
+            const msg = document.getElementById('mensajeModalEdit');
+            msg.style.display = 'none';
+            msg.className = 'alert-box';
+        }
+
         function configurarLimpiezaAlertasAlEscribir() {
             document.querySelectorAll('input').forEach(input => {
                 input.addEventListener('input', () => {
                     input.classList.remove('input-error');
-                    const msg = document.getElementById('mensajeGlobal');
-                    if (msg.classList.contains('error')) ocultarMensaje();
-                    const msgModal = document.getElementById('mensajeModalRecuperar');
-                    if (msgModal.classList.contains('error')) ocultarMensajeModal();
+                    if (document.getElementById('mensajeGlobal').classList.contains('error')) ocultarMensaje();
+                    if (document.getElementById('mensajeModalRecuperar').classList.contains('error')) ocultarMensajeModal();
+                    if (document.getElementById('mensajeModalEdit').classList.contains('error')) ocultarMensajeEditModal();
                 });
             });
         }
@@ -955,7 +1050,82 @@
             mostrarSeccion('sec-registro');
         }
 
-        // --- MANEJO DEL MODAL DE RECUPERACIÓN DE CONTRASEÑA ---
+        // --- EDITAR PERFIL ---
+        function abrirModalEditarPerfil() {
+            if (!usuarioActualEnSesion) return;
+
+            ocultarMensajeEditModal();
+            document.getElementById('editUsuario').value = usuarioActualEnSesion.usuario || '';
+            document.getElementById('editCorreo').value = usuarioActualEnSesion.correo || '';
+            document.getElementById('editTelefono').value = usuarioActualEnSesion.telefono || '';
+            document.getElementById('editDireccion').value = usuarioActualEnSesion.direccion || '';
+
+            document.getElementById('modalEditarPerfil').classList.add('active');
+            setTimeout(() => document.getElementById('editUsuario').focus(), 100);
+        }
+
+        function cerrarModalEditarPerfil() {
+            document.getElementById('modalEditarPerfil').classList.remove('active');
+        }
+
+        async function guardarCambiosPerfil() {
+            ocultarMensajeEditModal();
+            limpiarErroresEntrada();
+
+            const nuevoUsuario = document.getElementById('editUsuario').value.trim();
+            const nuevoTelefono = document.getElementById('editTelefono').value.trim();
+            const nuevaDireccion = document.getElementById('editDireccion').value.trim();
+            const idUsuario = usuarioActualEnSesion.id;
+
+            if (!nuevoUsuario) {
+                mostrarMensajeEditModal("El nombre de usuario no puede estar vacío.", "error");
+                remarcarErrorInput('editUsuario');
+                return;
+            }
+
+            const btn = document.getElementById('btnGuardarEdit');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Guardando...`;
+
+            try {
+                const response = await fetch('/api/usuarios/actualizar', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: idUsuario,
+                        usuario: nuevoUsuario,
+                        telefono: nuevoTelefono,
+                        direccion: nuevaDireccion
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const usuarioActualizado = {
+                        ...usuarioActualEnSesion,
+                        usuario: nuevoUsuario,
+                        telefono: nuevoTelefono,
+                        direccion: nuevaDireccion
+                    };
+
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(usuarioActualizado));
+                    renderizarPerfil(usuarioActualizado);
+
+                    cerrarModalEditarPerfil();
+                    mostrarMensaje("Perfil actualizado correctamente.", "exito");
+                } else {
+                    mostrarMensajeEditModal(data.error || "No se pudieron guardar los cambios.", "error");
+                }
+            } catch (err) {
+                mostrarMensajeEditModal("Error de conexión con el servidor.", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Guardar Cambios`;
+            }
+        }
+
+        // --- RECUPERACIÓN DE CONTRASEÑA ---
         function abrirModalRecuperar() {
             ocultarMensajeModal();
             document.getElementById('step-recuperar-1').style.display = 'block';
@@ -1017,7 +1187,6 @@
             timerRecuperacionInterval = setInterval(actualizarDisplay, 1000);
         }
 
-        // 1. SOLICITAR CÓDIGO POR CORREO
         async function solicitarCodigoRecuperacion() {
             ocultarMensajeModal();
             limpiarErroresEntrada();
@@ -1061,7 +1230,6 @@
             }
         }
 
-        // REENVIAR CÓDIGO
         async function reenviarCodigo() {
             ocultarMensajeModal();
             const btnReenviar = document.getElementById('btnReenviarCodigo');
@@ -1093,7 +1261,6 @@
             }
         }
 
-        // 2. VERIFICAR CÓDIGO
         async function verificarCodigoRecuperacion() {
             ocultarMensajeModal();
             limpiarErroresEntrada();
@@ -1136,7 +1303,6 @@
             }
         }
 
-        // 3. RESTABLECER CONTRASEÑA
         async function restablecerContrasena() {
             ocultarMensajeModal();
             limpiarErroresEntrada();
@@ -1151,7 +1317,6 @@
                 return;
             }
 
-            // Validar restricción de contraseña (Min 4, Max 15, contenga letras, números y caracteres)
             const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{4,15}$/;
             if (!passwordRegex.test(nuevaClave)) {
                 mostrarMensajeModal("La contraseña debe tener entre 4 y 15 caracteres e incluir al menos una letra, un número y un carácter especial.", "error");
@@ -1197,7 +1362,7 @@
             }
         }
 
-        // --- API: REGISTRAR USUARIO ---
+        // --- REGISTRO Y LOGIN ---
         async function registrarUsuario() {
             limpiarErroresEntrada();
 
@@ -1211,7 +1376,6 @@
             if (!usuario) { mostrarMensaje("Por favor ingresa un nombre de usuario.", "error"); remarcarErrorInput('regUsuario'); return; }
             if (!correo) { mostrarMensaje("Por favor ingresa un correo electrónico válido.", "error"); remarcarErrorInput('regCorreo'); return; }
 
-            // Validar complejidad de Contraseña (mínimo 4, máximo 15, con letras, números y caracteres especiales)
             const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{4,15}$/;
             if (!clave || !passwordRegex.test(clave)) {
                 mostrarMensaje("La contraseña debe tener entre 4 y 15 caracteres e incluir al menos una letra, un número y un carácter especial.", "error");
@@ -1219,7 +1383,6 @@
                 return;
             }
 
-            // Validar longitud mínima de Teléfono según el país seleccionado
             const minDigits = MIN_TELEFONO_PAIS[pais] || 10;
             const soloNumerosTel = telefono.replace(/\D/g, '');
             if (!telefono || soloNumerosTel.length < minDigits) {
@@ -1259,7 +1422,6 @@
             }
         }
 
-        // --- API: INICIAR SESIÓN ---
         async function iniciarSesion() {
             limpiarErroresEntrada();
 
