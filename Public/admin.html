@@ -20,6 +20,7 @@
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
+            --primary-light: #eef2ff;
             --bg-dark: #0f172a;
             --card-bg: rgba(255, 255, 255, 0.96);
             --text-main: #1e293b;
@@ -27,11 +28,16 @@
             --border-color: #e2e8f0;
             --radius-lg: 20px;
             --radius-md: 12px;
+            --radius-sm: 8px;
             --danger: #ef4444;
             --warning-bg: #fef3c7;
             --warning-text: #b45309;
             --success-bg: #dcfce7;
             --success-text: #15803d;
+            --folder-perfil: #3b82f6;
+            --folder-clave: #f59e0b;
+            --folder-admin: #8b5cf6;
+            --folder-otp: #10b981;
         }
 
         * {
@@ -53,7 +59,7 @@
 
         .admin-container {
             width: 100%;
-            max-width: 840px;
+            max-width: 900px;
         }
 
         /* CARD LOGIN ADMIN */
@@ -118,12 +124,14 @@
             background: #f8fafc;
             color: var(--text-main);
             outline: none;
+            transition: all 0.2s ease;
         }
 
         .input-wrapper input:focus,
         .input-wrapper select:focus {
             border-color: var(--primary);
             background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
         }
 
         .btn-primary {
@@ -141,6 +149,13 @@
             justify-content: center;
             gap: 8px;
             margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.05);
         }
 
         .alert-error {
@@ -186,22 +201,22 @@
         .stat-card {
             background: linear-gradient(135deg, #4f46e5, #06b6d4);
             color: white;
-            padding: 16px 24px;
+            padding: 14px 22px;
             border-radius: var(--radius-md);
             text-align: center;
-            min-width: 160px;
+            min-width: 140px;
             box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
         }
 
         .stat-card .number {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 800;
             line-height: 1;
         }
 
         .stat-card .label {
-            font-size: 12px;
-            font-weight: 600;
+            font-size: 11px;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             opacity: 0.9;
@@ -312,17 +327,25 @@
             align-items: center;
             gap: 15px;
             flex-wrap: wrap;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .user-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .user-detail {
             display: flex;
             align-items: center;
             gap: 14px;
+            flex: 1;
+            min-width: 260px;
         }
 
         .avatar {
-            width: 44px;
-            height: 44px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), #06b6d4);
             color: white;
@@ -331,6 +354,8 @@
             justify-content: center;
             font-weight: 800;
             font-size: 18px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
         }
 
         .user-data h3 {
@@ -340,12 +365,14 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
 
         .user-data p {
             font-size: 12px;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 3px;
+            line-height: 1.4;
         }
 
         .badges-group {
@@ -365,20 +392,25 @@
         }
 
         .badge-mods {
-            background: var(--warning-bg);
-            color: var(--warning-text);
-            padding: 4px 10px;
+            background: #fef3c7;
+            color: #b45309;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
+            font-size: 11.5px;
+            font-weight: 800;
             cursor: pointer;
-            transition: transform 0.15s ease, background 0.15s ease;
+            transition: all 0.2s ease;
             user-select: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #fde68a;
         }
 
         .badge-mods:hover {
             transform: scale(1.05);
             background: #fde68a;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
         }
 
         /* BADGES ROL Y ESTADO */
@@ -413,8 +445,8 @@
         }
 
         .badge-status-inactive {
-            background: #fee2e2;
-            color: #991b1b;
+            background: #fef3c7;
+            color: #b45309;
             padding: 3px 8px;
             border-radius: 6px;
             font-size: 10px;
@@ -423,13 +455,14 @@
         }
 
         .badge-status-blocked {
-            background: #475569;
-            color: #ffffff;
+            background: #fee2e2;
+            color: #b91c1c;
             padding: 3px 8px;
             border-radius: 6px;
             font-size: 10px;
             font-weight: 800;
             text-transform: uppercase;
+            border: 1px solid #fca5a5;
         }
 
         .btn-action-user {
@@ -492,11 +525,14 @@
             background: #ffffff;
             border-radius: var(--radius-lg);
             width: 90%;
-            max-width: 550px;
+            max-width: 580px;
             padding: 24px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
             transform: translateY(20px);
             transition: all 0.3s ease;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .modal-overlay.active .modal-card {
@@ -527,57 +563,286 @@
             font-size: 20px;
             color: #94a3b8;
             cursor: pointer;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .modal-close:hover {
             color: var(--danger);
+            background: #fee2e2;
         }
 
         .modal-body {
-            max-height: 380px;
             overflow-y: auto;
+            flex: 1;
             display: flex;
             flex-direction: column;
             gap: 12px;
+            padding-right: 4px;
         }
 
-        .history-item {
-            background: #f8fafc;
+        /* --- DISEÑO DE AUDITORÍA EN CARPETAS --- */
+        .folder-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .folder-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .filter-chip {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
             border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-size: 13px;
+            background: #f8fafc;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
-        .history-date {
+        .filter-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .folder-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-mini {
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: white;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .btn-mini:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        .folder-card {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: all 0.25s ease;
+        }
+
+        .folder-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .folder-header {
+            padding: 12px 14px;
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            border-left: 4px solid var(--primary);
+            gap: 10px;
+        }
+
+        .folder-header.perfil {
+            border-left-color: var(--folder-perfil);
+            background: #f0f7ff;
+        }
+
+        .folder-header.clave {
+            border-left-color: var(--folder-clave);
+            background: #fffbeb;
+        }
+
+        .folder-header.admin {
+            border-left-color: var(--folder-admin);
+            background: #faf5ff;
+        }
+
+        .folder-header.recuperacion {
+            border-left-color: var(--folder-otp);
+            background: #ecfdf5;
+        }
+
+        .folder-title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .folder-main-icon {
+            font-size: 18px;
+            color: var(--primary);
+            transition: transform 0.2s ease;
+        }
+
+        .folder-header.perfil .folder-main-icon { color: var(--folder-perfil); }
+        .folder-header.clave .folder-main-icon { color: var(--folder-clave); }
+        .folder-header.admin .folder-main-icon { color: var(--folder-admin); }
+        .folder-header.recuperacion .folder-main-icon { color: var(--folder-otp); }
+
+        .folder-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .folder-meta {
             font-size: 11px;
             color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 2px;
         }
 
-        .history-change {
+        .folder-badges {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .folder-count-badge {
+            background: white;
+            border: 1px solid var(--border-color);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .chevron-icon {
+            font-size: 12px;
+            color: #94a3b8;
+            transition: transform 0.25s ease;
+        }
+
+        .folder-card.open .chevron-icon {
+            transform: rotate(180deg);
+        }
+
+        .folder-content {
+            display: none;
+            padding: 14px;
+            background: #ffffff;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        .folder-card.open .folder-content {
+            display: block;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        .folder-summary {
+            font-size: 12px;
+            color: #475569;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .changes-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .change-row {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .change-field {
+            font-size: 11.5px;
+            font-weight: 800;
+            color: #334155;
             display: flex;
             align-items: center;
             gap: 6px;
-            margin-top: 4px;
+        }
+
+        .change-diff {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 12px;
+            flex-wrap: wrap;
         }
 
-        .history-change .field-name {
-            font-weight: 700;
-            color: var(--primary);
-            text-transform: capitalize;
+        .val-box {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11.5px;
         }
 
-        .history-change .old-val {
+        .val-box.old {
+            background: #fee2e2;
+            color: #991b1b;
             text-decoration: line-through;
+        }
+
+        .val-box.new {
+            background: #dcfce7;
+            color: #166534;
+            font-weight: 700;
+        }
+
+        .diff-arrow {
+            font-size: 10px;
             color: #94a3b8;
         }
 
-        .history-change .new-val {
+        .empty-folder-state {
+            text-align: center;
+            padding: 36px 12px;
+            color: var(--text-muted);
+        }
+
+        .empty-folder-state i {
+            font-size: 42px;
+            color: #cbd5e1;
+            margin-bottom: 10px;
+        }
+
+        .empty-folder-state p {
+            font-size: 14px;
             font-weight: 700;
-            color: #15803d;
+            color: #334155;
+            margin-bottom: 4px;
+        }
+
+        .empty-folder-state span {
+            font-size: 12px;
         }
 
         .download-item {
@@ -598,20 +863,9 @@
             text-transform: uppercase;
         }
 
-        .badge-csv {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .badge-excel {
-            background: #dcfce7;
-            color: #15803d;
-        }
-
-        .badge-json {
-            background: #dbeafe;
-            color: #1e40af;
-        }
+        .badge-csv { background: #d1fae5; color: #065f46; }
+        .badge-excel { background: #dcfce7; color: #15803d; }
+        .badge-json { background: #dbeafe; color: #1e40af; }
 
         .download-time {
             font-size: 12px;
@@ -656,40 +910,21 @@
             transition: all 0.3s ease;
         }
 
-        .toast.success {
-            border-left-color: #10b981;
-        }
-
-        .toast.success i {
-            color: #10b981;
-        }
-
-        .toast.error {
-            border-left-color: var(--danger);
-        }
-
-        .toast.error i {
-            color: var(--danger);
-        }
-
-        .toast.info {
-            border-left-color: var(--primary);
-        }
-
-        .toast.info i {
-            color: var(--primary);
-        }
+        .toast.success { border-left-color: #10b981; }
+        .toast.success i { color: #10b981; }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.error i { color: var(--danger); }
+        .toast.info { border-left-color: var(--primary); }
+        .toast.info i { color: var(--primary); }
 
         @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
 
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -700,7 +935,7 @@
 
         <!-- 1. FORMULARIO DE ACCESO ADMIN -->
         <div id="vistaLoginAdmin" class="login-card">
-            <div style="font-size: 40px; color: var(--primary); margin-bottom: 10px;">
+            <div style="font-size: 44px; color: var(--primary); margin-bottom: 12px;">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h2>Acceso Administrador</h2>
@@ -736,8 +971,8 @@
 
             <div class="header-panel">
                 <div class="header-info">
-                    <h1><i class="fa-solid fa-code"></i> Panel de Programador</h1>
-                    <p>Monitoreo de usuarios y auditoría de ediciones</p>
+                    <h1><i class="fa-solid fa-sliders"></i> Panel de Administración</h1>
+                    <p>Monitoreo de usuarios, control de estados y auditoría de modificaciones</p>
                 </div>
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <div class="stat-card">
@@ -753,7 +988,9 @@
 
             <div class="content-panel">
                 <div class="controls-bar">
-                    <span style="font-weight: 700; font-size: 15px; color: #0f172a;">Directorio y Auditoría</span>
+                    <span style="font-weight: 800; font-size: 16px; color: #0f172a;">
+                        <i class="fa-solid fa-users"></i> Directorio y Auditoría
+                    </span>
                     <div class="btn-group">
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
                             <i class="fa-solid fa-rotate-right"></i>
@@ -782,11 +1019,11 @@
 
     </div>
 
-    <!-- MODAL EDICIÓN DE USUARIO -->
+    <!-- MODAL EDICIÓN DE USUARIO Y GESTIÓN DE ESTADOS -->
     <div id="modalEdicion" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
-                <h2><i class="fa-solid fa-user-pen"></i> Editar Usuario</h2>
+                <h2><i class="fa-solid fa-user-pen"></i> Editar Usuario y Estado</h2>
                 <button onclick="cerrarModalEdicion()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form onsubmit="event.preventDefault(); guardarCambiosUsuario();">
@@ -810,33 +1047,43 @@
                     </div>
 
                     <div class="form-group">
+                        <label>Dirección</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-location-dot field-icon"></i>
+                            <input type="text" id="editDireccion" placeholder="Dirección del usuario">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         <label>Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-key field-icon"></i>
-                            <input type="text" id="editClave" placeholder="Nueva contraseña" required>
+                            <input type="text" id="editClave" placeholder="Contraseña de acceso" required>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Rol</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-user-gear field-icon"></i>
-                            <select id="editRol">
-                                <option value="Cliente">Cliente</option>
-                                <option value="Admin">Admin</option>
-                            </select>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group">
+                            <label>Rol</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-user-gear field-icon"></i>
+                                <select id="editRol">
+                                    <option value="Cliente">Cliente</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-toggle-on field-icon"></i>
-                            <select id="editEstado">
-                                <option value="Activo">Activo</option>
-                                <option value="Inactivo">Inactivo</option>
-                                <option value="Bloqueado">Bloqueado</option>
-                            </select>
+                        <div class="form-group">
+                            <label>Estado de Cuenta</label>
+                            <div class="input-wrapper">
+                                <i class="fa-solid fa-toggle-on field-icon"></i>
+                                <select id="editEstado">
+                                    <option value="Activo">🟢 Activo</option>
+                                    <option value="Inactivo">🟡 Inactivo</option>
+                                    <option value="Bloqueado">🔴 Bloqueado</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -850,16 +1097,39 @@
         </div>
     </div>
 
-    <!-- MODAL DETALLE DE EDICIONES / HISTORIAL -->
+    <!-- MODAL DETALLE DE AUDITORÍA ORGANIZADA EN CARPETAS -->
     <div id="modalHistorialEdiciones" class="modal-overlay">
-        <div class="modal-card">
+        <div class="modal-card" style="max-width: 650px;">
             <div class="modal-header">
-                <h2><i class="fa-solid fa-clock-rotate-left"></i> Auditoría de Modificaciones</h2>
+                <div>
+                    <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de Modificaciones</h2>
+                    <p id="auditoriaUsuarioSub" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        Historial organizado en carpetas de cambios de perfil, contraseña y estado.
+                    </p>
+                </div>
                 <button onclick="cerrarModalHistorialEdiciones()" class="modal-close"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
+
+            <!-- CONTROLES Y FILTROS DE CARPETAS -->
+            <div class="folder-controls">
+                <div class="folder-filters" id="folderFiltersContainer">
+                    <button class="filter-chip active" onclick="filtrarCarpetas('todas', this)">Todas</button>
+                    <button class="filter-chip" onclick="filtrarCarpetas('perfil', this)">📁 Perfil</button>
+                    <button class="filter-chip" onclick="filtrarCarpetas('clave', this)">📁 Contraseña</button>
+                    <button class="filter-chip" onclick="filtrarCarpetas('admin', this)">📁 Admin</button>
+                    <button class="filter-chip" onclick="filtrarCarpetas('recuperacion', this)">📁 OTP</button>
+                </div>
+                <div class="folder-actions">
+                    <button class="btn-mini" onclick="expandirTodasCarpetas(true)">📂 Abrir Todas</button>
+                    <button class="btn-mini" onclick="expandirTodasCarpetas(false)">📁 Cerrar Todas</button>
+                </div>
+            </div>
+
             <div id="listaHistorialEdiciones" class="modal-body"></div>
+
             <div class="modal-footer">
+                <span id="contadorCarpetasTotal" style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
                 <button onclick="cerrarModalHistorialEdiciones()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
@@ -888,11 +1158,17 @@
     <script>
         const ADMIN_SESSION_KEY = 'admin_session_active';
         let usuariosCargados = [];
+        let usuarioAuditoriaActual = null;
+        let filtroAuditoriaActivo = 'todas';
 
         document.addEventListener('DOMContentLoaded', () => {
-            sessionStorage.removeItem(ADMIN_SESSION_KEY);
-            document.getElementById('vistaPanelAdmin').style.display = 'none';
-            document.getElementById('vistaLoginAdmin').style.display = 'block';
+            const sesionAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
+            if (sesionAdmin === 'true') {
+                mostrarPanelAdmin();
+            } else {
+                document.getElementById('vistaPanelAdmin').style.display = 'none';
+                document.getElementById('vistaLoginAdmin').style.display = 'block';
+            }
         });
 
         // --- SISTEMA DE TOASTS ---
@@ -980,7 +1256,7 @@
                 let html = '';
                 usuariosCargados.forEach((u, index) => {
                     const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
-                    const ediciones = u.contadorModificaciones || 0;
+                    const ediciones = u.contadorModificaciones || (u.historialEdiciones ? u.historialEdiciones.length : 0);
                     const rol = u.rol || 'Cliente';
                     const estado = u.estado || 'Activo';
 
@@ -1005,12 +1281,12 @@
                             </div>
                         </div>
                         <div class="badges-group">
-                            <span class="badge-mods" onclick="verHistorialModificaciones('${u.usuario}')" title="Haz clic para ver qué se ha modificado">
-                                <i class="fa-solid fa-pen-to-square"></i> ${ediciones} ${ediciones === 1 ? 'edición' : 'ediciones'}
+                            <span class="badge-mods" onclick="verHistorialModificaciones('${u.usuario}')" title="Haz clic para abrir las carpetas de auditoría de este usuario">
+                                <i class="fa-solid fa-folder-open"></i> ${ediciones} ${ediciones === 1 ? 'modificación' : 'modificaciones'}
                             </span>
                             <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
-                            <button onclick="abrirModalEdicion('${u.usuario}')" class="btn-action-user edit" title="Editar usuario">
-                                <i class="fa-solid fa-pen"></i>
+                            <button onclick="abrirModalEdicion('${u.usuario}')" class="btn-action-user edit" title="Editar usuario y estado (Bloquear/Activar)">
+                                <i class="fa-solid fa-user-pen"></i>
                             </button>
                             <button onclick="eliminarUsuario('${u.usuario}')" class="btn-action-user delete" title="Eliminar usuario">
                                 <i class="fa-solid fa-trash"></i>
@@ -1026,59 +1302,187 @@
             }
         }
 
-        // --- VER DETALLE DE HISTORIAL DE MODIFICACIONES ---
+        // --- SISTEMA DE AUDITORÍA EN FORMATO DE CARPETAS ---
         function verHistorialModificaciones(nombreUsuario) {
             const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
             if (!usuario) return;
 
+            usuarioAuditoriaActual = usuario;
+            document.getElementById('auditoriaUsuarioSub').innerHTML = `
+                Mostrando carpetas de cambios para el usuario: <strong>${usuario.usuario}</strong>
+            `;
+
+            // Reset filtro a todas
+            filtroAuditoriaActivo = 'todas';
+            document.querySelectorAll('#folderFiltersContainer .filter-chip').forEach(c => c.classList.remove('active'));
+            const chipTodas = document.querySelector('#folderFiltersContainer .filter-chip');
+            if (chipTodas) chipTodas.classList.add('active');
+
+            renderizarCarpetasAuditoria();
+            document.getElementById('modalHistorialEdiciones').classList.add('active');
+        }
+
+        function filtrarCarpetas(tipo, btnElem) {
+            filtroAuditoriaActivo = tipo;
+            document.querySelectorAll('#folderFiltersContainer .filter-chip').forEach(c => c.classList.remove('active'));
+            if (btnElem) btnElem.classList.add('active');
+            renderizarCarpetasAuditoria();
+        }
+
+        function renderizarCarpetasAuditoria() {
+            if (!usuarioAuditoriaActual) return;
+
             const contenedor = document.getElementById('listaHistorialEdiciones');
-            const historial = usuario.historialEdiciones || [];
+            const totalSpan = document.getElementById('contadorCarpetasTotal');
+            let historial = usuarioAuditoriaActual.historialEdiciones || [];
+
+            if (!Array.isArray(historial)) {
+                try { historial = JSON.parse(historial); } catch (e) { historial = []; }
+            }
+
+            if (filtroAuditoriaActivo !== 'todas') {
+                historial = historial.filter(h => h.tipo === filtroAuditoriaActivo);
+            }
+
+            totalSpan.innerText = `${historial.length} carpeta(s) registrada(s)`;
 
             if (historial.length === 0) {
                 contenedor.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-solid fa-file-circle-question"></i>
-                        <p>El usuario <strong>${usuario.usuario}</strong> no posee registros de cambios o aún no ha sido editado.</p>
+                    <div class="empty-folder-state">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <p>Esta carpeta está vacía</p>
+                        <span>El usuario <strong>${usuarioAuditoriaActual.usuario}</strong> no registra modificaciones en esta categoría.</span>
                     </div>
                 `;
-            } else {
-                let html = '';
-                historial.forEach((log, index) => {
-                    html += `
-                        <div class="history-item">
-                            <div class="history-date">
-                                <i class="fa-regular fa-clock"></i> ${log.fecha || 'Sin fecha'}
-                            </div>
-                    `;
-
-                    if (log.cambios && Array.isArray(log.cambios)) {
-                        log.cambios.forEach(c => {
-                            html += `
-                                <div class="history-change">
-                                    <span class="field-name">${c.campo}:</span>
-                                    <span class="old-val">${c.valorAnterior || 'Vacío'}</span>
-                                    <i class="fa-solid fa-arrow-right-long" style="font-size: 10px; color: #94a3b8;"></i>
-                                    <span class="new-val">${c.valorNuevo || 'Vacío'}</span>
-                                </div>
-                            `;
-                        });
-                    } else if (log.detalle) {
-                        html += `<div style="color: #475569;">${log.detalle}</div>`;
-                    }
-
-                    html += `</div>`;
-                });
-                contenedor.innerHTML = html;
+                return;
             }
 
-            document.getElementById('modalHistorialEdiciones').classList.add('active');
+            let html = '';
+            historial.forEach((log, index) => {
+                const tipo = log.tipo || 'perfil';
+                const nombreCarpeta = log.carpeta || '📁 Registro de Modificación';
+                const cambios = Array.isArray(log.cambios) ? log.cambios : [];
+                const editor = log.editor || 'Usuario';
+                const fecha = log.fecha || 'Sin fecha';
+                const resumen = log.resumen || `${cambios.length} campo(s) modificado(s)`;
+
+                // Asignar ícono según tipo de carpeta
+                let folderIconClass = 'fa-folder-closed';
+                let iconCampoDefault = 'fa-file-lines';
+                if (tipo === 'clave') iconCampoDefault = 'fa-key';
+                if (tipo === 'admin') iconCampoDefault = 'fa-user-shield';
+                if (tipo === 'recuperacion') iconCampoDefault = 'fa-shield-halved';
+
+                html += `
+                    <div class="folder-card" id="folderCard_${index}">
+                        <div class="folder-header ${tipo}" onclick="toggleCarpeta(${index})">
+                            <div class="folder-title-box">
+                                <i class="fa-solid ${folderIconClass} folder-main-icon" id="folderIcon_${index}"></i>
+                                <div>
+                                    <div class="folder-title">${nombreCarpeta}</div>
+                                    <div class="folder-meta">
+                                        <span><i class="fa-regular fa-clock"></i> ${fecha}</span>
+                                        <span>•</span>
+                                        <span><i class="fa-solid fa-user-pen"></i> Por: <strong>${editor}</strong></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="folder-badges">
+                                <span class="folder-count-badge">${cambios.length} ${cambios.length === 1 ? 'cambio' : 'cambios'}</span>
+                                <i class="fa-solid fa-chevron-down chevron-icon"></i>
+                            </div>
+                        </div>
+
+                        <div class="folder-content">
+                            <div class="folder-summary">
+                                <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> ${resumen}
+                            </div>
+                            <div class="changes-grid">
+                `;
+
+                if (cambios.length > 0) {
+                    cambios.forEach(c => {
+                        let fieldIcon = 'fa-file-lines';
+                        const campoLower = (c.campo || '').toLowerCase();
+                        if (campoLower.includes('correo')) fieldIcon = 'fa-envelope';
+                        else if (campoLower.includes('teléfono') || campoLower.includes('telefono')) fieldIcon = 'fa-phone';
+                        else if (campoLower.includes('dirección') || campoLower.includes('direccion')) fieldIcon = 'fa-location-dot';
+                        else if (campoLower.includes('contraseña') || campoLower.includes('clave')) fieldIcon = 'fa-key';
+                        else if (campoLower.includes('rol')) fieldIcon = 'fa-user-gear';
+                        else if (campoLower.includes('estado')) fieldIcon = 'fa-toggle-on';
+
+                        html += `
+                            <div class="change-row">
+                                <div class="change-field">
+                                    <i class="fa-solid ${fieldIcon}" style="color: var(--primary); width: 14px;"></i>
+                                    <span>${c.campo}</span>
+                                </div>
+                                <div class="change-diff">
+                                    <span class="val-box old">${c.valorAnterior || 'Vacío'}</span>
+                                    <i class="fa-solid fa-arrow-right diff-arrow"></i>
+                                    <span class="val-box new">${c.valorNuevo || 'Vacío'}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += `<p style="font-size:12px; color:var(--text-muted);">Sin detalles específicos registrados en este evento.</p>`;
+                }
+
+                html += `
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            contenedor.innerHTML = html;
+        }
+
+        function toggleCarpeta(index) {
+            const card = document.getElementById(`folderCard_${index}`);
+            const icon = document.getElementById(`folderIcon_${index}`);
+            if (!card) return;
+
+            card.classList.toggle('open');
+            if (card.classList.contains('open')) {
+                if (icon) {
+                    icon.classList.remove('fa-folder-closed');
+                    icon.classList.add('fa-folder-open');
+                }
+            } else {
+                if (icon) {
+                    icon.classList.remove('fa-folder-open');
+                    icon.classList.add('fa-folder-closed');
+                }
+            }
+        }
+
+        function expandirTodasCarpetas(abrir = true) {
+            document.querySelectorAll('.folder-card').forEach((card, index) => {
+                const icon = document.getElementById(`folderIcon_${index}`);
+                if (abrir) {
+                    card.classList.add('open');
+                    if (icon) {
+                        icon.classList.remove('fa-folder-closed');
+                        icon.classList.add('fa-folder-open');
+                    }
+                } else {
+                    card.classList.remove('open');
+                    if (icon) {
+                        icon.classList.remove('fa-folder-open');
+                        icon.classList.add('fa-folder-closed');
+                    }
+                }
+            });
         }
 
         function cerrarModalHistorialEdiciones() {
             document.getElementById('modalHistorialEdiciones').classList.remove('active');
+            usuarioAuditoriaActual = null;
         }
 
-        // --- EDICIÓN DE USUARIOS ---
+        // --- EDICIÓN DE USUARIOS Y CAMBIO DE ESTADOS ---
         function abrirModalEdicion(nombreUsuario) {
             const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
             if (!usuario) return;
@@ -1086,6 +1490,7 @@
             document.getElementById('editOriginalUsuario').value = usuario.usuario;
             document.getElementById('editCorreo').value = usuario.correo || '';
             document.getElementById('editTelefono').value = usuario.telefono || '';
+            document.getElementById('editDireccion').value = usuario.direccion || '';
             document.getElementById('editClave').value = usuario.clave || '';
             document.getElementById('editRol').value = usuario.rol || 'Cliente';
             document.getElementById('editEstado').value = usuario.estado || 'Activo';
@@ -1102,6 +1507,7 @@
             const payload = {
                 correo: document.getElementById('editCorreo').value.trim(),
                 telefono: document.getElementById('editTelefono').value.trim(),
+                direccion: document.getElementById('editDireccion').value.trim(),
                 clave: document.getElementById('editClave').value.trim(),
                 rol: document.getElementById('editRol').value,
                 estado: document.getElementById('editEstado').value
@@ -1114,12 +1520,14 @@
                     body: JSON.stringify(payload)
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
-                    showToast(`Usuario "${usuarioOriginal}" actualizado`, 'success');
+                    showToast(`Usuario "${usuarioOriginal}" actualizado con éxito`, 'success');
                     cerrarModalEdicion();
                     cargarDatos();
                 } else {
-                    showToast('No se pudieron guardar los cambios', 'error');
+                    showToast(data.error || 'No se pudieron guardar los cambios', 'error');
                 }
             } catch (err) {
                 showToast('Error de servidor al editar usuario', 'error');
@@ -1127,7 +1535,7 @@
         }
 
         async function eliminarUsuario(nombre) {
-            if (confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombre}"?`)) {
+            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al usuario "${nombre}"?`)) {
                 try {
                     const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
                     if (res.ok) {
@@ -1143,7 +1551,7 @@
         }
 
         async function vaciarBaseDeDatos() {
-            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios?")) {
+            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios del sistema?")) {
                 try {
                     const res = await fetch('/api/usuarios', { method: 'DELETE' });
                     if (res.ok) {
@@ -1186,7 +1594,7 @@
                 "Teléfono": u.telefono || '',
                 "Dirección": u.direccion || '',
                 "Fecha Registro": u.fechaRegistro || '',
-                "Modificaciones": u.contadorModificaciones || 0
+                "Modificaciones": u.contadorModificaciones || (u.historialEdiciones ? u.historialEdiciones.length : 0)
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(datosExcel);

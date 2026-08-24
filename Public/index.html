@@ -15,11 +15,11 @@
 
     <style>
         :root {
-            --primary: #0000ff;
-            --primary-hover: #312e81;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
             --primary-light: #eef2ff;
             --secondary: #06b6d4;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #adadad 50%, #0f172a 100%);
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             --card-bg: rgba(255, 255, 255, 0.96);
             --text-main: #1e293b;
             --text-muted: #64748b;
@@ -31,6 +31,12 @@
             --radius-sm: 8px;
             --shadow-glow: 0 20px 40px -15px rgba(79, 70, 229, 0.3);
             --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.25);
+            --success-bg: #dcfce7;
+            --success-text: #15803d;
+            --warning-bg: #fef3c7;
+            --warning-text: #b45309;
+            --danger-bg: #fee2e2;
+            --danger-text: #b91c1c;
         }
 
         [data-theme="dark"] {
@@ -46,6 +52,12 @@
             --input-bg: #1e293b;
             --modal-bg: #0f172a;
             --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.6);
+            --success-bg: rgba(34, 197, 94, 0.2);
+            --success-text: #4ade80;
+            --warning-bg: rgba(245, 158, 11, 0.2);
+            --warning-text: #fbbf24;
+            --danger-bg: rgba(239, 68, 68, 0.2);
+            --danger-text: #f87171;
         }
 
         * {
@@ -418,10 +430,12 @@
             gap: 8px;
             margin-top: 10px;
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            transition: all 0.2s ease;
         }
 
         .btn-primary:hover {
             transform: translateY(-1px);
+            filter: brightness(1.05);
         }
 
         .btn-primary:disabled {
@@ -432,56 +446,114 @@
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25) !important;
         }
 
         .btn-warning {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25) !important;
         }
 
         .btn-secondary {
-            background: #64748b;
+            background: linear-gradient(135deg, #64748b, #475569) !important;
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.25) !important;
         }
 
         .user-card {
             background: var(--modal-bg);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 16px;
-            margin-bottom: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
         }
 
         .user-card-header {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 14px;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .avatar {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-weight: 800;
+            font-size: 20px;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+        }
+
+        .user-badges {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+            flex-wrap: wrap;
+        }
+
+        .badge-status {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-status.Activo {
+            background: var(--success-bg);
+            color: var(--success-text);
+        }
+
+        .badge-status.Inactivo {
+            background: var(--warning-bg);
+            color: var(--warning-text);
+        }
+
+        .badge-status.Bloqueado {
+            background: var(--danger-bg);
+            color: var(--danger-text);
+        }
+
+        .badge-role {
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-audit-count {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
             font-weight: 700;
-            font-size: 18px;
         }
 
         .detail-row {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            margin-top: 6px;
+            gap: 10px;
+            font-size: 13.5px;
+            margin-top: 8px;
+            color: var(--text-main);
         }
 
         .detail-row i {
             color: var(--primary);
-            width: 16px;
+            width: 18px;
+            text-align: center;
         }
 
         .modal-overlay {
@@ -490,7 +562,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(15, 23, 42, 0.6);
+            background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
@@ -509,10 +581,10 @@
         .modal-box {
             background: var(--modal-bg);
             width: 90%;
-            max-width: 420px;
-            padding: 24px;
+            max-width: 440px;
+            padding: 26px 24px;
             border-radius: var(--radius-lg);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.3);
             text-align: center;
             position: relative;
             max-height: 90vh;
@@ -526,9 +598,20 @@
             right: 14px;
             background: none;
             border: none;
-            font-size: 16px;
+            font-size: 18px;
             color: var(--text-muted);
             cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .modal-close-btn:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
         }
 
         .modal-icon {
@@ -550,8 +633,9 @@
         }
 
         .modal-box h3 {
-            font-size: 18px;
-            margin-bottom: 8px;
+            font-size: 19px;
+            font-weight: 800;
+            margin-bottom: 6px;
         }
 
         .modal-box p {
@@ -570,7 +654,8 @@
 
         .profile-actions button {
             margin-top: 0;
-            font-size: 12.5px;
+            font-size: 13px;
+            padding: 12px 10px;
         }
 
         .lockout-banner {
@@ -619,7 +704,7 @@
                 </button>
             </div>
 
-            <!-- 1. SECCIÓN: LOGIN -->
+            <!-- 1. SECCIÓN: LOGIN / PERFIL -->
             <div id="sec-login" class="section active">
                 <div id="formLoginWrapper">
                     <div class="section-title">
@@ -637,7 +722,7 @@
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-user field-icon"></i>
                                 <input type="text" id="loginUsuario" placeholder="Usuario o tu@correo.com"
-                                    autocomplete="username">
+                                    autocomplete="username" required>
                             </div>
                         </div>
 
@@ -646,7 +731,7 @@
                             <div class="input-wrapper">
                                 <i class="fa-solid fa-lock field-icon"></i>
                                 <input type="password" id="loginClave" placeholder="••••••••"
-                                    autocomplete="current-password">
+                                    autocomplete="current-password" required>
                                 <button type="button" class="btn-toggle-pwd"
                                     onclick="togglePasswordVisibility('loginClave', this)">
                                     <i class="fa-solid fa-eye"></i>
@@ -669,7 +754,7 @@
 
                 <div id="perfilUsuario" style="display: none;">
                     <div class="section-title">
-                        <i class="fa-solid fa-circle-user"></i> Tu Perfil
+                        <i class="fa-solid fa-circle-user"></i> Tu Perfil de Usuario
                     </div>
                     <div id="datosPerfil"></div>
 
@@ -678,7 +763,7 @@
                             <i class="fa-solid fa-pen-to-square"></i> Editar Perfil
                         </button>
                         <button onclick="abrirModalCambiarClave()" class="btn-primary btn-secondary">
-                            <i class="fa-solid fa-lock-open"></i> Nueva Clave
+                            <i class="fa-solid fa-key"></i> Nueva Clave
                         </button>
                     </div>
 
@@ -704,7 +789,7 @@
                         <label for="regUsuario">Nombre de Usuario</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-user field-icon"></i>
-                            <input type="text" id="regUsuario" placeholder="Ej. AngelRojas" autocomplete="username">
+                            <input type="text" id="regUsuario" placeholder="Ej. AngelRojas" autocomplete="username" required>
                         </div>
                     </div>
 
@@ -712,7 +797,7 @@
                         <label for="regCorreo">Correo Electrónico</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="regCorreo" placeholder="ejemplo@correo.com" autocomplete="email">
+                            <input type="email" id="regCorreo" placeholder="ejemplo@correo.com" autocomplete="email" required>
                         </div>
                     </div>
 
@@ -720,8 +805,8 @@
                         <label for="regClave">Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="regClave" placeholder="••••••••" maxlength="15"
-                                autocomplete="new-password" oninput="evaluarFuerzaClave(this.value)">
+                            <input type="password" id="regClave" placeholder="••••••••" maxlength="25"
+                                autocomplete="new-password" oninput="evaluarFuerzaClave(this.value)" required>
                             <button type="button" class="btn-toggle-pwd"
                                 onclick="togglePasswordVisibility('regClave', this)">
                                 <i class="fa-solid fa-eye"></i>
@@ -821,15 +906,15 @@
                     <label for="changeClaveActual">Contraseña Actual</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
-                        <input type="password" id="changeClaveActual" required>
+                        <input type="password" id="changeClaveActual" required placeholder="••••••••">
                     </div>
                 </div>
 
                 <div class="form-group" style="text-align: left;">
-                    <label for="changeClaveNueva">Nueva Contraseña</label>
+                    <label for="changeClaveNueva">Nueva Contraseña (mínimo 6 caracteres)</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
-                        <input type="password" id="changeClaveNueva" required>
+                        <input type="password" id="changeClaveNueva" required placeholder="••••••••">
                     </div>
                 </div>
 
@@ -849,7 +934,7 @@
             <h3>¿Eliminar Cuenta?</h3>
             <p style="font-size: 15px; font-weight: 600; color: var(--text-main);">¿Estás seguro que quieres borrar tu
                 cuenta?</p>
-            <p>Esta acción es permanente y no se podrá recuperar tu información.</p>
+            <p>Esta acción es permanente y no se podrá recuperar tu información ni historial.</p>
 
             <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button type="button" class="btn-primary btn-secondary" onclick="cerrarModal('modalEliminarCuenta')">
@@ -877,7 +962,7 @@
                         <label for="recCorreoInput">Correo Electrónico</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="recCorreoInput" required>
+                            <input type="email" id="recCorreoInput" required placeholder="correo@ejemplo.com">
                         </div>
                     </div>
                     <button type="submit" id="btnEnviarCodigo" class="btn-primary">Enviar Código</button>
@@ -887,11 +972,11 @@
             <div id="step-recuperar-2" style="display: none;">
                 <div class="modal-icon"><i class="fa-solid fa-shield-cat"></i></div>
                 <h3>Ingresa el Código</h3>
-                <p>Escribe el código enviado a tu correo.</p>
+                <p>Escribe el código de 6 dígitos enviado a tu correo.</p>
                 <form onsubmit="event.preventDefault(); verificarCodigoRecuperacion();">
                     <div class="form-group">
                         <input type="text" id="recCodigoInput"
-                            style="letter-spacing: 8px; font-size:20px; text-align:center;" maxlength="6" required>
+                            style="letter-spacing: 8px; font-size:20px; text-align:center; padding:12px; font-weight:700;" maxlength="6" required>
                     </div>
                     <button type="submit" id="btnVerificarCodigo" class="btn-primary">Verificar Código</button>
                 </form>
@@ -905,7 +990,7 @@
                         <label>Nueva Clave</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="recNuevaClave" required>
+                            <input type="password" id="recNuevaClave" required placeholder="••••••••">
                         </div>
                     </div>
                     <button type="submit" id="btnActualizarClave" class="btn-primary">Restablecer Clave</button>
@@ -939,7 +1024,7 @@
             };
 
             toast.innerHTML = `
-                <i class="fa-solid ${iconoMap[tipo]} toast-icon"></i>
+                <i class="fa-solid ${iconoMap[tipo] || 'fa-circle-info'} toast-icon"></i>
                 <div class="toast-content">
                     <h5>${titulo}</h5>
                     <p>${mensaje}</p>
@@ -1034,7 +1119,7 @@
                     }
                 }, 1000);
 
-                mostrarToast('Cuenta Bloqueada', 'Demasiados intentos fallidos. Espera 60 segundos.', 'error');
+                mostrarToast('Intentos Agotados', 'Demasiados intentos fallidos. Espera 60 segundos.', 'error');
             } else {
                 mostrarToast('Error de Acceso', `Credenciales incorrectas. Intento ${intentosFallidos} de 3.`, 'advertencia');
             }
@@ -1042,17 +1127,22 @@
 
         // --- NAVEGACIÓN Y MODALES ---
         function mostrarSeccion(secId) {
-            // Cierra la sesión automáticamente si el usuario decide cambiar de pestaña teniendo sesión iniciada
-            if (usuarioActualEnSesion) {
-                cerrarSesion();
-            }
-
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
 
             document.getElementById(secId).classList.add('active');
             const tab = document.getElementById(secId.replace('sec-', 'tab-'));
             if (tab) tab.classList.add('active');
+
+            if (secId === 'sec-login') {
+                if (usuarioActualEnSesion) {
+                    document.getElementById('formLoginWrapper').style.display = 'none';
+                    document.getElementById('perfilUsuario').style.display = 'block';
+                } else {
+                    document.getElementById('formLoginWrapper').style.display = 'block';
+                    document.getElementById('perfilUsuario').style.display = 'none';
+                }
+            }
         }
 
         function abrirModal(id) { document.getElementById(id).classList.add('active'); }
@@ -1072,7 +1162,10 @@
 
         // --- AUTENTICACIÓN Y PERFIL ---
         async function iniciarSesion() {
-            if (estaBloqueado) return;
+            if (estaBloqueado) {
+                mostrarToast('Espera un momento', 'Demasiados intentos fallidos. Por favor espera.', 'advertencia');
+                return;
+            }
 
             const usuario = document.getElementById('loginUsuario').value.trim();
             const clave = document.getElementById('loginClave').value.trim();
@@ -1096,6 +1189,8 @@
                     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
                     renderizarPerfil(data);
                     mostrarToast('¡Bienvenido!', `Sesión iniciada como ${data.usuario}`, 'exito');
+                } else if (response.status === 403) {
+                    mostrarToast('Acceso Restringido', data.error || 'Tu cuenta se encuentra bloqueada.', 'error');
                 } else {
                     registrarIntentoFallido();
                 }
@@ -1109,19 +1204,30 @@
             document.getElementById('formLoginWrapper').style.display = 'none';
             document.getElementById('perfilUsuario').style.display = 'block';
 
-            const inicial = user.usuario.charAt(0).toUpperCase();
+            const inicial = user.usuario ? user.usuario.charAt(0).toUpperCase() : '?';
+            const rol = user.rol || 'Cliente';
+            const estado = user.estado || 'Activo';
+            const ediciones = user.contadorModificaciones || (user.historialEdiciones ? user.historialEdiciones.length : 0);
+
             document.getElementById('datosPerfil').innerHTML = `
                 <div class="user-card">
                     <div class="user-card-header">
                         <div class="avatar">${inicial}</div>
                         <div>
-                            <h4>${user.usuario}</h4>
-                            <p style="font-size:12px; color:var(--text-muted);">Usuario Activo</p>
+                            <h4 style="font-size:16px; font-weight:800; color:var(--text-main);">${user.usuario}</h4>
+                            <div class="user-badges">
+                                <span class="badge-role">${rol}</span>
+                                <span class="badge-status ${estado}">${estado}</span>
+                                <span class="badge-audit-count"><i class="fa-solid fa-clock-rotate-left"></i> ${ediciones} ${ediciones === 1 ? 'cambio' : 'cambios'}</span>
+                            </div>
                         </div>
                     </div>
-                    <div class="detail-row"><i class="fa-solid fa-envelope"></i> <span>${user.correo || 'N/A'}</span></div>
-                    <div class="detail-row"><i class="fa-solid fa-phone"></i> <span>${user.telefono || 'N/A'}</span></div>
-                    <div class="detail-row"><i class="fa-solid fa-location-dot"></i> <span>${user.direccion || 'N/A'}</span></div>
+                    <div class="detail-row"><i class="fa-solid fa-envelope"></i> <span>${user.correo || 'Sin correo registrado'}</span></div>
+                    <div class="detail-row"><i class="fa-solid fa-phone"></i> <span>${user.telefono || 'Sin teléfono registrado'}</span></div>
+                    <div class="detail-row"><i class="fa-solid fa-location-dot"></i> <span>${user.direccion || 'Sin dirección registrada'}</span></div>
+                    <div class="detail-row" style="font-size:12px; color:var(--text-muted); margin-top:12px; border-top:1px dashed var(--border-color); padding-top:8px;">
+                        <i class="fa-regular fa-calendar"></i> <span>Registrado el: ${user.fechaRegistro || 'N/A'}</span>
+                    </div>
                 </div>
             `;
         }
@@ -1138,7 +1244,14 @@
         function verificarSesionGuardada() {
             const sesion = localStorage.getItem(SESSION_KEY);
             if (sesion) {
-                try { renderizarPerfil(JSON.parse(sesion)); } catch (e) { }
+                try {
+                    const parsed = JSON.parse(sesion);
+                    if (parsed && parsed.usuario) {
+                        renderizarPerfil(parsed);
+                    }
+                } catch (e) {
+                    localStorage.removeItem(SESSION_KEY);
+                }
             }
         }
 
@@ -1153,30 +1266,39 @@
         }
 
         async function guardarCambiosPerfil() {
+            if (!usuarioActualEnSesion) return;
+
             const nuevoCorreo = document.getElementById('editCorreo').value.trim();
             const nuevoTelefono = document.getElementById('editTelefono').value.trim();
             const nuevaDireccion = document.getElementById('editDireccion').value.trim();
 
+            if (!nuevoCorreo) {
+                mostrarToast('Campo requerido', 'El correo electrónico no puede estar vacío.', 'advertencia');
+                return;
+            }
+
             try {
-                const response = await fetch('/api/usuarios/actualizar', {
+                const response = await fetch('/api/usuarios/editar', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        id: usuarioActualEnSesion.id,
+                        usuario: usuarioActualEnSesion.usuario,
                         correo: nuevoCorreo,
                         telefono: nuevoTelefono,
                         direccion: nuevaDireccion
                     })
                 });
 
-                if (response.ok) {
-                    const actualizado = { ...usuarioActualEnSesion, correo: nuevoCorreo, telefono: nuevoTelefono, direccion: nuevaDireccion };
-                    localStorage.setItem(SESSION_KEY, JSON.stringify(actualizado));
-                    renderizarPerfil(actualizado);
+                const data = await response.json();
+
+                if (response.ok && data.usuario) {
+                    usuarioActualEnSesion = data.usuario;
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(usuarioActualEnSesion));
+                    renderizarPerfil(usuarioActualEnSesion);
                     cerrarModal('modalEditarPerfil');
-                    mostrarToast('Perfil Actualizado', 'Tus datos se han guardado con éxito.', 'exito');
+                    mostrarToast('Perfil Actualizado', 'Tus datos se han guardado y registrado en la auditoría.', 'exito');
                 } else {
-                    mostrarToast('Error', 'No se pudieron actualizar los datos.', 'error');
+                    mostrarToast('Error', data.error || 'No se pudieron guardar los cambios.', 'error');
                 }
             } catch (e) {
                 mostrarToast('Error de Red', 'Error al conectar con el servidor.', 'error');
@@ -1191,21 +1313,46 @@
         }
 
         async function cambiarContrasenaPerfil() {
+            if (!usuarioActualEnSesion) return;
+
             const claveActual = document.getElementById('changeClaveActual').value.trim();
             const claveNueva = document.getElementById('changeClaveNueva').value.trim();
+
+            if (!claveActual || !claveNueva) {
+                mostrarToast('Campos requeridos', 'Ingresa la contraseña actual y la nueva.', 'advertencia');
+                return;
+            }
+
+            if (claveNueva.length < 6) {
+                mostrarToast('Contraseña corta', 'La nueva contraseña debe tener al menos 6 caracteres.', 'advertencia');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/usuarios/cambiar-clave', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: usuarioActualEnSesion.id, claveActual, claveNueva })
+                    body: JSON.stringify({
+                        usuario: usuarioActualEnSesion.usuario,
+                        claveActual,
+                        claveNueva
+                    })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
+                    if (data.usuario) {
+                        usuarioActualEnSesion = data.usuario;
+                        localStorage.setItem(SESSION_KEY, JSON.stringify(usuarioActualEnSesion));
+                        renderizarPerfil(usuarioActualEnSesion);
+                    }
                     cerrarModal('modalCambiarClave');
-                    mostrarToast('Clave Actualizada', 'Tu contraseña ha sido cambiada.', 'exito');
+                    document.getElementById('changeClaveActual').value = '';
+                    document.getElementById('changeClaveNueva').value = '';
+                    mostrarToast('Clave Actualizada', 'Tu contraseña ha sido cambiada y registrada en auditoría.', 'exito');
                 } else {
-                    mostrarToast('Error', 'La contraseña actual no es correcta.', 'error');
+                    mostrarToast('Error', data.error || 'La contraseña actual no es correcta.', 'error');
                 }
             } catch (e) {
                 mostrarToast('Error', 'Error al procesar la solicitud.', 'error');
@@ -1220,10 +1367,10 @@
         async function confirmarEliminarCuenta() {
             if (!usuarioActualEnSesion) return;
 
-            const identificador = usuarioActualEnSesion.usuario || usuarioActualEnSesion.id;
+            const identificador = usuarioActualEnSesion.usuario;
 
             try {
-                const response = await fetch(`/api/usuarios/eliminar/${identificador}`, {
+                const response = await fetch(`/api/usuarios/${encodeURIComponent(identificador)}`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' }
                 });
@@ -1233,19 +1380,7 @@
                     cerrarSesion();
                     mostrarToast('Cuenta Eliminada', 'Tu cuenta ha sido eliminada definitivamente.', 'exito');
                 } else {
-                    const altResponse = await fetch('/api/usuarios/eliminar', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ usuario: usuarioActualEnSesion.usuario, id: usuarioActualEnSesion.id })
-                    });
-
-                    if (altResponse.ok) {
-                        cerrarModal('modalEliminarCuenta');
-                        cerrarSesion();
-                        mostrarToast('Cuenta Eliminada', 'Tu cuenta ha sido eliminada definitivamente.', 'exito');
-                    } else {
-                        mostrarToast('Error', 'No se pudo eliminar la cuenta desde el servidor.', 'error');
-                    }
+                    mostrarToast('Error', 'No se pudo eliminar la cuenta desde el servidor.', 'error');
                 }
             } catch (e) {
                 mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
@@ -1272,13 +1407,15 @@
                     body: JSON.stringify({ usuario, clave, correo, telefono, direccion })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
                     mostrarToast('Registro Exitoso', 'Cuenta creada. Ya puedes iniciar sesión.', 'exito');
                     document.getElementById('formRegistro').reset();
                     evaluarFuerzaClave('');
                     mostrarSeccion('sec-login');
                 } else {
-                    mostrarToast('Error de Registro', 'El usuario o correo ya existe.', 'error');
+                    mostrarToast('Error de Registro', data.error || 'El usuario o correo ya existe.', 'error');
                 }
             } catch (e) {
                 mostrarToast('Error', 'No se pudo completar el registro.', 'error');
@@ -1290,11 +1427,15 @@
             document.getElementById('step-recuperar-1').style.display = 'block';
             document.getElementById('step-recuperar-2').style.display = 'none';
             document.getElementById('step-recuperar-3').style.display = 'none';
+            document.getElementById('recCorreoInput').value = '';
+            document.getElementById('recCodigoInput').value = '';
+            document.getElementById('recNuevaClave').value = '';
             abrirModal('modalRecuperar');
         }
 
         async function solicitarCodigoRecuperacion() {
             const correo = document.getElementById('recCorreoInput').value.trim();
+            if (!correo) return;
             correoRecuperacionActual = correo;
 
             try {
@@ -1304,18 +1445,23 @@
                     body: JSON.stringify({ correo })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
                     document.getElementById('step-recuperar-1').style.display = 'none';
                     document.getElementById('step-recuperar-2').style.display = 'block';
                     mostrarToast('Código Enviado', 'Revisa tu correo electrónico.', 'exito');
                 } else {
-                    mostrarToast('Error', 'Correo no encontrado.', 'error');
+                    mostrarToast('Error', data.error || 'Correo no encontrado.', 'error');
                 }
-            } catch (e) { mostrarToast('Error', 'Error de red.', 'error'); }
+            } catch (e) {
+                mostrarToast('Error', 'Error de red al solicitar el código.', 'error');
+            }
         }
 
         async function verificarCodigoRecuperacion() {
             const codigo = document.getElementById('recCodigoInput').value.trim();
+            if (!codigo) return;
 
             try {
                 const response = await fetch('/api/usuarios/verificar-codigo-recuperacion', {
@@ -1324,19 +1470,28 @@
                     body: JSON.stringify({ correo: correoRecuperacionActual, codigo })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
                     document.getElementById('step-recuperar-2').style.display = 'none';
                     document.getElementById('step-recuperar-3').style.display = 'block';
                     mostrarToast('Código Correcto', 'Ingresa tu nueva clave.', 'exito');
                 } else {
-                    mostrarToast('Código Inválido', 'El código es incorrecto o expiró.', 'error');
+                    mostrarToast('Código Inválido', data.error || 'El código es incorrecto o expiró.', 'error');
                 }
-            } catch (e) { mostrarToast('Error', 'Error de red.', 'error'); }
+            } catch (e) {
+                mostrarToast('Error', 'Error de red al verificar código.', 'error');
+            }
         }
 
         async function restablecerContrasena() {
             const codigo = document.getElementById('recCodigoInput').value.trim();
             const nuevaClave = document.getElementById('recNuevaClave').value.trim();
+
+            if (!nuevaClave || nuevaClave.length < 6) {
+                mostrarToast('Contraseña corta', 'La nueva clave debe tener al menos 6 caracteres.', 'advertencia');
+                return;
+            }
 
             try {
                 const response = await fetch('/api/usuarios/restablecer-clave', {
@@ -1345,13 +1500,17 @@
                     body: JSON.stringify({ correo: correoRecuperacionActual, codigo, nuevaClave })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
                     cerrarModal('modalRecuperar');
-                    mostrarToast('Clave Actualizada', 'Ya puedes iniciar sesión con tu nueva clave.', 'exito');
+                    mostrarToast('Clave Actualizada', 'Ya puedes iniciar sesión con tu nueva contraseña.', 'exito');
                 } else {
-                    mostrarToast('Error', 'No se pudo restablecer la clave.', 'error');
+                    mostrarToast('Error', data.error || 'No se pudo restablecer la clave.', 'error');
                 }
-            } catch (e) { mostrarToast('Error', 'Error de red.', 'error'); }
+            } catch (e) {
+                mostrarToast('Error', 'Error de red al restablecer la contraseña.', 'error');
+            }
         }
     </script>
 </body>
