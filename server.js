@@ -201,6 +201,40 @@ if (process.env.DATABASE_URL) {
     console.log('DATABASE_URL no definida. Modo fallback a db.json local');
 }
 
+let mensajesSoporte = []; // O tabla de PostgreSQL / Base de datos
+
+// Guardar nuevo mensaje del usuario
+app.post('/api/soporte', (req, res) => {
+    const { usuario, motivo, mensaje } = req.body;
+    const nuevoMensaje = {
+        id: Date.now().toString(),
+        usuario,
+        motivo,
+        mensaje,
+        fecha: new Date().toLocaleString('es-ES')
+    };
+    mensajesSoporte.unshift(nuevoMensaje);
+    res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido' });
+});
+
+// Obtener mensajes en el Admin Panel
+app.get('/api/soporte', (req, res) => {
+    res.json(mensajesSoporte);
+});
+
+// Eliminar mensaje individual
+app.delete('/api/soporte/:id', (req, res) => {
+    const { id } = req.params;
+    mensajesSoporte = mensajesSoporte.filter(m => m.id !== id);
+    res.json({ status: 'ok' });
+});
+
+// Vaciar todos los mensajes
+app.delete('/api/soporte', (req, res) => {
+    mensajesSoporte = [];
+    res.json({ status: 'ok' });
+});
+
 // Ruta dinámica para la carpeta Public
 const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'Public'))
     ? path.join(__dirname, 'Public')

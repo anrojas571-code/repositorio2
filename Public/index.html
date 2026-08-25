@@ -103,6 +103,32 @@
             transform: scale(1.08);
         }
 
+        /* --- BOTÓN DE SOPORTE PARA USUARIOS INACTIVOS / BLOQUEADOS --- */
+        .support-toggle-btn {
+            position: fixed;
+            top: 74px;
+            /* Ubicado exactamente debajo del icono de modo oscuro */
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            transition: transform 0.2s ease, background 0.3s ease;
+        }
+
+        .support-toggle-btn:hover {
+            transform: scale(1.08);
+        }
+
         /* --- CONTENEDOR DE NOTIFICACIONES TOAST --- */
         #toastContainer {
             position: fixed;
@@ -679,6 +705,56 @@
     <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar Tema">
         <i id="themeIcon" class="fa-solid fa-moon"></i>
     </button>
+    <!-- BOTÓN FLOTANTE PARA CONTACTAR AL DESARROLLADOR -->
+    <button class="support-toggle-btn" onclick="abrirModalSoporte()" title="Contactar al Desarrollador / Soporte">
+        <i class="fa-solid fa-headset"></i>
+    </button>
+
+    <!-- MODAL DE MENSAJE AL DESARROLLADOR -->
+    <div id="modalSoporte" class="modal-overlay">
+        <div class="modal-box" style="text-align: left;">
+            <button class="modal-close-btn" onclick="cerrarModalSoporte()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-icon">
+                <i class="fa-solid fa-envelope-open-text"></i>
+            </div>
+            <h3 style="text-align: center;">Contactar al Desarrollador</h3>
+            <p style="text-align: center; margin-bottom: 15px;">¿Tu cuenta se encuentra inactiva o bloqueada? Envía un
+                mensaje para solicitar ayuda o reactivación.</p>
+
+            <form onsubmit="event.preventDefault(); enviarMensajeSoporte();">
+                <div class="form-group">
+                    <label>Tu Usuario o Correo</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-user field-icon"></i>
+                        <input type="text" id="soporteUsuario" placeholder="Usuario o tu@correo.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Asunto / Estado</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-triangle-exclamation field-icon"></i>
+                        <select id="soporteMotivo">
+                            <option value="Cuenta Inactiva">🟡 Mi cuenta está Inactiva</option>
+                            <option value="Cuenta Bloqueada">🔴 Mi cuenta está Bloqueada</option>
+                            <option value="Soporte Técnico">💬 Otro problema de acceso</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Mensaje</label>
+                    <div class="input-wrapper">
+                        <textarea id="soporteMensaje"
+                            style="width: 100%; padding: 10px 10px 10px 38px; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-size: 13px; min-height: 90px; outline: none; resize: vertical;"
+                            placeholder="Describe detalladamente lo sucedido..." required></textarea>
+                        <i class="fa-solid fa-comment-dots field-icon" style="top: 20px;"></i>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-paper-plane"></i> Enviar Mensaje
+                </button>
+            </form>
+        </div>
+    </div>
 
     <!-- CONTENEDOR DE TOASTS -->
     <div id="toastContainer"></div>
@@ -789,7 +865,8 @@
                         <label for="regUsuario">Nombre de Usuario</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-user field-icon"></i>
-                            <input type="text" id="regUsuario" placeholder="Ej. AngelRojas" autocomplete="username" required>
+                            <input type="text" id="regUsuario" placeholder="Ej. AngelRojas" autocomplete="username"
+                                required>
                         </div>
                     </div>
 
@@ -797,7 +874,8 @@
                         <label for="regCorreo">Correo Electrónico</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="regCorreo" placeholder="ejemplo@correo.com" autocomplete="email" required>
+                            <input type="email" id="regCorreo" placeholder="ejemplo@correo.com" autocomplete="email"
+                                required>
                         </div>
                     </div>
 
@@ -907,7 +985,8 @@
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
                         <input type="password" id="changeClaveActual" required placeholder="••••••••">
-                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('changeClaveActual', this)">
+                        <button type="button" class="btn-toggle-pwd"
+                            onclick="togglePasswordVisibility('changeClaveActual', this)">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                     </div>
@@ -918,7 +997,8 @@
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
                         <input type="password" id="changeClaveNueva" required placeholder="••••••••">
-                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('changeClaveNueva', this)">
+                        <button type="button" class="btn-toggle-pwd"
+                            onclick="togglePasswordVisibility('changeClaveNueva', this)">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                     </div>
@@ -982,7 +1062,8 @@
                 <form onsubmit="event.preventDefault(); verificarCodigoRecuperacion();">
                     <div class="form-group">
                         <input type="text" id="recCodigoInput"
-                            style="letter-spacing: 8px; font-size:20px; text-align:center; padding:12px; font-weight:700;" maxlength="6" required>
+                            style="letter-spacing: 8px; font-size:20px; text-align:center; padding:12px; font-weight:700;"
+                            maxlength="6" required>
                     </div>
                     <button type="submit" id="btnVerificarCodigo" class="btn-primary">Verificar Código</button>
                 </form>
@@ -997,7 +1078,8 @@
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
                             <input type="password" id="recNuevaClave" required placeholder="••••••••">
-                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('recNuevaClave', this)">
+                            <button type="button" class="btn-toggle-pwd"
+                                onclick="togglePasswordVisibility('recNuevaClave', this)">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
@@ -1064,6 +1146,40 @@
             const savedTheme = localStorage.getItem('app_theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
             document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        // --- SOPORTE AL DESARROLLADOR ---
+        function abrirModalSoporte() {
+            document.getElementById('modalSoporte').classList.add('active');
+        }
+
+        function cerrarModalSoporte() {
+            document.getElementById('modalSoporte').classList.remove('active');
+        }
+
+        async function enviarMensajeSoporte() {
+            const usuario = document.getElementById('soporteUsuario').value.trim();
+            const motivo = document.getElementById('soporteMotivo').value;
+            const mensaje = document.getElementById('soporteMensaje').value.trim();
+
+            try {
+                const res = await fetch('/api/soporte', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, motivo, mensaje })
+                });
+
+                if (res.ok) {
+                    showToast('Mensaje enviado al desarrollador con éxito', 'exito', 'Mensaje Enviado');
+                    cerrarModalSoporte();
+                    document.getElementById('soporteUsuario').value = '';
+                    document.getElementById('soporteMensaje').value = '';
+                } else {
+                    showToast('Error al enviar el mensaje. Inténtalo de nuevo.', 'error');
+                }
+            } catch (err) {
+                showToast('Error de conexión con el servidor', 'error');
+            }
         }
 
         // --- INDICADOR DE FUERZA DE CONTRASEÑA ---

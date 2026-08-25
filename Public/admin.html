@@ -1191,6 +1191,13 @@
     <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar Tema">
         <i id="themeIcon" class="fa-solid fa-moon"></i>
     </button>
+    <!-- BOTÓN DE SOPORTE DE USARIOS-->
+    <button onclick="abrirModalMensajesSoporte()" class="btn btn-export-json" title="Buzón de Mensajes de Soporte"
+        style="position: relative;">
+        <i class="fa-solid fa-inbox"></i> Mensajes Soporte
+        <span id="badgeNuevosMensajes"
+            style="display:none; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 4px;">0</span>
+    </button>
 
     <div class="admin-container">
 
@@ -1218,7 +1225,8 @@
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
                         <input type="password" id="adminPass" placeholder="••••••••" required>
-                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('adminPass', this)">
+                        <button type="button" class="btn-toggle-pwd"
+                            onclick="togglePasswordVisibility('adminPass', this)">
                             <i class="fa-solid fa-eye"></i>
                         </button>
                     </div>
@@ -1280,7 +1288,8 @@
                 <div class="filter-search-bar">
                     <div class="search-box">
                         <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" id="adminSearchInput" placeholder="Buscar por usuario, correo o teléfono..." oninput="filtrarUsuarios()">
+                        <input type="text" id="adminSearchInput" placeholder="Buscar por usuario, correo o teléfono..."
+                            oninput="filtrarUsuarios()">
                     </div>
                     <select id="adminFilterRole" class="filter-select" onchange="filtrarUsuarios()">
                         <option value="todos">Todos los Roles</option>
@@ -1317,7 +1326,8 @@
                         <label>Nombre de Usuario (No modificable)</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-user field-icon"></i>
-                            <input type="text" id="editUsuarioDisplay" disabled style="opacity:0.65; cursor:not-allowed; font-weight:700;">
+                            <input type="text" id="editUsuarioDisplay" disabled
+                                style="opacity:0.65; cursor:not-allowed; font-weight:700;">
                         </div>
                     </div>
 
@@ -1393,12 +1403,14 @@
         <div class="modal-card" style="max-width: 650px;">
             <div class="modal-header">
                 <div>
-                    <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de Modificaciones</h2>
+                    <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de
+                        Modificaciones</h2>
                     <p id="auditoriaUsuarioSub" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
                         Historial organizado en carpetas de cambios de perfil, contraseña y estado.
                     </p>
                 </div>
-                <button onclick="cerrarModalHistorialEdiciones()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="cerrarModalHistorialEdiciones()" class="modal-close"><i
+                        class="fa-solid fa-xmark"></i></button>
             </div>
 
             <!-- CONTROLES Y FILTROS DE CARPETAS -->
@@ -1419,7 +1431,8 @@
             <div id="listaHistorialEdiciones" class="modal-body"></div>
 
             <div class="modal-footer">
-                <span id="contadorCarpetasTotal" style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
+                <span id="contadorCarpetasTotal"
+                    style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
                 <button onclick="cerrarModalHistorialEdiciones()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
@@ -1448,10 +1461,12 @@
             <div style="font-size: 42px; color: var(--danger); margin-bottom: 12px;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <h2 id="confirmTitulo" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+            <h2 id="confirmTitulo"
+                style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
                 ¿Estás seguro?
             </h2>
-            <p id="confirmMensaje" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">
+            <p id="confirmMensaje"
+                style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">
                 Esta acción no se puede deshacer.
             </p>
             <div style="display: flex; gap: 10px; justify-content: center;">
@@ -1461,6 +1476,31 @@
                 <button type="button" id="btnConfirmarAccion" class="btn btn-danger" style="flex: 1;">
                     <i class="fa-solid fa-trash"></i> Confirmar
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE BUZÓN DE MENSAJES DE SOPORTE EN ADMIN -->
+    <div id="modalBuzonSoporte" class="modal-overlay">
+        <div class="modal-card" style="max-width: 650px;">
+            <div class="modal-header">
+                <div>
+                    <h2><i class="fa-solid fa-headset" style="color: var(--primary);"></i> Mensajes de Usuarios
+                        Inactivos / Bloqueados</h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Comunicaciones enviadas por
+                        los usuarios para solicitar soporte.</p>
+                </div>
+                <button onclick="cerrarModalMensajesSoporte()" class="modal-close"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div id="listaMensajesSoporte" class="modal-body"></div>
+
+            <div class="modal-footer">
+                <button onclick="pedirConfirmacionVaciarSoporte()" class="btn btn-danger">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Mensajes
+                </button>
+                <button onclick="cerrarModalMensajesSoporte()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
     </div>
@@ -1495,6 +1535,91 @@
 
             const icon = document.getElementById('themeIcon');
             if (icon) icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        // --- GESTIÓN DE MENSAJES DE SOPORTE ---
+        function abrirModalMensajesSoporte() {
+            document.getElementById('modalBuzonSoporte').classList.add('active');
+            cargarMensajesSoporte();
+        }
+
+        function cerrarModalMensajesSoporte() {
+            document.getElementById('modalBuzonSoporte').classList.remove('active');
+        }
+
+        async function cargarMensajesSoporte() {
+            const contenedor = document.getElementById('listaMensajesSoporte');
+            try {
+                const res = await fetch('/api/soporte');
+                const mensajes = await res.json();
+
+                if (!mensajes || mensajes.length === 0) {
+                    contenedor.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa-solid fa-envelope-open"></i>
+                    <p>No hay mensajes de soporte recibidos.</p>
+                </div>
+            `;
+                    return;
+                }
+
+                let html = '';
+                mensajes.forEach(m => {
+                    html += `
+                <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-weight: 800; font-size: 14px; color: var(--text-main);">
+                            <i class="fa-solid fa-user"></i> ${m.usuario}
+                        </span>
+                        <span class="badge-status-blocked" style="font-size: 10px;">${m.motivo}</span>
+                    </div>
+                    <p style="font-size: 13px; color: var(--text-main); background: var(--modal-bg); padding: 10px; border-radius: 6px; border: 1px dashed var(--border-color); margin-bottom: 8px;">
+                        "${m.mensaje}"
+                    </p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
+                        <span><i class="fa-regular fa-clock"></i> ${m.fecha || 'Reciente'}</span>
+                        <button onclick="eliminarMensajeSoporte('${m.id}')" class="btn-action-user delete" title="Eliminar mensaje">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+                });
+
+                contenedor.innerHTML = html;
+            } catch (err) {
+                contenedor.innerHTML = '<p style="text-align:center; color:red;">Error al cargar mensajes de soporte.</p>';
+            }
+        }
+
+        async function eliminarMensajeSoporte(id) {
+            try {
+                const res = await fetch(`/api/soporte/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Mensaje eliminado', 'success');
+                    cargarMensajesSoporte();
+                }
+            } catch (err) {
+                showToast('Error al eliminar mensaje', 'error');
+            }
+        }
+
+        function pedirConfirmacionVaciarSoporte() {
+            mostrarModalConfirmacion(
+                '¿Vaciar Mensajes de Soporte?',
+                'Se eliminarán todos los mensajes enviados por los usuarios.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/soporte', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Buzón vaciado con éxito', 'success');
+                            cargarMensajesSoporte();
+                        }
+                    } catch (err) {
+                        showToast('Error al vaciar buzón', 'error');
+                    }
+                }
+            );
         }
 
         function cargarTemaGuardado() {
@@ -1621,7 +1746,7 @@
             const contenedor = document.getElementById('contenedorLista');
 
             let usuariosFiltrados = usuariosCargados.filter(u => {
-                const matchTexto = !busqueda || 
+                const matchTexto = !busqueda ||
                     (u.usuario && u.usuario.toLowerCase().includes(busqueda)) ||
                     (u.correo && u.correo.toLowerCase().includes(busqueda)) ||
                     (u.telefono && u.telefono.toLowerCase().includes(busqueda)) ||
