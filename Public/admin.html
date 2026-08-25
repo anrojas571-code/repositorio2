@@ -116,6 +116,50 @@
             transform: scale(1.08);
         }
 
+        /* Botón de mensajes de soporte en la vista de Admin */
+        .support-admin-btn {
+            position: fixed;
+            top: 74px;
+            /* 20px (posicion superior) + 44px (alto del boton de tema) + 10px (separación) */
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            transition: transform 0.2s ease, background 0.3s ease;
+        }
+
+        .support-admin-btn:hover {
+            transform: scale(1.08);
+        }
+
+        /* Badge de notificaciones de nuevos mensajes */
+        .badge-soporte {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #e74c3c;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 50%;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+        }
+
         /* --- CONTENEDOR DE NOTIFICACIONES TOAST (ACORDE AL SISTEMA) --- */
         #toastContainer {
             position: fixed;
@@ -1191,12 +1235,11 @@
     <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar Tema">
         <i id="themeIcon" class="fa-solid fa-moon"></i>
     </button>
-    <!-- BOTÓN DE SOPORTE DE USARIOS-->
-    <button onclick="abrirModalMensajesSoporte()" class="btn btn-export-json" title="Buzón de Mensajes de Soporte"
-        style="position: relative;">
-        <i class="fa-solid fa-inbox"></i> Mensajes Soporte
-        <span id="badgeNuevosMensajes"
-            style="display:none; background: var(--danger); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 4px;">0</span>
+
+    <!-- BOTÓN MENSAJES DE SOPORTE (Ubicación relativa al tema) -->
+    <button class="support-admin-btn" onclick="abrirModalMensajesSoporte()" title="Ver Mensajes de Soporte">
+        <i class="fa-solid fa-headset"></i>
+        <span id="badgeSoporte" class="badge-soporte" style="display: none;">0</span>
     </button>
 
     <div class="admin-container">

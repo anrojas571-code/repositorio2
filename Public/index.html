@@ -710,52 +710,55 @@
         <i class="fa-solid fa-headset"></i>
     </button>
 
-    <!-- MODAL DE MENSAJE AL DESARROLLADOR -->
-    <div id="modalSoporte" class="modal-overlay">
-        <div class="modal-box" style="text-align: left;">
-            <button class="modal-close-btn" onclick="cerrarModalSoporte()"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-icon">
-                <i class="fa-solid fa-envelope-open-text"></i>
+    <!-- MODAL DE MENSAJE DE SOPORTE PARA USUARIOS -->
+    <div id="modalSoporteUsuario" class="modal-overlay">
+        <div class="modal-card" style="max-width: 440px;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-headset"></i> Contactar a Soporte</h2>
+                <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <h3 style="text-align: center;">Contactar al Desarrollador</h3>
-            <p style="text-align: center; margin-bottom: 15px;">¿Tu cuenta se encuentra inactiva o bloqueada? Envía un
-                mensaje para solicitar ayuda o reactivación.</p>
-
             <form onsubmit="event.preventDefault(); enviarMensajeSoporte();">
-                <div class="form-group">
-                    <label>Tu Usuario o Correo</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-user field-icon"></i>
-                        <input type="text" id="soporteUsuario" placeholder="Usuario o tu@correo.com" required>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Nombre de Usuario</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user field-icon"></i>
+                            <input type="text" id="soporteUsuario" placeholder="Tu usuario registrado" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Motivo de Consulta</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-circle-exclamation field-icon"></i>
+                            <select id="soporteMotivo">
+                                <option value="Cuenta Inactiva">🟡Cuenta Inactiva</option>
+                                <option value="Cuenta Bloqueada">🔴Cuenta Bloqueada</option>
+                                <option value="Olvido de Contraseña">💬Olvido de Contraseña</option>
+                                <option value="Otro">Otro Motivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Mensaje</label>
+                        <div class="input-wrapper">
+                            <textarea id="soporteMensaje" rows="4"
+                                style="width:100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline:none;"
+                                placeholder="Describe tu problema o solicitud..." required></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>Asunto / Estado</label>
-                    <div class="input-wrapper">
-                        <i class="fa-solid fa-triangle-exclamation field-icon"></i>
-                        <select id="soporteMotivo">
-                            <option value="Cuenta Inactiva">🟡 Mi cuenta está Inactiva</option>
-                            <option value="Cuenta Bloqueada">🔴 Mi cuenta está Bloqueada</option>
-                            <option value="Soporte Técnico">💬 Otro problema de acceso</option>
-                        </select>
-                    </div>
+
+                <div class="modal-footer">
+                    <button type="button" onclick="cerrarModalSoporte()" class="btn btn-refresh">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-paper-plane"></i> Enviar Mensaje
+                    </button>
                 </div>
-                <div class="form-group">
-                    <label>Mensaje</label>
-                    <div class="input-wrapper">
-                        <textarea id="soporteMensaje"
-                            style="width: 100%; padding: 10px 10px 10px 38px; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-size: 13px; min-height: 90px; outline: none; resize: vertical;"
-                            placeholder="Describe detalladamente lo sucedido..." required></textarea>
-                        <i class="fa-solid fa-comment-dots field-icon" style="top: 20px;"></i>
-                    </div>
-                </div>
-                <button type="submit" class="btn-primary">
-                    <i class="fa-solid fa-paper-plane"></i> Enviar Mensaje
-                </button>
             </form>
         </div>
     </div>
-
     <!-- CONTENEDOR DE TOASTS -->
     <div id="toastContainer"></div>
 
@@ -1150,11 +1153,11 @@
 
         // --- SOPORTE AL DESARROLLADOR ---
         function abrirModalSoporte() {
-            document.getElementById('modalSoporte').classList.add('active');
+            document.getElementById('modalSoporteUsuario').classList.add('active');
         }
 
         function cerrarModalSoporte() {
-            document.getElementById('modalSoporte').classList.remove('active');
+            document.getElementById('modalSoporteUsuario').classList.remove('active');
         }
 
         async function enviarMensajeSoporte() {
@@ -1162,22 +1165,29 @@
             const motivo = document.getElementById('soporteMotivo').value;
             const mensaje = document.getElementById('soporteMensaje').value.trim();
 
+            if (!usuario || !mensaje) {
+                showToast('Por favor completa todos los campos requeridos', 'advertencia');
+                return;
+            }
+
             try {
-                const res = await fetch('/api/soporte', {
+                const response = await fetch('/api/soporte', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ usuario, motivo, mensaje })
                 });
 
-                if (res.ok) {
-                    showToast('Mensaje enviado al desarrollador con éxito', 'exito', 'Mensaje Enviado');
+                if (response.ok) {
+                    showToast('Tu mensaje ha sido enviado al administrador', 'exito', 'Mensaje Enviado');
                     cerrarModalSoporte();
                     document.getElementById('soporteUsuario').value = '';
                     document.getElementById('soporteMensaje').value = '';
                 } else {
-                    showToast('Error al enviar el mensaje. Inténtalo de nuevo.', 'error');
+                    const errData = await response.json();
+                    showToast(errData.error || 'No se pudo enviar el mensaje', 'error');
                 }
-            } catch (err) {
+            } catch (error) {
+                console.error('Error al enviar mensaje de soporte:', error);
                 showToast('Error de conexión con el servidor', 'error');
             }
         }
