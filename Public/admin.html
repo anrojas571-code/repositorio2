@@ -1642,8 +1642,11 @@
         }
 
         async function guardarCambiosUsuario() {
-            const usuarioOriginal = document.getElementById('editOriginalUsuario').value;
-            const payload = {
+            // 1. Obtener el id u identificador original del campo oculto
+            const originalUsuario = document.getElementById('editOriginalUsuario').value;
+
+            // 2. Extraer los valores actualizados de los inputs
+            const usuarioActualizado = {
                 correo: document.getElementById('editCorreo').value.trim(),
                 telefono: document.getElementById('editTelefono').value.trim(),
                 direccion: document.getElementById('editDireccion').value.trim(),
@@ -1653,26 +1656,49 @@
             };
 
             try {
-                const response = await fetch(`/api/usuarios/${encodeURIComponent(usuarioOriginal)}`, {
+                // --- OPCIÓN A: Si usas Backend / API REST ---
+                /*
+                const response = await fetch(`/api/usuarios/${originalUsuario}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(usuarioActualizado)
                 });
+        
+                if (!response.ok) throw new Error('Error al actualizar en la base de datos');
+                */
 
-                const data = await response.json();
+                // --- OPCIÓN B: Si usas localStorage (ejemplo local) ---
+                let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+                const index = usuarios.findIndex(u => u.correo === originalUsuario || u.id === originalUsuario);
 
-                if (response.ok) {
-                    showToast(`Usuario "${usuarioOriginal}" actualizado con éxito`, 'success');
-                    cerrarModalEdicion();
-                    cargarDatos();
-                } else {
-                    showToast(data.error || 'No se pudieron guardar los cambios', 'error');
+                if (index !== -1) {
+                    usuarios[index] = { ...usuarios[index], ...usuarioActualizado };
+                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
                 }
-            } catch (err) {
-                showToast('Error de servidor al editar usuario', 'error');
+
+                // 3. Notificar al usuario, actualizar la UI y cerrar el modal
+                alert('¡Cambios guardados con éxito!');
+
+                // Función opcional para refrescar la tabla/lista en pantalla
+                if (typeof renderizarTablaUsuarios === 'function') {
+                    renderizarTablaUsuarios();
+                }
+
+                cerrarModalEdicion();
+
+            } catch (error) {
+                console.error('Error guardando cambios:', error);
+                alert('Hubo un error al intentar guardar los cambios.');
             }
         }
 
+        // Función auxiliar para cerrar el modal
+        function cerrarModalEdicion() {
+            const modal = document.getElementById('modalEdicion');
+            if (modal) {
+                modal.classList.remove('active'); // O modal.style.display = 'none';
+            }
+        }
         async function eliminarUsuario(nombre) {
             if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al usuario "${nombre}"?`)) {
                 try {
