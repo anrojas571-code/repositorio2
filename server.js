@@ -11,6 +11,19 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'db.json');
 
+// --- MIDDLEWARES GLOBALES (DEBEN IR ANTES DE TODAS LAS RUTAS) ---
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Ruta dinámica para la carpeta Public
+const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'Public'))
+    ? path.join(__dirname, 'Public')
+    : path.join(__dirname, 'public');
+
+// Servir archivos estáticos
+app.use(express.static(PUBLIC_DIR));
+
 // Credenciales del administrador inicial
 const ADMIN_DEFAULT = {
     usuario: 'Admin',
@@ -151,7 +164,7 @@ if (process.env.DATABASE_URL) {
                 );
             `);
 
-            // Asegurar que columnas nuevas existan si la tabla ya existía
+            // Asegurar columnas existentes
             await pool.query(`
                 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS correo TEXT;
                 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT;
@@ -184,11 +197,22 @@ if (process.env.DATABASE_URL) {
                 );
             `);
 
+            // Tabla de soporte técnico
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS soporte (
+                    id TEXT PRIMARY KEY,
+                    usuario TEXT NOT NULL,
+                    motivo TEXT NOT NULL,
+                    mensaje TEXT NOT NULL,
+                    fecha TEXT NOT NULL
+                );
+            `);
+
             // Insertar o actualizar el admin por defecto
             await pool.query(`
                 INSERT INTO administradores (usuario, clave) 
                 VALUES ($1, $2)
-                ON CONFLICT (usuario) DO UPDATE SET clave = EXCLUDED.clave;
+                ON CONFLICT (usuario) DO NOTHING;
             `, [ADMIN_DEFAULT.usuario, ADMIN_DEFAULT.clave]);
 
             console.log('Tablas listas en PostgreSQL');
@@ -201,77 +225,23 @@ if (process.env.DATABASE_URL) {
     console.log('DATABASE_URL no definida. Modo fallback a db.json local');
 }
 
-let mensajesSoporte = []; // O tabla de PostgreSQL / Base de datos
-
-// Guardar nuevo mensaje del usuario
-app.post('/api/soporte', (req, res) => {
-    const { usuario, motivo, mensaje } = req.body;
-    const nuevoMensaje = {
-        id: Date.now().toString(),
-        usuario,
-        motivo,
-        mensaje,
-        fecha: new Date().toLocaleString('es-ES')
-    };
-    mensajesSoporte.unshift(nuevoMensaje);
-    res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido' });
-});
-
-// Obtener mensajes en el Admin Panel
-app.get('/api/soporte', (req, res) => {
-    res.json(mensajesSoporte);
-});
-
-// Eliminar mensaje individual
-app.delete('/api/soporte/:id', (req, res) => {
-    const { id } = req.params;
-    mensajesSoporte = mensajesSoporte.filter(m => m.id !== id);
-    res.json({ status: 'ok' });
-});
-
-// Vaciar todos los mensajes
-app.delete('/api/soporte', (req, res) => {
-    mensajesSoporte = [];
-    res.json({ status: 'ok' });
-});
-
-// Ruta dinámica para la carpeta Public
-const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'Public'))
-    ? path.join(__dirname, 'Public')
-    : path.join(__dirname, 'public');
-
-app.use(cors());
-app.use(express.json());
-
-// Servir archivos estáticos
-app.use(express.static(PUBLIC_DIR));
-
-// Ruta raíz principal
-app.get('/', (req, res) => {
-    res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
-});
-
-// Ruta dedicada para el panel de administración
-app.get(['/admin', '/admin.html'], (req, res) => {
-    res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
-});
-
 // --- MÉTODOS LOCALES (FALLBACK A db.json) ---
 function leerDBLocal() {
     if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] }, null, 2));
+        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [], soporte: [] }, null, 2));
     }
     try {
         const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
         if (Array.isArray(data)) {
-            return { usuarios: data, administradores: [ADMIN_DEFAULT], descargas: [] };
+            return { usuarios: data, administradores: [ADMIN_DEFAULT], descargas: [], soporte: [] };
         }
         if (!data.administradores) data.administradores = [ADMIN_DEFAULT];
         if (!data.descargas) data.descargas = [];
         if (!data.usuarios) data.usuarios = [];
+        if (!data.soporte) data.soporte = [];
         return data;
     } catch (e) {
-        return { usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] };
+        return { usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [], soporte: [] };
     }
 }
 
@@ -279,7 +249,96 @@ function guardarDBLocal(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
-// --- API ENDPOINTS ---
+// --- RUTAS DE VISTAS PRINCIPALES ---
+app.get('/', (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+});
+
+app.get(['/admin', '/admin.html'], (req, res) => {
+    res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
+});
+
+// --- API SOPORTE TÉCNICO ---
+app.post('/api/soporte', async (req, res) => {
+    const { usuario, motivo, mensaje } = req.body;
+    if (!usuario || !motivo || !mensaje) {
+        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    }
+
+    const nuevoMensaje = {
+        id: Date.now().toString(),
+        usuario,
+        motivo,
+        mensaje,
+        fecha: new Date().toLocaleString('es-ES')
+    };
+
+    if (pool) {
+        try {
+            await pool.query(
+                'INSERT INTO soporte (id, usuario, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5)',
+                [nuevoMensaje.id, nuevoMensaje.usuario, nuevoMensaje.motivo, nuevoMensaje.mensaje, nuevoMensaje.fecha]
+            );
+            return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito' });
+        } catch (err) {
+            console.error('Error al guardar mensaje de soporte en PostgreSQL:', err);
+            return res.status(500).json({ error: 'Error al enviar mensaje de soporte' });
+        }
+    } else {
+        const db = leerDBLocal();
+        if (!Array.isArray(db.soporte)) db.soporte = [];
+        db.soporte.unshift(nuevoMensaje);
+        guardarDBLocal(db);
+        return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito' });
+    }
+});
+
+app.get('/api/soporte', async (req, res) => {
+    if (pool) {
+        try {
+            const result = await pool.query('SELECT * FROM soporte ORDER BY id DESC');
+            return res.json(result.rows);
+        } catch (err) {
+            return res.status(500).json({ error: 'Error al obtener mensajes de soporte' });
+        }
+    } else {
+        const db = leerDBLocal();
+        return res.json(db.soporte || []);
+    }
+});
+
+app.delete('/api/soporte/:id', async (req, res) => {
+    const { id } = req.params;
+    if (pool) {
+        try {
+            await pool.query('DELETE FROM soporte WHERE id = $1', [id]);
+            return res.json({ status: 'ok' });
+        } catch (err) {
+            return res.status(500).json({ error: 'Error al eliminar mensaje' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.soporte = (db.soporte || []).filter(m => m.id !== id);
+        guardarDBLocal(db);
+        return res.json({ status: 'ok' });
+    }
+});
+
+app.delete('/api/soporte', async (req, res) => {
+    if (pool) {
+        try {
+            await pool.query('TRUNCATE TABLE soporte');
+            return res.json({ status: 'ok' });
+        } catch (err) {
+            return res.status(500).json({ error: 'Error al vaciar mensajes' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.soporte = [];
+        guardarDBLocal(db);
+        return res.json({ status: 'ok' });
+    }
+});
 
 // API: Login exclusivo para Administradores
 app.post('/api/admin/login', async (req, res) => {
@@ -672,7 +731,6 @@ app.put('/api/usuarios/editar', async (req, res) => {
             if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
             const userActual = normalizarUsuario(userRes.rows[0]);
 
-            // Detectar cambios
             const cambios = [];
             const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
             const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
@@ -1105,7 +1163,7 @@ app.delete('/api/descargas', async (req, res) => {
     }
 });
 
-// Redirección por defecto
+// Redirección por defecto (SIEMPRE AL FINAL)
 app.get('*', (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
