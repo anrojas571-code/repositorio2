@@ -105,7 +105,8 @@
             cursor: pointer;
             font-size: 18px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-            z-index: 100;
+            z-index: 9999;
+            /* Subir z-index para asegurar visibilidad */
             transition: transform 0.2s ease, background 0.3s ease;
         }
 
@@ -757,10 +758,21 @@
             transition: transform 0.2s ease;
         }
 
-        .folder-header.perfil .folder-main-icon { color: var(--folder-perfil); }
-        .folder-header.clave .folder-main-icon { color: var(--folder-clave); }
-        .folder-header.admin .folder-main-icon { color: var(--folder-admin); }
-        .folder-header.recuperacion .folder-main-icon { color: var(--folder-otp); }
+        .folder-header.perfil .folder-main-icon {
+            color: var(--folder-perfil);
+        }
+
+        .folder-header.clave .folder-main-icon {
+            color: var(--folder-clave);
+        }
+
+        .folder-header.admin .folder-main-icon {
+            color: var(--folder-admin);
+        }
+
+        .folder-header.recuperacion .folder-main-icon {
+            color: var(--folder-otp);
+        }
 
         .folder-title {
             font-size: 13.5px;
@@ -921,9 +933,20 @@
             text-transform: uppercase;
         }
 
-        .badge-csv { background: #d1fae5; color: #065f46; }
-        .badge-excel { background: #dcfce7; color: #15803d; }
-        .badge-json { background: #dbeafe; color: #1e40af; }
+        .badge-csv {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-excel {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-json {
+            background: #dbeafe;
+            color: #1e40af;
+        }
 
         .download-time {
             font-size: 12px;
@@ -969,21 +992,52 @@
             border: 1px solid var(--border-color);
         }
 
-        .toast.success { border-left-color: #10b981; }
-        .toast.success i { color: #10b981; }
-        .toast.error { border-left-color: var(--danger); }
-        .toast.error i { color: var(--danger); }
-        .toast.info { border-left-color: var(--primary); }
-        .toast.info i { color: var(--primary); }
+        .toast.success {
+            border-left-color: #10b981;
+        }
+
+        .toast.success i {
+            color: #10b981;
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.error i {
+            color: var(--danger);
+        }
+
+        .toast.info {
+            border-left-color: var(--primary);
+        }
+
+        .toast.info i {
+            color: var(--primary);
+        }
 
         @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -1166,7 +1220,8 @@
         <div class="modal-card" style="max-width: 650px;">
             <div class="modal-header">
                 <div>
-                    <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de Modificaciones</h2>
+                    <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de
+                        Modificaciones</h2>
                     <p id="auditoriaUsuarioSub" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
                         Historial organizado en carpetas de cambios de perfil, contraseña y estado.
                     </p>
@@ -1193,7 +1248,8 @@
             <div id="listaHistorialEdiciones" class="modal-body"></div>
 
             <div class="modal-footer">
-                <span id="contadorCarpetasTotal" style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
+                <span id="contadorCarpetasTotal"
+                    style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
                 <button onclick="cerrarModalHistorialEdiciones()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
