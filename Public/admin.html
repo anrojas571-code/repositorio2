@@ -21,6 +21,7 @@
             --primary: #4f46e5;
             --primary-hover: #4338ca;
             --primary-light: #eef2ff;
+            --secondary: #06b6d4;
             --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             --card-bg: rgba(255, 255, 255, 0.96);
             --modal-bg: #ffffff;
@@ -33,6 +34,7 @@
             --radius-md: 12px;
             --radius-sm: 8px;
             --danger: #ef4444;
+            --danger-hover: #dc2626;
             --warning-bg: #fef3c7;
             --warning-text: #b45309;
             --success-bg: #dcfce7;
@@ -51,6 +53,7 @@
             --primary: #6366f1;
             --primary-hover: #4f46e5;
             --primary-light: rgba(99, 102, 241, 0.2);
+            --secondary: #22d3ee;
             --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 50%, #020617 100%);
             --card-bg: rgba(15, 23, 42, 0.94);
             --modal-bg: #0f172a;
@@ -106,7 +109,6 @@
             font-size: 18px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
             z-index: 9999;
-            /* Subir z-index para asegurar visibilidad */
             transition: transform 0.2s ease, background 0.3s ease;
         }
 
@@ -114,9 +116,144 @@
             transform: scale(1.08);
         }
 
+        /* --- CONTENEDOR DE NOTIFICACIONES TOAST (ACORDE AL SISTEMA) --- */
+        #toastContainer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 340px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            background: var(--modal-bg);
+            color: var(--text-main);
+            border-left: 5px solid var(--primary);
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideInRight 0.3s ease forwards;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .toast.exito,
+        .toast.success {
+            border-left-color: #22c55e;
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        .toast.advertencia,
+        .toast.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .toast.info {
+            border-left-color: var(--primary);
+        }
+
+        .toast i.toast-icon {
+            font-size: 18px;
+            margin-top: 2px;
+        }
+
+        .toast.exito i.toast-icon,
+        .toast.success i.toast-icon {
+            color: #22c55e;
+        }
+
+        .toast.error i.toast-icon {
+            color: #ef4444;
+        }
+
+        .toast.advertencia i.toast-icon,
+        .toast.warning i.toast-icon {
+            color: #f59e0b;
+        }
+
+        .toast.info i.toast-icon {
+            color: var(--primary);
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-content h5 {
+            font-size: 13.5px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .toast-content p {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px;
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .toast-progress-bar {
+            height: 100%;
+            background: currentColor;
+            width: 100%;
+            animation: toastProgress 4s linear forwards;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toastProgress {
+            from {
+                width: 100%;
+            }
+
+            to {
+                width: 0%;
+            }
+        }
+
         .admin-container {
             width: 100%;
-            max-width: 900px;
+            max-width: 960px;
         }
 
         /* CARD LOGIN ADMIN */
@@ -190,6 +327,17 @@
             border-color: var(--primary);
             background: var(--modal-bg);
             box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .btn-toggle-pwd {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            font-size: 14px;
         }
 
         .btn-primary {
@@ -294,9 +442,68 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             gap: 10px;
             flex-wrap: wrap;
+        }
+
+        /* BARRA DE BÚSQUEDA Y FILTRADO */
+        .filter-search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 2;
+            min-width: 220px;
+            position: relative;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 10px 14px 10px 38px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--item-bg);
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .search-box input:focus {
+            border-color: var(--primary);
+            background: var(--modal-bg);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .filter-select {
+            flex: 1;
+            min-width: 140px;
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+            background: var(--item-bg);
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            border-color: var(--primary);
+            background: var(--modal-bg);
         }
 
         .btn-group {
@@ -564,8 +771,8 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -706,6 +913,7 @@
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
             transition: all 0.25s ease;
+            margin-bottom: 4px;
         }
 
         .folder-card:hover {
@@ -963,71 +1171,6 @@
             align-items: center;
         }
 
-        /* CONTENEDOR DE TOASTS */
-        #toastContainer {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 2000;
-        }
-
-        .toast {
-            min-width: 280px;
-            padding: 12px 18px;
-            border-radius: var(--radius-md);
-            background: var(--modal-bg);
-            color: var(--text-main);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            border-left: 5px solid var(--primary);
-            animation: slideIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            transition: all 0.3s ease;
-            border: 1px solid var(--border-color);
-        }
-
-        .toast.success {
-            border-left-color: #10b981;
-        }
-
-        .toast.success i {
-            color: #10b981;
-        }
-
-        .toast.error {
-            border-left-color: var(--danger);
-        }
-
-        .toast.error i {
-            color: var(--danger);
-        }
-
-        .toast.info {
-            border-left-color: var(--primary);
-        }
-
-        .toast.info i {
-            color: var(--primary);
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -1075,6 +1218,9 @@
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
                         <input type="password" id="adminPass" placeholder="••••••••" required>
+                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('adminPass', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -1095,11 +1241,11 @@
                 <div style="display: flex; gap: 15px; align-items: center;">
                     <div class="stat-card">
                         <div class="number" id="totalUsuariosCount">0</div>
-                        <div class="label">Usuarios Totales</div>
+                        <div class="label">Usuarios Registrados</div>
                     </div>
                     <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;"
                         title="Cerrar sesión">
-                        <i class="fa-solid fa-power-off"></i>
+                        <i class="fa-solid fa-power-off"></i> Salir
                     </button>
                 </div>
             </div>
@@ -1111,7 +1257,7 @@
                     </span>
                     <div class="btn-group">
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
-                            <i class="fa-solid fa-rotate-right"></i>
+                            <i class="fa-solid fa-rotate-right"></i> Actualizar
                         </button>
                         <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xlsx)">
                             <i class="fa-solid fa-file-excel"></i> Excel
@@ -1123,11 +1269,30 @@
                             title="Ver Historial de Descargas">
                             <i class="fa-solid fa-clock-rotate-left"></i> Historial
                         </button>
-                        <button onclick="vaciarBaseDeDatos()" class="btn btn-danger"
+                        <button onclick="pedirConfirmacionVaciarBD()" class="btn btn-danger"
                             title="Borrar toda la base de datos">
-                            <i class="fa-solid fa-trash-can"></i>
+                            <i class="fa-solid fa-trash-can"></i> Vaciar BD
                         </button>
                     </div>
+                </div>
+
+                <!-- BARRA DE BÚSQUEDA Y FILTRADO EN TIEMPO REAL -->
+                <div class="filter-search-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="adminSearchInput" placeholder="Buscar por usuario, correo o teléfono..." oninput="filtrarUsuarios()">
+                    </div>
+                    <select id="adminFilterRole" class="filter-select" onchange="filtrarUsuarios()">
+                        <option value="todos">Todos los Roles</option>
+                        <option value="Admin">Solo Admin</option>
+                        <option value="Cliente">Solo Clientes</option>
+                    </select>
+                    <select id="adminFilterStatus" class="filter-select" onchange="filtrarUsuarios()">
+                        <option value="todos">Todos los Estados</option>
+                        <option value="Activo">🟢 Activos</option>
+                        <option value="Inactivo">🟡 Inactivos</option>
+                        <option value="Bloqueado">🔴 Bloqueados</option>
+                    </select>
                 </div>
 
                 <div id="contenedorLista" class="users-list"></div>
@@ -1147,6 +1312,14 @@
             <form onsubmit="event.preventDefault(); guardarCambiosUsuario();">
                 <div class="modal-body">
                     <input type="hidden" id="editOriginalUsuario">
+
+                    <div class="form-group">
+                        <label>Nombre de Usuario (No modificable)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user field-icon"></i>
+                            <input type="text" id="editUsuarioDisplay" disabled style="opacity:0.65; cursor:not-allowed; font-weight:700;">
+                        </div>
+                    </div>
 
                     <div class="form-group">
                         <label>Correo Electrónico</label>
@@ -1220,14 +1393,12 @@
         <div class="modal-card" style="max-width: 650px;">
             <div class="modal-header">
                 <div>
-                    <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de
-                        Modificaciones</h2>
+                    <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de Modificaciones</h2>
                     <p id="auditoriaUsuarioSub" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
                         Historial organizado en carpetas de cambios de perfil, contraseña y estado.
                     </p>
                 </div>
-                <button onclick="cerrarModalHistorialEdiciones()" class="modal-close"><i
-                        class="fa-solid fa-xmark"></i></button>
+                <button onclick="cerrarModalHistorialEdiciones()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
             <!-- CONTROLES Y FILTROS DE CARPETAS -->
@@ -1248,8 +1419,7 @@
             <div id="listaHistorialEdiciones" class="modal-body"></div>
 
             <div class="modal-footer">
-                <span id="contadorCarpetasTotal"
-                    style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
+                <span id="contadorCarpetasTotal" style="font-size: 12px; font-weight: 700; color: var(--text-muted);"></span>
                 <button onclick="cerrarModalHistorialEdiciones()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
@@ -1264,10 +1434,33 @@
             </div>
             <div id="listaDescargas" class="modal-body"></div>
             <div class="modal-footer">
-                <button onclick="vaciarHistorialDescargas()" class="btn btn-danger">
+                <button onclick="pedirConfirmacionVaciarDescargas()" class="btn btn-danger">
                     <i class="fa-solid fa-trash-can"></i> Vaciar Historial
                 </button>
                 <button onclick="cerrarModalDescargas()" class="btn btn-refresh">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN ELEGANTE (REEMPLAZO DE CONFIRM NATIVO) -->
+    <div id="modalConfirmacion" class="modal-overlay">
+        <div class="modal-card" style="max-width: 440px; text-align: center;">
+            <div style="font-size: 42px; color: var(--danger); margin-bottom: 12px;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h2 id="confirmTitulo" style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+                ¿Estás seguro?
+            </h2>
+            <p id="confirmMensaje" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">
+                Esta acción no se puede deshacer.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button type="button" class="btn btn-refresh" style="flex: 1;" onclick="cerrarModalConfirmacion()">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarAccion" class="btn btn-danger" style="flex: 1;">
+                    <i class="fa-solid fa-trash"></i> Confirmar
+                </button>
             </div>
         </div>
     </div>
@@ -1280,6 +1473,7 @@
         let usuariosCargados = [];
         let usuarioAuditoriaActual = null;
         let filtroAuditoriaActivo = 'todas';
+        let accionConfirmacionPendiente = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             cargarTemaGuardado();
@@ -1310,26 +1504,62 @@
             if (icon) icon.className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
-        // --- SISTEMA DE TOASTS ---
-        function showToast(mensaje, tipo = 'info') {
+        // --- SISTEMA DE TOAST NOTIFICATIONS ACORDE AL SISTEMA ---
+        function showToast(mensaje, tipo = 'info', tituloPersonalizado = null) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             toast.className = `toast ${tipo}`;
 
-            let iconClass = 'fa-circle-info';
-            if (tipo === 'success') iconClass = 'fa-circle-check';
-            if (tipo === 'error') iconClass = 'fa-circle-exclamation';
+            const iconoMap = {
+                exito: 'fa-circle-check',
+                success: 'fa-circle-check',
+                error: 'fa-circle-xmark',
+                advertencia: 'fa-triangle-exclamation',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
 
-            toast.innerHTML = `<i class="fa-solid ${iconClass}"></i> <span>${mensaje}</span>`;
+            const tituloDefaultMap = {
+                exito: 'Éxito',
+                success: 'Éxito',
+                error: 'Error',
+                advertencia: 'Advertencia',
+                warning: 'Advertencia',
+                info: 'Información'
+            };
+
+            const titulo = tituloPersonalizado || tituloDefaultMap[tipo] || 'Notificación';
+
+            toast.innerHTML = `
+                <i class="fa-solid ${iconoMap[tipo] || 'fa-circle-info'} toast-icon"></i>
+                <div class="toast-content">
+                    <h5>${titulo}</h5>
+                    <p>${mensaje}</p>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+            `;
+
             container.appendChild(toast);
 
             setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateX(100%)';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
+                if (toast.parentElement) toast.remove();
+            }, 4000);
         }
 
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        // --- AUTENTICACIÓN ADMIN ---
         async function iniciarSesionAdmin() {
             const usuario = document.getElementById('adminUser').value.trim();
             const clave = document.getElementById('adminPass').value.trim();
@@ -1347,10 +1577,10 @@
                 if (response.ok) {
                     sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
                     mostrarPanelAdmin();
-                    showToast('Sesión iniciada con éxito', 'success');
+                    showToast('Sesión iniciada correctamente en el panel', 'success', 'Bienvenido');
                 } else {
                     errorElem.style.display = 'block';
-                    showToast('Credenciales inválidas', 'error');
+                    showToast('Credenciales de Administrador no válidas', 'error', 'Acceso Denegado');
                 }
             } catch (err) {
                 showToast('Error al conectar con el servidor', 'error');
@@ -1369,43 +1599,66 @@
             document.getElementById('vistaLoginAdmin').style.display = 'block';
             document.getElementById('adminUser').value = '';
             document.getElementById('adminPass').value = '';
-            showToast('Sesión cerrada', 'info');
+            showToast('Has cerrado la sesión del panel', 'info', 'Sesión Finalizada');
         }
 
+        // --- CARGAR Y RENDERIZAR USUARIOS ---
         async function cargarDatos() {
-            const contadorElem = document.getElementById('totalUsuariosCount');
-            const contenedor = document.getElementById('contenedorLista');
-
             try {
                 const response = await fetch('/api/usuarios');
                 usuariosCargados = await response.json();
+                filtrarUsuarios();
+            } catch (err) {
+                showToast('Error al cargar la lista de usuarios del servidor', 'error');
+            }
+        }
 
-                contadorElem.textContent = usuariosCargados.length;
+        function filtrarUsuarios() {
+            const busqueda = (document.getElementById('adminSearchInput')?.value || '').toLowerCase().trim();
+            const filtroRol = document.getElementById('adminFilterRole')?.value || 'todos';
+            const filtroEstado = document.getElementById('adminFilterStatus')?.value || 'todos';
+            const contadorElem = document.getElementById('totalUsuariosCount');
+            const contenedor = document.getElementById('contenedorLista');
 
-                if (!usuariosCargados || usuariosCargados.length === 0) {
-                    contenedor.innerHTML = `
+            let usuariosFiltrados = usuariosCargados.filter(u => {
+                const matchTexto = !busqueda || 
+                    (u.usuario && u.usuario.toLowerCase().includes(busqueda)) ||
+                    (u.correo && u.correo.toLowerCase().includes(busqueda)) ||
+                    (u.telefono && u.telefono.toLowerCase().includes(busqueda)) ||
+                    (u.direccion && u.direccion.toLowerCase().includes(busqueda));
+
+                const matchRol = filtroRol === 'todos' || (u.rol && u.rol.toLowerCase() === filtroRol.toLowerCase());
+                const matchEstado = filtroEstado === 'todos' || (u.estado && u.estado.toLowerCase() === filtroEstado.toLowerCase());
+
+                return matchTexto && matchRol && matchEstado;
+            });
+
+            contadorElem.textContent = usuariosCargados.length;
+
+            if (usuariosFiltrados.length === 0) {
+                contenedor.innerHTML = `
                     <div class="empty-state">
                         <i class="fa-solid fa-users-slash"></i>
-                        <p>No hay usuarios registrados en la base de datos.</p>
+                        <p>${usuariosCargados.length === 0 ? 'No hay usuarios registrados en la base de datos.' : 'No se encontraron usuarios con los filtros aplicados.'}</p>
                     </div>
                 `;
-                    return;
-                }
+                return;
+            }
 
-                let html = '';
-                usuariosCargados.forEach((u, index) => {
-                    const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
-                    const ediciones = u.contadorModificaciones || (u.historialEdiciones ? u.historialEdiciones.length : 0);
-                    const rol = u.rol || 'Cliente';
-                    const estado = u.estado || 'Activo';
+            let html = '';
+            usuariosFiltrados.forEach((u, index) => {
+                const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
+                const ediciones = u.contadorModificaciones || (u.historialEdiciones ? u.historialEdiciones.length : 0);
+                const rol = u.rol || 'Cliente';
+                const estado = u.estado || 'Activo';
 
-                    const roleBadgeClass = rol === 'Admin' ? 'badge-role-admin' : 'badge-role-client';
+                const roleBadgeClass = rol === 'Admin' ? 'badge-role-admin' : 'badge-role-client';
 
-                    let statusBadgeClass = 'badge-status-active';
-                    if (estado === 'Inactivo') statusBadgeClass = 'badge-status-inactive';
-                    if (estado === 'Bloqueado') statusBadgeClass = 'badge-status-blocked';
+                let statusBadgeClass = 'badge-status-active';
+                if (estado === 'Inactivo') statusBadgeClass = 'badge-status-inactive';
+                if (estado === 'Bloqueado') statusBadgeClass = 'badge-status-blocked';
 
-                    html += `
+                html += `
                     <div class="user-item">
                         <div class="user-detail">
                             <div class="avatar">${inicial}</div>
@@ -1415,30 +1668,27 @@
                                     <span class="${roleBadgeClass}">${rol}</span>
                                     <span class="${statusBadgeClass}">${estado}</span>
                                 </h3>
-                                <p><i class="fa-solid fa-envelope"></i> Correo: ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> Tel: ${u.telefono || 'Sin teléfono'}</p>
-                                <p><i class="fa-solid fa-key"></i> Clave: ${u.clave} ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
+                                <p><i class="fa-solid fa-envelope"></i> ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> ${u.telefono || 'Sin teléfono'}</p>
+                                <p><i class="fa-solid fa-key"></i> Clave: <strong>${u.clave}</strong> ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
                             </div>
                         </div>
                         <div class="badges-group">
-                            <span class="badge-mods" onclick="verHistorialModificaciones('${u.usuario}')" title="Haz clic para abrir las carpetas de auditoría de este usuario">
+                            <span class="badge-mods" onclick="verHistorialModificaciones('${u.usuario}')" title="Haz clic para ver carpetas de auditoría">
                                 <i class="fa-solid fa-folder-open"></i> ${ediciones} ${ediciones === 1 ? 'modificación' : 'modificaciones'}
                             </span>
                             <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
-                            <button onclick="abrirModalEdicion('${u.usuario}')" class="btn-action-user edit" title="Editar usuario y estado (Bloquear/Activar)">
+                            <button onclick="abrirModalEdicion('${u.usuario}')" class="btn-action-user edit" title="Editar usuario y estado">
                                 <i class="fa-solid fa-user-pen"></i>
                             </button>
-                            <button onclick="eliminarUsuario('${u.usuario}')" class="btn-action-user delete" title="Eliminar usuario">
+                            <button onclick="pedirConfirmacionEliminar('${u.usuario}')" class="btn-action-user delete" title="Eliminar usuario">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </div>
                     </div>
                 `;
-                });
+            });
 
-                contenedor.innerHTML = html;
-            } catch (err) {
-                showToast('Error al cargar la lista de usuarios', 'error');
-            }
+            contenedor.innerHTML = html;
         }
 
         // --- SISTEMA DE AUDITORÍA EN FORMATO DE CARPETAS ---
@@ -1451,7 +1701,6 @@
                 Mostrando carpetas de cambios para el usuario: <strong>${usuario.usuario}</strong>
             `;
 
-            // Reset filtro a todas
             filtroAuditoriaActivo = 'todas';
             document.querySelectorAll('#folderFiltersContainer .filter-chip').forEach(c => c.classList.remove('active'));
             const chipTodas = document.querySelector('#folderFiltersContainer .filter-chip');
@@ -1489,8 +1738,8 @@
                 contenedor.innerHTML = `
                     <div class="empty-folder-state">
                         <i class="fa-solid fa-folder-open"></i>
-                        <p>Esta carpeta está vacía</p>
-                        <span>El usuario <strong>${usuarioAuditoriaActual.usuario}</strong> no registra modificaciones en esta categoría.</span>
+                        <p>Esta categoría está vacía</p>
+                        <span>El usuario <strong>${usuarioAuditoriaActual.usuario}</strong> no registra modificaciones en esta sección.</span>
                     </div>
                 `;
                 return;
@@ -1505,12 +1754,10 @@
                 const fecha = log.fecha || 'Sin fecha';
                 const resumen = log.resumen || `${cambios.length} campo(s) modificado(s)`;
 
-                // Asignar ícono según tipo de carpeta
                 let folderIconClass = 'fa-folder-closed';
-                let iconCampoDefault = 'fa-file-lines';
-                if (tipo === 'clave') iconCampoDefault = 'fa-key';
-                if (tipo === 'admin') iconCampoDefault = 'fa-user-shield';
-                if (tipo === 'recuperacion') iconCampoDefault = 'fa-shield-halved';
+                if (tipo === 'clave') folderIconClass = 'fa-key';
+                if (tipo === 'admin') folderIconClass = 'fa-user-shield';
+                if (tipo === 'recuperacion') folderIconClass = 'fa-shield-halved';
 
                 html += `
                     <div class="folder-card" id="folderCard_${index}">
@@ -1580,39 +1827,14 @@
 
         function toggleCarpeta(index) {
             const card = document.getElementById(`folderCard_${index}`);
-            const icon = document.getElementById(`folderIcon_${index}`);
             if (!card) return;
-
             card.classList.toggle('open');
-            if (card.classList.contains('open')) {
-                if (icon) {
-                    icon.classList.remove('fa-folder-closed');
-                    icon.classList.add('fa-folder-open');
-                }
-            } else {
-                if (icon) {
-                    icon.classList.remove('fa-folder-open');
-                    icon.classList.add('fa-folder-closed');
-                }
-            }
         }
 
         function expandirTodasCarpetas(abrir = true) {
-            document.querySelectorAll('.folder-card').forEach((card, index) => {
-                const icon = document.getElementById(`folderIcon_${index}`);
-                if (abrir) {
-                    card.classList.add('open');
-                    if (icon) {
-                        icon.classList.remove('fa-folder-closed');
-                        icon.classList.add('fa-folder-open');
-                    }
-                } else {
-                    card.classList.remove('open');
-                    if (icon) {
-                        icon.classList.remove('fa-folder-open');
-                        icon.classList.add('fa-folder-closed');
-                    }
-                }
+            document.querySelectorAll('.folder-card').forEach(card => {
+                if (abrir) card.classList.add('open');
+                else card.classList.remove('open');
             });
         }
 
@@ -1621,12 +1843,13 @@
             usuarioAuditoriaActual = null;
         }
 
-        // --- EDICIÓN DE USUARIOS Y CAMBIO DE ESTADOS ---
+        // --- EDICIÓN DE USUARIOS Y GESTIÓN DE ESTADOS (ADMIN) ---
         function abrirModalEdicion(nombreUsuario) {
             const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
             if (!usuario) return;
 
             document.getElementById('editOriginalUsuario').value = usuario.usuario;
+            document.getElementById('editUsuarioDisplay').value = usuario.usuario;
             document.getElementById('editCorreo').value = usuario.correo || '';
             document.getElementById('editTelefono').value = usuario.telefono || '';
             document.getElementById('editDireccion').value = usuario.direccion || '';
@@ -1642,11 +1865,9 @@
         }
 
         async function guardarCambiosUsuario() {
-            // 1. Obtener el id u identificador original del campo oculto
             const originalUsuario = document.getElementById('editOriginalUsuario').value;
-
-            // 2. Extraer los valores actualizados de los inputs
             const usuarioActualizado = {
+                usuario: originalUsuario,
                 correo: document.getElementById('editCorreo').value.trim(),
                 telefono: document.getElementById('editTelefono').value.trim(),
                 direccion: document.getElementById('editDireccion').value.trim(),
@@ -1656,79 +1877,86 @@
             };
 
             try {
-                // --- OPCIÓN A: Si usas Backend / API REST ---
-                /*
-                const response = await fetch(`/api/usuarios/${originalUsuario}`, {
+                const response = await fetch('/api/usuarios/admin-editar', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(usuarioActualizado)
                 });
-        
-                if (!response.ok) throw new Error('Error al actualizar en la base de datos');
-                */
 
-                // --- OPCIÓN B: Si usas localStorage (ejemplo local) ---
-                let usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
-                const index = usuarios.findIndex(u => u.correo === originalUsuario || u.id === originalUsuario);
+                const data = await response.json();
 
-                if (index !== -1) {
-                    usuarios[index] = { ...usuarios[index], ...usuarioActualizado };
-                    localStorage.setItem('usuarios', JSON.stringify(usuarios));
+                if (response.ok) {
+                    cerrarModalEdicion();
+                    await cargarDatos();
+                    showToast('¡Cambios guardados con éxito!', 'success', 'Usuario Actualizado');
+                } else {
+                    showToast(data.error || 'Error al guardar los cambios.', 'error');
                 }
-
-                // 3. Notificar al usuario, actualizar la UI y cerrar el modal
-                alert('¡Cambios guardados con éxito!');
-
-                // Función opcional para refrescar la tabla/lista en pantalla
-                if (typeof renderizarTablaUsuarios === 'function') {
-                    renderizarTablaUsuarios();
-                }
-
-                cerrarModalEdicion();
-
             } catch (error) {
                 console.error('Error guardando cambios:', error);
-                alert('Hubo un error al intentar guardar los cambios.');
+                showToast('Hubo un error de conexión al guardar los cambios.', 'error');
             }
         }
 
-        // Función auxiliar para cerrar el modal
-        function cerrarModalEdicion() {
-            const modal = document.getElementById('modalEdicion');
-            if (modal) {
-                modal.classList.remove('active'); // O modal.style.display = 'none';
-            }
-        }
-        async function eliminarUsuario(nombre) {
-            if (confirm(`¿Estás seguro de que deseas eliminar permanentemente al usuario "${nombre}"?`)) {
-                try {
-                    const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        showToast(`Usuario "${nombre}" eliminado`, 'success');
-                        cargarDatos();
-                    } else {
-                        showToast('Error al eliminar usuario', 'error');
-                    }
-                } catch (err) {
-                    showToast('Error de conexión al eliminar', 'error');
+        // --- SISTEMA DE CONFIRMACIONES MODALES (SIN DIÁLOGOS NATIVOS) ---
+        function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
+            document.getElementById('confirmTitulo').textContent = titulo;
+            document.getElementById('confirmMensaje').textContent = mensaje;
+            accionConfirmacionPendiente = onConfirm;
+            document.getElementById('modalConfirmacion').classList.add('active');
+
+            const btnConfirmar = document.getElementById('btnConfirmarAccion');
+            btnConfirmar.onclick = async () => {
+                cerrarModalConfirmacion();
+                if (typeof accionConfirmacionPendiente === 'function') {
+                    await accionConfirmacionPendiente();
                 }
-            }
+            };
         }
 
-        async function vaciarBaseDeDatos() {
-            if (confirm("⚠️ ADVERTENCIA: ¿Estás seguro de que deseas borrar TODOS los usuarios del sistema?")) {
-                try {
-                    const res = await fetch('/api/usuarios', { method: 'DELETE' });
-                    if (res.ok) {
-                        showToast('Base de datos vaciada con éxito', 'success');
-                        cargarDatos();
-                    } else {
-                        showToast('No se pudo vaciar la base de datos', 'error');
+        function cerrarModalConfirmacion() {
+            document.getElementById('modalConfirmacion').classList.remove('active');
+            accionConfirmacionPendiente = null;
+        }
+
+        function pedirConfirmacionEliminar(nombre) {
+            mostrarModalConfirmacion(
+                `¿Eliminar a "${nombre}"?`,
+                `Esta acción eliminará de forma permanente al usuario "${nombre}" de la base de datos.`,
+                async () => {
+                    try {
+                        const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast(`Usuario "${nombre}" eliminado permanentemente`, 'success', 'Eliminado');
+                            cargarDatos();
+                        } else {
+                            showToast('Error al eliminar usuario', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión al eliminar', 'error');
                     }
-                } catch (err) {
-                    showToast('Error de conexión', 'error');
                 }
-            }
+            );
+        }
+
+        function pedirConfirmacionVaciarBD() {
+            mostrarModalConfirmacion(
+                '¿Vaciar Base de Datos?',
+                '⚠️ ADVERTENCIA CRÍTICA: Se borrarán TODOS los usuarios del sistema de forma irreversible.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/usuarios', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Base de datos vaciada con éxito', 'success', 'Base de Datos');
+                            cargarDatos();
+                        } else {
+                            showToast('No se pudo vaciar la base de datos', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión', 'error');
+                    }
+                }
+            );
         }
 
         // --- EXPORTAR Y REGISTRAR DESCARGA ---
@@ -1746,7 +1974,7 @@
 
         function exportarExcel() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
-                showToast('No hay datos para exportar', 'error');
+                showToast('No hay datos para exportar', 'advertencia');
                 return;
             }
 
@@ -1773,19 +2001,19 @@
             XLSX.writeFile(workbook, "Reporte_de_usuarios.xlsx");
 
             registrarLogDescarga('Excel');
-            showToast('Reporte de Excel exportado', 'success');
+            showToast('Reporte de Excel exportado con éxito', 'success', 'Exportación');
         }
 
         function exportarJSON() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
-                showToast('No hay datos para exportar', 'error');
+                showToast('No hay datos para exportar', 'advertencia');
                 return;
             }
 
             const jsonString = JSON.stringify(usuariosCargados, null, 2);
             descargarArchivo(jsonString, 'usuarios_sistema.json', 'application/json');
             registrarLogDescarga('JSON');
-            showToast('Archivo JSON exportado', 'success');
+            showToast('Archivo JSON exportado con éxito', 'success', 'Exportación');
         }
 
         function descargarArchivo(contenido, nombreArchivo, mimeType) {
@@ -1818,11 +2046,11 @@
 
                 if (!descargas || descargas.length === 0) {
                     contenedor.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-solid fa-folder-open"></i>
-                        <p>No se han realizado descargas de reportes.</p>
-                    </div>
-                `;
+                        <div class="empty-state">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <p>No se han realizado descargas de reportes.</p>
+                        </div>
+                    `;
                     return;
                 }
 
@@ -1833,18 +2061,18 @@
                     if (d.formato === 'Excel') badgeClass = 'badge-excel';
 
                     html += `
-                    <div class="download-item">
-                        <div class="download-info">
-                            <span class="${badgeClass}">${d.formato}</span>
-                            <div class="download-time">
-                                <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
+                        <div class="download-item">
+                            <div class="download-info">
+                                <span class="${badgeClass}">${d.formato}</span>
+                                <div class="download-time">
+                                    <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
+                                </div>
                             </div>
+                            <button onclick="eliminarDescarga('${d.id}')" class="btn-action-user delete" title="Eliminar registro">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
-                        <button onclick="eliminarDescarga('${d.id}')" class="btn-action-user delete" title="Eliminar registro">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                `;
+                    `;
                 });
 
                 contenedor.innerHTML = html;
@@ -1865,18 +2093,22 @@
             }
         }
 
-        async function vaciarHistorialDescargas() {
-            if (confirm("¿Estás seguro de vaciar todo el historial de descargas?")) {
-                try {
-                    const res = await fetch('/api/descargas', { method: 'DELETE' });
-                    if (res.ok) {
-                        showToast('Historial vaciado', 'success');
-                        cargarHistorialDescargas();
+        function pedirConfirmacionVaciarDescargas() {
+            mostrarModalConfirmacion(
+                '¿Vaciar Historial de Descargas?',
+                'Se eliminarán todos los registros de descargas realizadas.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/descargas', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Historial de descargas vaciado', 'success');
+                            cargarHistorialDescargas();
+                        }
+                    } catch (err) {
+                        showToast('Error al vaciar historial', 'error');
                     }
-                } catch (err) {
-                    showToast('Error al vaciar historial', 'error');
                 }
-            }
+            );
         }
     </script>
 </body>

@@ -133,5 +133,18 @@
       "clave": "An12345*"
     }
   ],
-  "descargas": []
+  "descargas": [
+    {
+      "id": 1787673690916,
+      "formato": "Excel",
+      "fecha": "25/8/2026",
+      "hora": "12:01:30"
+    },
+    {
+      "id": 1787673721506,
+      "formato": "Excel",
+      "fecha": "25/8/2026",
+      "hora": "12:02:01"
+    }
+  ]
 }

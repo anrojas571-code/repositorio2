@@ -907,6 +907,9 @@
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
                         <input type="password" id="changeClaveActual" required placeholder="••••••••">
+                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('changeClaveActual', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -915,6 +918,9 @@
                     <div class="input-wrapper">
                         <i class="fa-solid fa-lock field-icon"></i>
                         <input type="password" id="changeClaveNueva" required placeholder="••••••••">
+                        <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('changeClaveNueva', this)">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -991,6 +997,9 @@
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
                             <input type="password" id="recNuevaClave" required placeholder="••••••••">
+                            <button type="button" class="btn-toggle-pwd" onclick="togglePasswordVisibility('recNuevaClave', this)">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
                         </div>
                     </div>
                     <button type="submit" id="btnActualizarClave" class="btn-primary">Restablecer Clave</button>

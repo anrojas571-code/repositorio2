@@ -5,7 +5,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
-const { Resend } = require('resend'); // SDK Oficial de Resend
+const { Resend } = require('resend');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,13 +44,11 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     const apiKey = obtenerApiKeyResend();
 
     if (!apiKey) {
-        console.warn(`[EMAIL ADVERTENCIA] No se envió el correo porque falta RESEND_API_KEY / EMAIL_PASS en Render.`);
+        console.warn(`[EMAIL ADVERTENCIA] No se envió el correo porque falta RESEND_API_KEY en variables de entorno.`);
         return { enviado: false, motivo: 'no_credentials', codigo };
     }
 
     const resend = new Resend(apiKey);
-
-    // Dirección del remitente configurada con tu dominio personalizado verificado
     let remitenteFinal = process.env.EMAIL_FROM || 'Sistema <soporte@misistema.space>';
 
     console.log(`[EMAIL DISPARANDO VIA API HTTP] Enviando a ${correoDestino} desde ${remitenteFinal}...`);
@@ -90,6 +88,37 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     }
 }
 
+// Normalizador unificado de objetos usuario
+function normalizarUsuario(u) {
+    if (!u) return null;
+    let historial = u.historialEdiciones || u.historial_ediciones || [];
+    if (typeof historial === 'string') {
+        try {
+            historial = JSON.parse(historial);
+        } catch (e) {
+            historial = [];
+        }
+    }
+    if (!Array.isArray(historial)) {
+        historial = [];
+    }
+
+    return {
+        usuario: u.usuario,
+        clave: u.clave || '',
+        correo: u.correo || '',
+        telefono: u.telefono || '',
+        direccion: u.direccion || '',
+        fechaRegistro: u.fechaRegistro || u.fecha_registro || new Date().toLocaleDateString(),
+        contadorModificaciones: parseInt(u.contadorModificaciones || u.contador_modificaciones || 0),
+        rol: u.rol || 'Cliente',
+        estado: u.estado || 'Activo',
+        historialEdiciones: historial,
+        codigoRecuperacion: u.codigoRecuperacion || u.codigo_recuperacion || null,
+        codigoExpiracion: u.codigoExpiracion || u.codigo_expiracion || null
+    };
+}
+
 // Configuración de PostgreSQL si DATABASE_URL existe
 let pool = null;
 if (process.env.DATABASE_URL) {
@@ -101,7 +130,7 @@ if (process.env.DATABASE_URL) {
     });
     console.log('Conectado a PostgreSQL mediante DATABASE_URL');
 
-    // Crear tablas e insertar admin por defecto si no existe
+    // Inicializar tablas y columnas en PostgreSQL
     const initDb = async () => {
         try {
             // Tabla de usuarios
@@ -115,15 +144,25 @@ if (process.env.DATABASE_URL) {
                     fecha_registro TEXT,
                     contador_modificaciones INT DEFAULT 0,
                     codigo_recuperacion TEXT,
-                    codigo_expiracion BIGINT
+                    codigo_expiracion BIGINT,
+                    rol VARCHAR(50) DEFAULT 'Cliente',
+                    estado VARCHAR(50) DEFAULT 'Activo',
+                    historial_ediciones TEXT DEFAULT '[]'
                 );
             `);
 
             // Asegurar que columnas nuevas existan si la tabla ya existía
             await pool.query(`
                 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS correo TEXT;
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT;
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS direccion TEXT;
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_registro TEXT;
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS contador_modificaciones INT DEFAULT 0;
                 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_recuperacion TEXT;
                 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_expiracion BIGINT;
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol VARCHAR(50) DEFAULT 'Cliente';
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS estado VARCHAR(50) DEFAULT 'Activo';
+                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS historial_ediciones TEXT DEFAULT '[]';
             `);
 
             // Tabla de administradores
@@ -186,7 +225,7 @@ app.get(['/admin', '/admin.html'], (req, res) => {
 // --- MÉTODOS LOCALES (FALLBACK A db.json) ---
 function leerDBLocal() {
     if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] }));
+        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] }, null, 2));
     }
     try {
         const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
@@ -195,6 +234,7 @@ function leerDBLocal() {
         }
         if (!data.administradores) data.administradores = [ADMIN_DEFAULT];
         if (!data.descargas) data.descargas = [];
+        if (!data.usuarios) data.usuarios = [];
         return data;
     } catch (e) {
         return { usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [] };
@@ -244,16 +284,23 @@ app.get('/api/usuarios', async (req, res) => {
             const result = await pool.query(
                 `SELECT usuario, clave, correo, telefono, direccion, 
                         fecha_registro AS "fechaRegistro", 
-                        contador_modificaciones AS "contadorModificaciones" 
+                        contador_modificaciones AS "contadorModificaciones",
+                        COALESCE(rol, 'Cliente') AS "rol",
+                        COALESCE(estado, 'Activo') AS "estado",
+                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones",
+                        codigo_recuperacion AS "codigoRecuperacion",
+                        codigo_expiracion AS "codigoExpiracion"
                  FROM usuarios ORDER BY usuario ASC`
             );
-            return res.json(result.rows);
+            const usuariosNormalizados = result.rows.map(normalizarUsuario);
+            return res.json(usuariosNormalizados);
         } catch (err) {
             return res.status(500).json({ error: 'Error al consultar PostgreSQL' });
         }
     } else {
         const db = leerDBLocal();
-        res.json(db.usuarios || []);
+        const usuariosNormalizados = (db.usuarios || []).map(normalizarUsuario);
+        res.json(usuariosNormalizados);
     }
 });
 
@@ -274,48 +321,74 @@ app.post('/api/usuarios/registrar', async (req, res) => {
             if (existeCorreo.rows.length > 0) return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
 
             const insertResult = await pool.query(
-                `INSERT INTO usuarios (usuario, clave, correo, telefono, direccion, fecha_registro, contador_modificaciones)
-                 VALUES ($1, $2, $3, $4, $5, $6, 0)
-                 RETURNING usuario, clave, correo, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
+                `INSERT INTO usuarios (usuario, clave, correo, telefono, direccion, fecha_registro, contador_modificaciones, rol, estado, historial_ediciones)
+                 VALUES ($1, $2, $3, $4, $5, $6, 0, 'Cliente', 'Activo', '[]')
+                 RETURNING usuario, clave, correo, telefono, direccion, 
+                           fecha_registro AS "fechaRegistro", 
+                           contador_modificaciones AS "contadorModificaciones", 
+                           rol, estado, historial_ediciones AS "historialEdiciones"`,
                 [usuario, clave, correo, telefono || '', direccion || '', fechaRegistro]
             );
 
-            return res.json({ mensaje: 'Usuario registrado', usuario: insertResult.rows[0] });
+            return res.json({ mensaje: 'Usuario registrado', usuario: normalizarUsuario(insertResult.rows[0]) });
         } catch (err) {
-            return res.status(500).json({ error: 'Error en base de datos' });
+            console.error('Error en registrar PostgreSQL:', err);
+            return res.status(500).json({ error: 'Error en base de datos al registrar usuario' });
         }
     } else {
         const db = leerDBLocal();
-        if (db.usuarios.some(u => u.usuario.toLowerCase() === usuario.toLowerCase())) {
+        if (db.usuarios.some(u => u.usuario && u.usuario.toLowerCase() === usuario.toLowerCase())) {
             return res.status(400).json({ error: 'El usuario ya existe' });
         }
         if (db.usuarios.some(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase())) {
             return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
         }
 
-        const nuevoUsuario = { usuario, clave, correo, telefono, direccion, fechaRegistro, contadorModificaciones: 0 };
+        const nuevoUsuario = {
+            usuario,
+            clave,
+            correo,
+            telefono: telefono || '',
+            direccion: direccion || '',
+            fechaRegistro,
+            contadorModificaciones: 0,
+            rol: 'Cliente',
+            estado: 'Activo',
+            historialEdiciones: []
+        };
         db.usuarios.push(nuevoUsuario);
         guardarDBLocal(db);
-        res.json({ mensaje: 'Usuario registrado', usuario: nuevoUsuario });
+        res.json({ mensaje: 'Usuario registrado', usuario: normalizarUsuario(nuevoUsuario) });
     }
 });
 
 // API: Iniciar sesión usuario normal
 app.post('/api/usuarios/login', async (req, res) => {
     const { usuario, clave } = req.body;
+    if (!usuario || !clave) return res.status(400).json({ error: 'Usuario y clave requeridos' });
 
     if (pool) {
         try {
             const result = await pool.query(
                 `SELECT usuario, clave, correo, telefono, direccion, 
                         fecha_registro AS "fechaRegistro", 
-                        contador_modificaciones AS "contadorModificaciones" 
+                        contador_modificaciones AS "contadorModificaciones", 
+                        COALESCE(rol, 'Cliente') AS "rol", 
+                        COALESCE(estado, 'Activo') AS "estado", 
+                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones" 
                  FROM usuarios WHERE (LOWER(usuario) = LOWER($1) OR LOWER(correo) = LOWER($1)) AND clave = $2`,
                 [usuario, clave]
             );
 
             if (result.rows.length > 0) {
-                res.json(result.rows[0]);
+                const user = normalizarUsuario(result.rows[0]);
+                if (user.estado === 'Bloqueado') {
+                    return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada por el administrador.' });
+                }
+                if (user.estado === 'Inactivo') {
+                    return res.status(403).json({ error: 'Tu cuenta se encuentra inactiva. Contacta al administrador.' });
+                }
+                res.json(user);
             } else {
                 res.status(401).json({ error: 'Credenciales incorrectas' });
             }
@@ -328,21 +401,29 @@ app.post('/api/usuarios/login', async (req, res) => {
             (u.usuario.toLowerCase() === usuario.toLowerCase() || (u.correo && u.correo.toLowerCase() === usuario.toLowerCase())) &&
             u.clave === clave
         );
-        if (encontrado) res.json(encontrado);
-        else res.status(401).json({ error: 'Credenciales incorrectas' });
+        if (encontrado) {
+            const user = normalizarUsuario(encontrado);
+            if (user.estado === 'Bloqueado') {
+                return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada por el administrador.' });
+            }
+            if (user.estado === 'Inactivo') {
+                return res.status(403).json({ error: 'Tu cuenta se encuentra inactiva. Contacta al administrador.' });
+            }
+            res.json(user);
+        } else {
+            res.status(401).json({ error: 'Credenciales incorrectas' });
+        }
     }
 });
 
-// --- API: RECUPERACIÓN DE CONTRASEÑA POR CORREO (CÓDIGO DE 6 DÍGITOS - 2 MINUTOS) ---
+// --- RECUPERACIÓN DE CONTRASEÑA POR CORREO (OTP 6 DÍGITOS) ---
 
 // 1. Solicitar código de recuperación
 app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
     const { correo } = req.body;
     if (!correo) return res.status(400).json({ error: 'El correo electrónico es requerido' });
 
-    // Generar código numérico de 6 dígitos
     const codigo = Math.floor(100000 + Math.random() * 900000).toString();
-    // Expiración: 15 minutos a partir de este momento (900.000 ms)
     const expiracion = Date.now() + (15 * 60 * 1000);
 
     let usuarioEncontrado = null;
@@ -381,13 +462,12 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
         guardarDBLocal(db);
     }
 
-    // DISPARAR EL ENVÍO REAL DEL CORREO MEDIANTE RESEND API
     try {
         const resultadoEnvio = await enviarCorreoRecuperacion(usuarioEncontrado.correo, codigo);
 
         if (resultadoEnvio && resultadoEnvio.enviado === false) {
             return res.status(400).json({
-                error: 'No se detectó la variable RESEND_API_KEY en el servidor (Render). Configúrala en Environment Variables.',
+                error: 'No se detectó la variable RESEND_API_KEY en el servidor. Configúrala en Environment Variables.',
                 modoDev: true
             });
         }
@@ -457,10 +537,24 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
         return res.status(400).json({ error: 'Todos los campos son requeridos' });
     }
 
+    const logAuditoria = {
+        tipo: 'recuperacion',
+        carpeta: '📁 Recuperación con OTP',
+        editor: 'Sistema (OTP)',
+        fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+        resumen: 'Contraseña restablecida exitosamente mediante código de seguridad OTP',
+        cambios: [{
+            campo: 'Contraseña',
+            valorAnterior: '••••••••',
+            valorNuevo: '•••••••• (Restablecida)'
+        }]
+    };
+
     if (pool) {
         try {
             const userRes = await pool.query(
-                'SELECT codigo_recuperacion, codigo_expiracion FROM usuarios WHERE LOWER(correo) = LOWER($1)',
+                `SELECT usuario, codigo_recuperacion, codigo_expiracion, contador_modificaciones, historial_ediciones 
+                 FROM usuarios WHERE LOWER(correo) = LOWER($1)`,
                 [correo]
             );
 
@@ -475,16 +569,25 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
                 return res.status(400).json({ error: 'El código ha expirado. Debes solicitar uno nuevo.' });
             }
 
+            let historial = [];
+            try {
+                historial = JSON.parse(user.historial_ediciones || '[]');
+            } catch (e) { historial = []; }
+            historial.unshift(logAuditoria);
+
+            const nuevoContador = (parseInt(user.contador_modificaciones || 0)) + 1;
+
             await pool.query(
                 `UPDATE usuarios 
                  SET clave = $1, codigo_recuperacion = NULL, codigo_expiracion = NULL, 
-                     contador_modificaciones = COALESCE(contador_modificaciones, 0) + 1 
-                 WHERE LOWER(correo) = LOWER($2)`,
-                [nuevaClave, correo]
+                     contador_modificaciones = $2, historial_ediciones = $3 
+                 WHERE LOWER(correo) = LOWER($4)`,
+                [nuevaClave, nuevoContador, JSON.stringify(historial), correo]
             );
 
             return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
         } catch (err) {
+            console.error('Error al restablecer clave en PostgreSQL:', err);
             return res.status(500).json({ error: 'Error al actualizar contraseña' });
         }
     } else {
@@ -502,48 +605,354 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
             return res.status(400).json({ error: 'El código ha expirado. Debes solicitar uno nuevo.' });
         }
 
-        db.usuarios[idx].clave = nuevaClave;
-        db.usuarios[idx].codigoRecuperacion = null;
-        db.usuarios[idx].codigoExpiracion = null;
-        db.usuarios[idx].contadorModificaciones = (db.usuarios[idx].contadorModificaciones || 0) + 1;
-        guardarDBLocal(db);
+        if (!Array.isArray(user.historialEdiciones)) user.historialEdiciones = [];
+        user.historialEdiciones.unshift(logAuditoria);
+        user.clave = nuevaClave;
+        user.codigoRecuperacion = null;
+        user.codigoExpiracion = null;
+        user.contadorModificaciones = (parseInt(user.contadorModificaciones || 0)) + 1;
 
+        guardarDBLocal(db);
         return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
     }
 });
 
-// API: Editar perfil
+// API: Editar perfil del usuario desde index.html
 app.put('/api/usuarios/editar', async (req, res) => {
-    const { usuario, clave, correo, telefono, direccion } = req.body;
+    const { usuario, correo, telefono, direccion } = req.body;
+    if (!usuario) return res.status(400).json({ error: 'Nombre de usuario requerido' });
 
     if (pool) {
         try {
-            const updateResult = await pool.query(
-                `UPDATE usuarios 
-                 SET clave = $2, correo = $3, telefono = $4, direccion = $5, contador_modificaciones = COALESCE(contador_modificaciones, 0) + 1 
-                 WHERE LOWER(usuario) = LOWER($1)
-                 RETURNING usuario, clave, correo, telefono, direccion, fecha_registro AS "fechaRegistro", contador_modificaciones AS "contadorModificaciones"`,
-                [usuario, clave, correo, telefono, direccion]
+            const userRes = await pool.query(
+                `SELECT usuario, clave, correo, telefono, direccion, 
+                        fecha_registro AS "fechaRegistro", 
+                        contador_modificaciones AS "contadorModificaciones", 
+                        COALESCE(rol, 'Cliente') AS "rol", 
+                        COALESCE(estado, 'Activo') AS "estado", 
+                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones" 
+                 FROM usuarios WHERE LOWER(usuario) = LOWER($1)`,
+                [usuario]
             );
 
-            if (updateResult.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
-            res.json({ mensaje: 'Perfil actualizado', usuario: updateResult.rows[0] });
+            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+            const userActual = normalizarUsuario(userRes.rows[0]);
+
+            // Detectar cambios
+            const cambios = [];
+            const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
+            const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
+            const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
+
+            if (nuevoCorreo !== userActual.correo) {
+                cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
+            }
+            if (nuevoTelefono !== userActual.telefono) {
+                cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
+            }
+            if (nuevaDireccion !== userActual.direccion) {
+                cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
+            }
+
+            let historial = userActual.historialEdiciones;
+            let nuevoContador = userActual.contadorModificaciones;
+
+            if (cambios.length > 0) {
+                const logAuditoria = {
+                    tipo: 'perfil',
+                    carpeta: '📁 Actualización de Perfil',
+                    editor: 'Usuario',
+                    fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+                    resumen: `${cambios.length} campo(s) de perfil modificado(s)`,
+                    cambios: cambios
+                };
+                historial.unshift(logAuditoria);
+                nuevoContador++;
+            }
+
+            const updateResult = await pool.query(
+                `UPDATE usuarios 
+                 SET correo = $2, telefono = $3, direccion = $4, contador_modificaciones = $5, historial_ediciones = $6 
+                 WHERE LOWER(usuario) = LOWER($1)
+                 RETURNING usuario, clave, correo, telefono, direccion, 
+                           fecha_registro AS "fechaRegistro", 
+                           contador_modificaciones AS "contadorModificaciones", 
+                           COALESCE(rol, 'Cliente') AS "rol", 
+                           COALESCE(estado, 'Activo') AS "estado", 
+                           COALESCE(historial_ediciones, '[]') AS "historialEdiciones"`,
+                [usuario, nuevoCorreo, nuevoTelefono, nuevaDireccion, nuevoContador, JSON.stringify(historial)]
+            );
+
+            res.json({ mensaje: 'Perfil actualizado', usuario: normalizarUsuario(updateResult.rows[0]) });
         } catch (err) {
-            res.status(500).json({ error: 'Error al actualizar' });
+            console.error('Error al editar perfil PostgreSQL:', err);
+            res.status(500).json({ error: 'Error al actualizar perfil en el servidor' });
         }
     } else {
         const db = leerDBLocal();
         const idx = db.usuarios.findIndex(u => u.usuario.toLowerCase() === usuario.toLowerCase());
         if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        db.usuarios[idx].clave = clave;
-        if (correo) db.usuarios[idx].correo = correo;
-        db.usuarios[idx].telefono = telefono;
-        db.usuarios[idx].direccion = direccion;
-        db.usuarios[idx].contadorModificaciones = (db.usuarios[idx].contadorModificaciones || 0) + 1;
+        const userActual = normalizarUsuario(db.usuarios[idx]);
+        const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
+        const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
+        const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
+
+        const cambios = [];
+        if (nuevoCorreo !== userActual.correo) {
+            cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
+        }
+        if (nuevoTelefono !== userActual.telefono) {
+            cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
+        }
+        if (nuevaDireccion !== userActual.direccion) {
+            cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
+        }
+
+        if (cambios.length > 0) {
+            const logAuditoria = {
+                tipo: 'perfil',
+                carpeta: '📁 Actualización de Perfil',
+                editor: 'Usuario',
+                fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+                resumen: `${cambios.length} campo(s) de perfil modificado(s)`,
+                cambios: cambios
+            };
+            if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
+            db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
+            db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
+        }
+
+        db.usuarios[idx].correo = nuevoCorreo;
+        db.usuarios[idx].telefono = nuevoTelefono;
+        db.usuarios[idx].direccion = nuevaDireccion;
 
         guardarDBLocal(db);
-        res.json({ mensaje: 'Perfil actualizado', usuario: db.usuarios[idx] });
+        res.json({ mensaje: 'Perfil actualizado', usuario: normalizarUsuario(db.usuarios[idx]) });
+    }
+});
+
+// API: Cambiar contraseña voluntariamente desde el perfil (index.html)
+app.put('/api/usuarios/cambiar-clave', async (req, res) => {
+    const { usuario, claveActual, claveNueva } = req.body;
+    if (!usuario || !claveActual || !claveNueva) {
+        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    }
+    if (claveNueva.length < 6) {
+        return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const logAuditoria = {
+        tipo: 'clave',
+        carpeta: '📁 Cambio de Contraseña',
+        editor: 'Usuario',
+        fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+        resumen: 'Contraseña actualizada voluntariamente por el usuario',
+        cambios: [{
+            campo: 'Contraseña',
+            valorAnterior: '••••••••',
+            valorNuevo: '•••••••• (Modificada)'
+        }]
+    };
+
+    if (pool) {
+        try {
+            const userRes = await pool.query(
+                `SELECT usuario, clave, contador_modificaciones, historial_ediciones 
+                 FROM usuarios WHERE LOWER(usuario) = LOWER($1)`,
+                [usuario]
+            );
+
+            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+            const user = userRes.rows[0];
+
+            if (user.clave !== claveActual) {
+                return res.status(400).json({ error: 'La contraseña actual no es correcta' });
+            }
+
+            let historial = [];
+            try { historial = JSON.parse(user.historial_ediciones || '[]'); } catch (e) { historial = []; }
+            historial.unshift(logAuditoria);
+            const nuevoContador = (parseInt(user.contador_modificaciones || 0)) + 1;
+
+            const updateResult = await pool.query(
+                `UPDATE usuarios 
+                 SET clave = $1, contador_modificaciones = $2, historial_ediciones = $3 
+                 WHERE LOWER(usuario) = LOWER($4)
+                 RETURNING usuario, clave, correo, telefono, direccion, 
+                           fecha_registro AS "fechaRegistro", 
+                           contador_modificaciones AS "contadorModificaciones", 
+                           COALESCE(rol, 'Cliente') AS "rol", 
+                           COALESCE(estado, 'Activo') AS "estado", 
+                           COALESCE(historial_ediciones, '[]') AS "historialEdiciones"`,
+                [claveNueva, nuevoContador, JSON.stringify(historial), usuario]
+            );
+
+            res.json({ ok: true, mensaje: 'Contraseña cambiada con éxito', usuario: normalizarUsuario(updateResult.rows[0]) });
+        } catch (err) {
+            console.error('Error al cambiar clave en PostgreSQL:', err);
+            res.status(500).json({ error: 'Error en el servidor al cambiar contraseña' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const idx = db.usuarios.findIndex(u => u.usuario.toLowerCase() === usuario.toLowerCase());
+        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        if (db.usuarios[idx].clave !== claveActual) {
+            return res.status(400).json({ error: 'La contraseña actual no es correcta' });
+        }
+
+        if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
+        db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
+        db.usuarios[idx].clave = claveNueva;
+        db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
+
+        guardarDBLocal(db);
+        res.json({ ok: true, mensaje: 'Contraseña cambiada con éxito', usuario: normalizarUsuario(db.usuarios[idx]) });
+    }
+});
+
+// API: Edición completa de usuario por el Administrador (admin.html)
+app.put(['/api/usuarios/admin-editar', '/api/usuarios/:usuario'], async (req, res) => {
+    const usuarioTarget = req.params.usuario || req.body.usuario || req.body.originalUsuario;
+    const { correo, telefono, direccion, clave, rol, estado } = req.body;
+
+    if (!usuarioTarget) return res.status(400).json({ error: 'Usuario objetivo requerido' });
+
+    if (pool) {
+        try {
+            const userRes = await pool.query(
+                `SELECT usuario, clave, correo, telefono, direccion, 
+                        fecha_registro AS "fechaRegistro", 
+                        contador_modificaciones AS "contadorModificaciones", 
+                        COALESCE(rol, 'Cliente') AS "rol", 
+                        COALESCE(estado, 'Activo') AS "estado", 
+                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones" 
+                 FROM usuarios WHERE LOWER(usuario) = LOWER($1)`,
+                [usuarioTarget]
+            );
+
+            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+            const userActual = normalizarUsuario(userRes.rows[0]);
+
+            const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
+            const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
+            const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
+            const nuevaClave = clave !== undefined && clave.trim() !== '' ? clave.trim() : userActual.clave;
+            const nuevoRol = rol || userActual.rol;
+            const nuevoEstado = estado || userActual.estado;
+
+            const cambios = [];
+            if (nuevoCorreo !== userActual.correo) {
+                cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
+            }
+            if (nuevoTelefono !== userActual.telefono) {
+                cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
+            }
+            if (nuevaDireccion !== userActual.direccion) {
+                cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
+            }
+            if (nuevaClave !== userActual.clave) {
+                cambios.push({ campo: 'Contraseña', valorAnterior: userActual.clave || '••••••••', valorNuevo: nuevaClave });
+            }
+            if (nuevoRol !== userActual.rol) {
+                cambios.push({ campo: 'Rol', valorAnterior: userActual.rol || 'Cliente', valorNuevo: nuevoRol });
+            }
+            if (nuevoEstado !== userActual.estado) {
+                cambios.push({ campo: 'Estado de Cuenta', valorAnterior: userActual.estado || 'Activo', valorNuevo: nuevoEstado });
+            }
+
+            let historial = userActual.historialEdiciones;
+            let nuevoContador = userActual.contadorModificaciones;
+
+            if (cambios.length > 0) {
+                const logAuditoria = {
+                    tipo: 'admin',
+                    carpeta: '📁 Modificación por Administrador',
+                    editor: 'Administrador',
+                    fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+                    resumen: `${cambios.length} cambio(s) realizado(s) por el Administrador`,
+                    cambios: cambios
+                };
+                historial.unshift(logAuditoria);
+                nuevoContador++;
+            }
+
+            const updateResult = await pool.query(
+                `UPDATE usuarios 
+                 SET correo = $2, telefono = $3, direccion = $4, clave = $5, rol = $6, estado = $7, 
+                     contador_modificaciones = $8, historial_ediciones = $9 
+                 WHERE LOWER(usuario) = LOWER($1)
+                 RETURNING usuario, clave, correo, telefono, direccion, 
+                           fecha_registro AS "fechaRegistro", 
+                           contador_modificaciones AS "contadorModificaciones", 
+                           COALESCE(rol, 'Cliente') AS "rol", 
+                           COALESCE(estado, 'Activo') AS "estado", 
+                           COALESCE(historial_ediciones, '[]') AS "historialEdiciones"`,
+                [usuarioTarget, nuevoCorreo, nuevoTelefono, nuevaDireccion, nuevaClave, nuevoRol, nuevoEstado, nuevoContador, JSON.stringify(historial)]
+            );
+
+            res.json({ ok: true, mensaje: 'Usuario actualizado con éxito', usuario: normalizarUsuario(updateResult.rows[0]) });
+        } catch (err) {
+            console.error('Error al editar usuario por Admin PostgreSQL:', err);
+            res.status(500).json({ error: 'Error en el servidor al actualizar usuario' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const idx = db.usuarios.findIndex(u => u.usuario.toLowerCase() === usuarioTarget.toLowerCase());
+        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const userActual = normalizarUsuario(db.usuarios[idx]);
+        const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
+        const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
+        const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
+        const nuevaClave = clave !== undefined && clave.trim() !== '' ? clave.trim() : userActual.clave;
+        const nuevoRol = rol || userActual.rol;
+        const nuevoEstado = estado || userActual.estado;
+
+        const cambios = [];
+        if (nuevoCorreo !== userActual.correo) {
+            cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
+        }
+        if (nuevoTelefono !== userActual.telefono) {
+            cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
+        }
+        if (nuevaDireccion !== userActual.direccion) {
+            cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
+        }
+        if (nuevaClave !== userActual.clave) {
+            cambios.push({ campo: 'Contraseña', valorAnterior: userActual.clave || '••••••••', valorNuevo: nuevaClave });
+        }
+        if (nuevoRol !== userActual.rol) {
+            cambios.push({ campo: 'Rol', valorAnterior: userActual.rol || 'Cliente', valorNuevo: nuevoRol });
+        }
+        if (nuevoEstado !== userActual.estado) {
+            cambios.push({ campo: 'Estado de Cuenta', valorAnterior: userActual.estado || 'Activo', valorNuevo: nuevoEstado });
+        }
+
+        if (cambios.length > 0) {
+            const logAuditoria = {
+                tipo: 'admin',
+                carpeta: '📁 Modificación por Administrador',
+                editor: 'Administrador',
+                fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+                resumen: `${cambios.length} cambio(s) realizado(s) por el Administrador`,
+                cambios: cambios
+            };
+            if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
+            db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
+            db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
+        }
+
+        db.usuarios[idx].correo = nuevoCorreo;
+        db.usuarios[idx].telefono = nuevoTelefono;
+        db.usuarios[idx].direccion = nuevaDireccion;
+        db.usuarios[idx].clave = nuevaClave;
+        db.usuarios[idx].rol = nuevoRol;
+        db.usuarios[idx].estado = nuevoEstado;
+
+        guardarDBLocal(db);
+        res.json({ ok: true, mensaje: 'Usuario actualizado con éxito', usuario: normalizarUsuario(db.usuarios[idx]) });
     }
 });
 
@@ -566,7 +975,7 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
     }
 });
 
-// API: Vaciar usuarios
+// API: Vaciar todos los usuarios
 app.delete('/api/usuarios', async (req, res) => {
     if (pool) {
         try {
@@ -622,7 +1031,7 @@ app.get('/api/descargas', async (req, res) => {
         }
     } else {
         const db = leerDBLocal();
-        res.json(db.descargas.reverse());
+        res.json([...db.descargas].reverse());
     }
 });
 
