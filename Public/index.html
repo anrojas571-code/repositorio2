@@ -125,6 +125,166 @@
             transition: transform 0.2s ease, background 0.3s ease;
         }
 
+        /* Superposición completa (Backdrop) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        /* Tarjeta Modal principal */
+        .modal-card {
+            background: var(--card-bg, #1a2035);
+            border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+            border-radius: 16px;
+            width: 90%;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            animation: modalFadeIn 0.25s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Encabezado */
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: transparent;
+            border: none;
+            color: #a0aec0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #ffffff;
+        }
+
+        /* Campos e Inputs */
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            color: #a0aec0;
+            margin-bottom: 6px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .field-icon {
+            position: absolute;
+            left: 14px;
+            color: #64748b;
+            pointer-events: none;
+        }
+
+        .input-wrapper input,
+        .input-wrapper select,
+        .input-wrapper textarea {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-wrapper textarea {
+            padding-left: 14px;
+            resize: vertical;
+        }
+
+        .input-wrapper input:focus,
+        .input-wrapper select:focus,
+        .input-wrapper textarea:focus {
+            border-color: #6366f1;
+        }
+
+        /* Pie del modal y botones */
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e2e8f0;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            border: none;
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
         .support-toggle-btn:hover {
             transform: scale(1.08);
         }
@@ -710,48 +870,50 @@
         <i class="fa-solid fa-headset"></i>
     </button>
 
-    <!-- MODAL DE MENSAJE DE SOPORTE PARA USUARIOS -->
+    <!-- OVERLAY Y CONTENEDOR DEL MODAL -->
     <div id="modalSoporteUsuario" class="modal-overlay">
         <div class="modal-card" style="max-width: 440px;">
             <div class="modal-header">
                 <h2><i class="fa-solid fa-headset"></i> Contactar a Soporte</h2>
-                <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" onclick="cerrarModalSoporte()" class="modal-close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
-            <form onsubmit="event.preventDefault(); enviarMensajeSoporte();">
+
+            <form id="formSoporteUsuario" onsubmit="enviarMensajeSoporte(event)">
                 <div class="modal-body">
                     <div class="form-group">
-                        <label>Nombre de Usuario</label>
+                        <label>NOMBRE DE USUARIO</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-user field-icon"></i>
-                            <input type="text" id="soporteUsuario" placeholder="Tu usuario registrado" required>
+                            <input type="text" id="soporteUsuario" placeholder="Ingresa tu usuario" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Motivo de Consulta</label>
+                        <label>MOTIVO DE CONSULTA</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-circle-exclamation field-icon"></i>
-                            <select id="soporteMotivo">
-                                <option value="Cuenta Inactiva">🟡Cuenta Inactiva</option>
-                                <option value="Cuenta Bloqueada">🔴Cuenta Bloqueada</option>
-                                <option value="Olvido de Contraseña">💬Olvido de Contraseña</option>
+                            <select id="soporteMotivo" class="form-select">
+                                <option value="Cuenta Inactiva">Cuenta Inactiva</option>
+                                <option value="Cuenta Bloqueada">Cuenta Bloqueada</option>
+                                <option value="Olvido de Contraseña">Olvido de Contraseña</option>
                                 <option value="Otro">Otro Motivo</option>
                             </select>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Mensaje</label>
+                        <label>MENSAJE</label>
                         <div class="input-wrapper">
-                            <textarea id="soporteMensaje" rows="4"
-                                style="width:100%; padding: 10px 14px; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); background: var(--input-bg); color: var(--text-main); outline:none;"
-                                placeholder="Describe tu problema o solicitud..." required></textarea>
+                            <textarea id="soporteMensaje" rows="4" placeholder="Escribe tu mensaje aquí..."
+                                required></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="modal-footer">
-                    <button type="button" onclick="cerrarModalSoporte()" class="btn btn-refresh">Cancelar</button>
+                    <button type="button" onclick="cerrarModalSoporte()" class="btn btn-secondary">Cancelar</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="fa-solid fa-paper-plane"></i> Enviar Mensaje
                     </button>
@@ -1160,13 +1322,19 @@
             document.getElementById('modalSoporteUsuario').classList.remove('active');
         }
 
-        async function enviarMensajeSoporte() {
+        async function enviarMensajeSoporte(e) {
+            e.preventDefault(); // Previene la recarga automática del navegador
+
             const usuario = document.getElementById('soporteUsuario').value.trim();
             const motivo = document.getElementById('soporteMotivo').value;
             const mensaje = document.getElementById('soporteMensaje').value.trim();
 
             if (!usuario || !mensaje) {
-                showToast('Por favor completa todos los campos requeridos', 'advertencia');
+                if (typeof showToast === 'function') {
+                    showToast('Por favor completa todos los campos', 'advertencia');
+                } else {
+                    alert('Por favor completa todos los campos');
+                }
                 return;
             }
 
@@ -1177,21 +1345,33 @@
                     body: JSON.stringify({ usuario, motivo, mensaje })
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
-                    showToast('Tu mensaje ha sido enviado al administrador', 'exito', 'Mensaje Enviado');
+                    if (typeof showToast === 'function') {
+                        showToast('Mensaje enviado correctamente al administrador', 'exito', 'Soporte');
+                    } else {
+                        alert('Mensaje enviado correctamente');
+                    }
                     cerrarModalSoporte();
-                    document.getElementById('soporteUsuario').value = '';
-                    document.getElementById('soporteMensaje').value = '';
+                    document.getElementById('formSoporteUsuario').reset();
                 } else {
-                    const errData = await response.json();
-                    showToast(errData.error || 'No se pudo enviar el mensaje', 'error');
+                    const errorMsg = data.error || 'No se pudo enviar el mensaje';
+                    if (typeof showToast === 'function') {
+                        showToast(errorMsg, 'error');
+                    } else {
+                        alert(errorMsg);
+                    }
                 }
             } catch (error) {
-                console.error('Error al enviar mensaje de soporte:', error);
-                showToast('Error de conexión con el servidor', 'error');
+                console.error('Error enviando soporte:', error);
+                if (typeof showToast === 'function') {
+                    showToast('Error de conexión con el servidor', 'error');
+                } else {
+                    alert('Error de conexión con el servidor');
+                }
             }
         }
-
         // --- INDICADOR DE FUERZA DE CONTRASEÑA ---
         function evaluarFuerzaClave(clave) {
             const bar = document.getElementById('strengthBar');
