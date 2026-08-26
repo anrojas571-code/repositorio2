@@ -1523,25 +1523,65 @@
         </div>
     </div>
 
-    <!-- MODAL DE BUZÓN DE MENSAJES DE SOPORTE EN ADMIN -->
+    <!-- MODAL DE CENTRO DE MENSAJERÍA DE SOPORTE Y CHAT DIRECTO (ADMIN) -->
     <div id="modalBuzonSoporte" class="modal-overlay">
-        <div class="modal-card" style="max-width: 650px;">
-            <div class="modal-header">
+        <div class="modal-card" style="max-width: 800px; height: 80vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="flex-shrink: 0;">
                 <div>
-                    <h2><i class="fa-solid fa-headset" style="color: var(--primary);"></i> Mensajes de Usuarios
-                        Inactivos / Bloqueados</h2>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Comunicaciones enviadas por
-                        los usuarios para solicitar soporte.</p>
+                    <h2><i class="fa-solid fa-comments" style="color: var(--primary);"></i> Centro de Atención y
+                        Mensajería Directa</h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Gestión de chats individuales
+                        por usuario.</p>
                 </div>
                 <button onclick="cerrarModalMensajesSoporte()" class="modal-close"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div id="listaMensajesSoporte" class="modal-body"></div>
+            <div style="display: grid; grid-template-columns: 240px 1fr; gap: 15px; flex: 1; overflow: hidden;">
+                <!-- Lista lateral de usuarios con tickets de soporte -->
+                <div style="border-right: 1px solid var(--border-color); overflow-y: auto; padding-right: 10px;">
+                    <div
+                        style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
+                        Conversaciones</div>
+                    <div id="listaConversacionesSoporte" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                </div>
 
-            <div class="modal-footer">
+                <!-- Área del chat con el usuario seleccionado -->
+                <div style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
+                    <div id="chatHeaderAdmin"
+                        style="padding: 8px 12px; background: var(--item-bg); border-radius: 8px; font-weight: 700; font-size: 13px; border: 1px solid var(--border-color); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span id="chatUsuarioNombre"><i class="fa-solid fa-user"></i> Selecciona un usuario</span>
+                        <span id="chatUsuarioEstado" class="badge-status-blocked"
+                            style="display: none; font-size: 10px;"></span>
+                    </div>
+
+                    <!-- Caja de mensajes recibidos/enviados -->
+                    <div id="cajaMensajesChat"
+                        style="flex: 1; overflow-y: auto; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-comments"></i>
+                            <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                        </div>
+                    </div>
+
+                    <!-- Formulario de respuesta del admin -->
+                    <form id="formRespuestaAdmin" onsubmit="event.preventDefault(); enviarRespuestaAdmin();"
+                        style="margin-top: 8px; display: flex; gap: 8px;">
+                        <input type="text" id="inputRespuestaAdmin"
+                            placeholder="Escribe una respuesta para el usuario..."
+                            style="flex: 1; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--item-bg); color: var(--text-main); font-size: 13px;"
+                            disabled>
+                        <button type="submit" id="btnEnviarRespuestaAdmin" class="btn btn-primary"
+                            style="margin: 0; padding: 0 16px;" disabled>
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="flex-shrink: 0; margin-top: 12px;">
                 <button onclick="pedirConfirmacionVaciarSoporte()" class="btn btn-danger">
-                    <i class="fa-solid fa-trash-can"></i> Vaciar Mensajes
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Todos los Mensajes
                 </button>
                 <button onclick="cerrarModalMensajesSoporte()" class="btn btn-refresh">Cerrar</button>
             </div>
@@ -1590,60 +1630,119 @@
             document.getElementById('modalBuzonSoporte').classList.remove('active');
         }
 
+        let usuarioSoporteSeleccionado = null;
+        let todosMensajesSoporte = [];
+
         async function cargarMensajesSoporte() {
-            const contenedor = document.getElementById('listaMensajesSoporte');
+            const contenedorLista = document.getElementById('listaConversacionesSoporte');
             try {
                 const res = await fetch('/api/soporte');
-                const mensajes = await res.json();
+                todosMensajesSoporte = await res.json();
 
-                if (!mensajes || mensajes.length === 0) {
-                    contenedor.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa-solid fa-envelope-open"></i>
-                    <p>No hay mensajes de soporte recibidos.</p>
-                </div>
-            `;
+                if (!todosMensajesSoporte || todosMensajesSoporte.length === 0) {
+                    contenedorLista.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 10px; text-align: center;">Sin mensajes</div>';
+                    document.getElementById('cajaMensajesChat').innerHTML = `
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-envelope-open"></i>
+                            <p>No hay mensajes de soporte recibidos.</p>
+                        </div>`;
                     return;
                 }
 
-                let html = '';
-                mensajes.forEach(m => {
-                    html += `
-                <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-weight: 800; font-size: 14px; color: var(--text-main);">
-                            <i class="fa-solid fa-user"></i> ${m.usuario}
-                        </span>
-                        <span class="badge-status-blocked" style="font-size: 10px;">${m.motivo}</span>
-                    </div>
-                    <p style="font-size: 13px; color: var(--text-main); background: var(--modal-bg); padding: 10px; border-radius: 6px; border: 1px dashed var(--border-color); margin-bottom: 8px;">
-                        "${m.mensaje}"
-                    </p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted);">
-                        <span><i class="fa-regular fa-clock"></i> ${m.fecha || 'Reciente'}</span>
-                        <button onclick="eliminarMensajeSoporte('${m.id}')" class="btn-action-user delete" title="Eliminar mensaje">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
+                // Agrupar mensajes por usuario
+                const usuariosUnicos = [...new Set(todosMensajesSoporte.map(m => m.usuario))];
+
+                let htmlLista = '';
+                usuariosUnicos.forEach(usr => {
+                    const mensajesUsuario = todosMensajesSoporte.filter(m => m.usuario === usr);
+                    const ultimoMsg = mensajesUsuario[mensajesUsuario.length - 1];
+                    const activo = usuarioSoporteSeleccionado === usr ? 'background: var(--primary-light); border-color: var(--primary);' : '';
+
+                    htmlLista += `
+                        <div onclick="seleccionarUsuarioChat('${usr}')" style="padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
+                            <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
+                            <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                                ${ultimoMsg.emisor === 'admin' ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje}
+                            </div>
+                        </div>
+                    `;
                 });
 
-                contenedor.innerHTML = html;
+                contenedorLista.innerHTML = htmlLista;
+
+                if (usuarioSoporteSeleccionado) {
+                    seleccionarUsuarioChat(usuarioSoporteSeleccionado);
+                }
             } catch (err) {
-                contenedor.innerHTML = '<p style="text-align:center; color:red;">Error al cargar mensajes de soporte.</p>';
+                contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar</p>';
             }
         }
 
-        async function eliminarMensajeSoporte(id) {
+        function seleccionarUsuarioChat(usuario) {
+            usuarioSoporteSeleccionado = usuario;
+            cargarMensajesSoporte();
+
+            const headerNombre = document.getElementById('chatUsuarioNombre');
+            const headerEstado = document.getElementById('chatUsuarioEstado');
+            const cajaChat = document.getElementById('cajaMensajesChat');
+            const inputRespuesta = document.getElementById('inputRespuestaAdmin');
+            const btnRespuesta = document.getElementById('btnEnviarRespuestaAdmin');
+
+            const mensajesUser = todosMensajesSoporte.filter(m => m.usuario === usuario);
+            const motivo = mensajesUser[0]?.motivo || 'Consulta';
+
+            headerNombre.innerHTML = `<i class="fa-solid fa-user"></i> Conversación con: <strong>${usuario}</strong>`;
+            headerEstado.style.display = 'inline-block';
+            headerEstado.textContent = motivo;
+
+            inputRespuesta.disabled = false;
+            btnRespuesta.disabled = false;
+
+            let htmlChat = '';
+            mensajesUser.forEach(m => {
+                const esAdmin = m.emisor === 'admin';
+                const alignment = esAdmin ? 'align-self: flex-end; background: var(--primary); color: white;' : 'align-self: flex-start; background: var(--item-bg); color: var(--text-main); border: 1px solid var(--border-color);';
+
+                htmlChat += `
+                    <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; ${alignment}">
+                        <div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px; font-weight: 700;">
+                            ${esAdmin ? 'Soporte (Administrador)' : m.usuario}
+                        </div>
+                        <div>${m.mensaje}</div>
+                        <div style="font-size: 9px; opacity: 0.7; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
+                    </div>
+                `;
+            });
+
+            cajaChat.innerHTML = htmlChat;
+            cajaChat.scrollTop = cajaChat.scrollHeight;
+        }
+
+        async function enviarRespuestaAdmin() {
+            const input = document.getElementById('inputRespuestaAdmin');
+            const mensaje = input.value.trim();
+
+            if (!mensaje || !usuarioSoporteSeleccionado) return;
+
             try {
-                const res = await fetch(`/api/soporte/${id}`, { method: 'DELETE' });
+                const res = await fetch('/api/soporte/responder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuarioSoporteSeleccionado,
+                        mensaje: mensaje
+                    })
+                });
+
                 if (res.ok) {
-                    showToast('Mensaje eliminado', 'success');
+                    input.value = '';
+                    showToast('Respuesta enviada al usuario', 'success');
                     cargarMensajesSoporte();
+                } else {
+                    showToast('Error al enviar respuesta', 'error');
                 }
             } catch (err) {
-                showToast('Error al eliminar mensaje', 'error');
+                showToast('Error de conexión con el servidor', 'error');
             }
         }
 
