@@ -865,46 +865,31 @@
     <button class="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar Tema">
         <i id="themeIcon" class="fa-solid fa-moon"></i>
     </button>
+
     <!-- BOTÓN FLOTANTE PARA CONTACTAR AL DESARROLLADOR -->
     <button class="support-toggle-btn" onclick="abrirModalSoporte()" title="Contactar al Desarrollador / Soporte">
         <i class="fa-solid fa-headset"></i>
     </button>
 
-    <!-- MODAL DE MENSAJERÍA DIRECTA CON EL ADMINISTRADOR (USUARIO) -->
-    <div id="modalSoporteUsuario" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px; height: 600px; display: flex; flex-direction: column;">
-            <div class="modal-header" style="flex-shrink: 0;">
-                <h2><i class="fa-solid fa-headset" style="color: var(--primary);"></i> Contactar con Administrador</h2>
-                <button onclick="cerrarModalSoporteUsuario()" class="modal-close"><i
-                        class="fa-solid fa-xmark"></i></button>
+    <div id="modalContactoSoporte" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-headset"></i> Contactar a Soporte</h2>
+                <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
-            <!-- Área de conversación continua -->
-            <div id="cajaMensajesUsuario"
-                style="flex: 1; overflow-y: auto; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-                <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin: auto;">
-                    <i class="fa-solid fa-comments" style="font-size: 24px; margin-bottom: 8px;"></i>
-                    <p>Inicia una conversación directa con el administrador para resolver tus dudas o recuperar el
-                        acceso.</p>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Mensaje / Consulta</label>
+                    <div class="input-wrapper">
+                        <textarea id="soporteMensajeCliente" rows="4"
+                            placeholder="Escribe tu mensaje para el desarrollador..."></textarea>
+                    </div>
                 </div>
             </div>
-
-            <!-- Formulario para enviar mensaje -->
-            <form onsubmit="event.preventDefault(); enviarMensajeSoporteUsuario();"
-                style="display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;">
-                <div class="form-group" style="margin: 0;">
-                    <input type="text" id="soporteNombreUsuario" placeholder="Tu nombre de usuario" required
-                        style="width: 100%; padding: 8px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-size: 12px;">
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="soporteMensajeText" placeholder="Escribe tu mensaje..." required
-                        style="flex: 1; padding: 10px 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; color: white; font-size: 12.5px;">
-                    <button type="submit"
-                        style="padding: 0 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700;">
-                        <i class="fa-solid fa-paper-plane"></i>
-                    </button>
-                </div>
-            </form>
+            <div class="modal-footer">
+                <button type="button" onclick="cerrarModalSoporte()" class="btn-secondary">Cancelar</button>
+                <button type="button" onclick="enviarMensajeSoporteCliente()" class="btn-primary">Enviar</button>
+            </div>
         </div>
     </div>
 
