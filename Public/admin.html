@@ -1678,9 +1678,9 @@
             }
         }
 
+        // --- FUNCIÓN CORREGIDA PARA SELECCIONAR Y HABILITAR EL CHAT ---
         function seleccionarUsuarioChat(usuario) {
             usuarioSoporteSeleccionado = usuario;
-            cargarMensajesSoporte();
 
             const headerNombre = document.getElementById('chatUsuarioNombre');
             const headerEstado = document.getElementById('chatUsuarioEstado');
@@ -1695,34 +1695,47 @@
             headerEstado.style.display = 'inline-block';
             headerEstado.textContent = motivo;
 
+            // Habilitar campos de entrada y botón de envío
             inputRespuesta.disabled = false;
             btnRespuesta.disabled = false;
+            inputRespuesta.focus();
 
             let htmlChat = '';
             mensajesUser.forEach(m => {
                 const esAdmin = m.emisor === 'admin';
-                const alignment = esAdmin ? 'align-self: flex-end; background: var(--primary); color: white;' : 'align-self: flex-start; background: var(--item-bg); color: var(--text-main); border: 1px solid var(--border-color);';
+                const alignment = esAdmin
+                    ? 'align-self: flex-end; background: var(--primary); color: white;'
+                    : 'align-self: flex-start; background: var(--item-bg); color: var(--text-main); border: 1px solid var(--border-color);';
 
                 htmlChat += `
-                    <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; ${alignment}">
-                        <div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px; font-weight: 700;">
-                            ${esAdmin ? 'Soporte (Administrador)' : m.usuario}
-                        </div>
-                        <div>${m.mensaje}</div>
-                        <div style="font-size: 9px; opacity: 0.7; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
-                    </div>
-                `;
+            <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; margin-bottom: 6px; ${alignment}">
+                <div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px; font-weight: 700;">
+                    ${esAdmin ? 'Soporte (Administrador)' : m.usuario}
+                </div>
+                <div>${m.mensaje}</div>
+                <div style="font-size: 9px; opacity: 0.7; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
+            </div>
+        `;
             });
 
             cajaChat.innerHTML = htmlChat;
             cajaChat.scrollTop = cajaChat.scrollHeight;
         }
 
+        // --- FUNCIÓN CORREGIDA PARA ENVIAR RESPUESTA DEL ADMINISTRADOR ---
         async function enviarRespuestaAdmin() {
             const input = document.getElementById('inputRespuestaAdmin');
             const mensaje = input.value.trim();
 
-            if (!mensaje || !usuarioSoporteSeleccionado) return;
+            if (!mensaje) {
+                showToast('Escribe un mensaje antes de enviar', 'advertencia');
+                return;
+            }
+
+            if (!usuarioSoporteSeleccionado) {
+                showToast('Selecciona un usuario de la lista lateral', 'advertencia');
+                return;
+            }
 
             try {
                 const res = await fetch('/api/soporte/responder', {
@@ -1736,32 +1749,17 @@
 
                 if (res.ok) {
                     input.value = '';
-                    showToast('Respuesta enviada al usuario', 'success');
-                    cargarMensajesSoporte();
+                    showToast('Respuesta enviada al usuario con éxito', 'success');
+                    // Recargar mensajes para actualizar la vista de la conversación
+                    await cargarMensajesSoporte();
                 } else {
-                    showToast('Error al enviar respuesta', 'error');
+                    const errData = await res.json().catch(() => ({}));
+                    showToast(errData.error || 'Error al enviar respuesta al usuario', 'error');
                 }
             } catch (err) {
+                console.error('Error enviando respuesta:', err);
                 showToast('Error de conexión con el servidor', 'error');
             }
-        }
-
-        function pedirConfirmacionVaciarSoporte() {
-            mostrarModalConfirmacion(
-                '¿Vaciar Mensajes de Soporte?',
-                'Se eliminarán todos los mensajes enviados por los usuarios.',
-                async () => {
-                    try {
-                        const res = await fetch('/api/soporte', { method: 'DELETE' });
-                        if (res.ok) {
-                            showToast('Buzón vaciado con éxito', 'success');
-                            cargarMensajesSoporte();
-                        }
-                    } catch (err) {
-                        showToast('Error al vaciar buzón', 'error');
-                    }
-                }
-            );
         }
 
         function cargarTemaGuardado() {

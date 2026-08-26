@@ -199,15 +199,20 @@ if (process.env.DATABASE_URL) {
 
             // Tabla de soporte técnico
             await pool.query(`
-                CREATE TABLE IF NOT EXISTS soporte (
-                    id TEXT PRIMARY KEY,
-                    usuario TEXT NOT NULL,
-                    motivo TEXT NOT NULL,
-                    mensaje TEXT NOT NULL,
-                    fecha TEXT NOT NULL
-                );
-            `);
+    CREATE TABLE IF NOT EXISTS soporte (
+        id TEXT PRIMARY KEY,
+        usuario TEXT NOT NULL,
+        emisor VARCHAR(20) DEFAULT 'usuario',
+        motivo TEXT NOT NULL,
+        mensaje TEXT NOT NULL,
+        fecha TEXT NOT NULL
+    );
+`);
 
+            // Asegurar columna emisor si la tabla ya existía
+            await pool.query(`
+                ALTER TABLE soporte ADD COLUMN IF NOT EXISTS emisor VARCHAR(20) DEFAULT 'usuario';
+            `);
             // Insertar o actualizar el admin por defecto
             await pool.query(`
                 INSERT INTO administradores (usuario, clave) 
@@ -258,7 +263,7 @@ app.get(['/admin', '/admin.html'], (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
-// --- API SOPORTE TÉCNICO ---
+// --- API SOPORTE TÉCNICO (Envío del usuario) ---
 app.post('/api/soporte', async (req, res) => {
     const { usuario, motivo, mensaje } = req.body;
     if (!usuario || !motivo || !mensaje) {
@@ -268,6 +273,7 @@ app.post('/api/soporte', async (req, res) => {
     const nuevoMensaje = {
         id: Date.now().toString(),
         usuario,
+        emisor: 'usuario',
         motivo,
         mensaje,
         fecha: new Date().toLocaleString('es-ES')
@@ -276,8 +282,8 @@ app.post('/api/soporte', async (req, res) => {
     if (pool) {
         try {
             await pool.query(
-                'INSERT INTO soporte (id, usuario, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5)',
-                [nuevoMensaje.id, nuevoMensaje.usuario, nuevoMensaje.motivo, nuevoMensaje.mensaje, nuevoMensaje.fecha]
+                'INSERT INTO soporte (id, usuario, emisor, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5, $6)',
+                [nuevoMensaje.id, nuevoMensaje.usuario, nuevoMensaje.emisor, nuevoMensaje.motivo, nuevoMensaje.mensaje, nuevoMensaje.fecha]
             );
             return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito' });
         } catch (err) {
@@ -290,6 +296,42 @@ app.post('/api/soporte', async (req, res) => {
         db.soporte.unshift(nuevoMensaje);
         guardarDBLocal(db);
         return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito' });
+    }
+});
+
+// --- API SOPORTE TÉCNICO (Respuesta del Administrador) ---
+app.post('/api/soporte/responder', async (req, res) => {
+    const { usuario, mensaje } = req.body;
+    if (!usuario || !mensaje) {
+        return res.status(400).json({ error: 'El usuario y el mensaje son requeridos' });
+    }
+
+    const respuestaAdmin = {
+        id: Date.now().toString(),
+        usuario,
+        emisor: 'admin',
+        motivo: 'Respuesta de Soporte',
+        mensaje,
+        fecha: new Date().toLocaleString('es-ES')
+    };
+
+    if (pool) {
+        try {
+            await pool.query(
+                'INSERT INTO soporte (id, usuario, emisor, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5, $6)',
+                [respuestaAdmin.id, respuestaAdmin.usuario, respuestaAdmin.emisor, respuestaAdmin.motivo, respuestaAdmin.mensaje, respuestaAdmin.fecha]
+            );
+            return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito' });
+        } catch (err) {
+            console.error('Error al guardar respuesta de admin en PostgreSQL:', err);
+            return res.status(500).json({ error: 'Error al enviar la respuesta de soporte' });
+        }
+    } else {
+        const db = leerDBLocal();
+        if (!Array.isArray(db.soporte)) db.soporte = [];
+        db.soporte.push(respuestaAdmin);
+        guardarDBLocal(db);
+        return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito' });
     }
 });
 
