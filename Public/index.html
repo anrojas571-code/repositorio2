@@ -866,9 +866,80 @@
         <i id="themeIcon" class="fa-solid fa-moon"></i>
     </button>
 
-    <!-- BOTÓN FLOTANTE PARA CONTACTAR AL DESARROLLADOR -->
-    <button class="support-toggle-btn" onclick="abrirModalSoporte()" title="Contactar al Desarrollador / Soporte">
+    <!-- Modal de Soporte con Desarrollador -->
+    <div id="modalContactoSoporte" class="modal-overlay">
+        <div class="modal-card" style="max-width: 520px; width: 90%;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-headset"></i> Soporte con el Desarrollador</h2>
+                <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Formulario de Selección del Problema -->
+                <div id="seccionFormularioSoporte">
+                    <div class="form-group">
+                        <label>Nombre de Usuario</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-user"></i>
+                            <input type="text" id="soporteUsuario" placeholder="Ingresa tu usuario">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Motivo de la consulta</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <select id="soporteMotivo">
+                                <option value="" disabled selected>Selecciona una opción</option>
+                                <option value="Cuenta Bloqueada">Cuenta Bloqueada</option>
+                                <option value="Cuenta Inactiva">Cuenta Inactiva</option>
+                                <option value="Otro Motivo">Otro Motivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Detalle de la consulta</label>
+                        <div class="input-wrapper">
+                            <textarea id="soporteMensajeCliente" rows="3"
+                                placeholder="Describe brevemente el inconveniente..."></textarea>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="iniciarOEnviarSoporte()" class="btn-primary" style="width: 100%;">
+                        <i class="fa-solid fa-paper-plane"></i> Iniciar Chat de Soporte
+                    </button>
+                </div>
+
+                <!-- Vista del Chat / Mensajería -->
+                <div id="seccionChatSoporte" style="display: none;">
+                    <div class="chat-info-header" style="margin-bottom: 10px; font-size: 0.85rem; color: #8a8d9b;">
+                        <span id="chatInfoUsuario"></span> | <span id="chatInfoMotivo"
+                            style="font-weight: bold; color: #a5b4fc;"></span>
+                    </div>
+
+                    <div id="contenedorMensajesChat"
+                        style="height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Mensajes dinámicos aquí -->
+                    </div>
+
+                    <div class="input-wrapper" style="margin-top: 10px; display: flex; gap: 8px;">
+                        <input type="text" id="nuevoMensajeChat" placeholder="Escribe un mensaje..."
+                            onkeypress="if(event.key==='Enter') enviarMensajeChat()">
+                        <button type="button" onclick="enviarMensajeChat()" class="btn-primary"
+                            style="padding: 0 15px;">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTÓN DE MENSAJES DE SOPORTE -->
+    <button class="support-admin-btn" onclick="abrirModalSoporte()" title="¿Necesitas ayuda?">
         <i class="fa-solid fa-headset"></i>
+        <span id="badgeSoporte" class="badge-soporte" style="display: none;">0</span>
     </button>
 
     <!-- CONTENEDOR DE TOASTS -->
@@ -1263,13 +1334,24 @@
             document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
-        // --- SOPORTE AL DESARROLLADOR ---
+        // Estructura local para almacenar la conversación del usuario
+        let soporteSesion = {
+            usuario: '',
+            motivo: '',
+            mensajes: []
+        };
+
         function abrirModalSoporte() {
             const modal = document.getElementById('modalContactoSoporte');
             if (modal) {
                 modal.classList.add('active');
-            } else {
-                showToast('El formulario de soporte no está disponible.', 'error');
+                // Si ya hay un chat activo iniciado, mostrar la vista del chat
+                if (soporteSesion.mensajes.length > 0) {
+                    mostrarVistaChat();
+                } else {
+                    document.getElementById('seccionFormularioSoporte').style.display = 'block';
+                    document.getElementById('seccionChatSoporte').style.display = 'none';
+                }
             }
         }
 
@@ -1279,67 +1361,99 @@
                 modal.classList.remove('active');
             }
         }
-        async function cargarConversacionUsuario() {
-            const usuarioInput = document.getElementById('soporteNombreUsuario').value.trim();
-            const cajaChat = document.getElementById('cajaMensajesUsuario');
 
-            if (!usuarioInput) return;
+        function iniciarOEnviarSoporte() {
+            const usuario = document.getElementById('soporteUsuario').value.trim();
+            const motivo = document.getElementById('soporteMotivo').value;
+            const mensajeInicial = document.getElementById('soporteMensajeCliente').value.trim();
 
-            try {
-                const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuarioInput)}`);
-                if (!res.ok) return;
-
-                const mensajes = await res.json();
-                if (!mensajes || mensajes.length === 0) return;
-
-                let htmlChat = '';
-                mensajes.forEach(m => {
-                    const esAdmin = m.emisor === 'admin';
-                    const alignment = esAdmin ? 'align-self: flex-start; background: #334155; color: white;' : 'align-self: flex-end; background: var(--primary); color: white;';
-
-                    htmlChat += `
-                        <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12px; ${alignment}">
-                            <div style="font-size: 9.5px; opacity: 0.8; margin-bottom: 2px; font-weight: 700;">
-                                ${esAdmin ? 'Administrador' : 'Tú'}
-                            </div>
-                            <div>${m.mensaje}</div>
-                            <div style="font-size: 8.5px; opacity: 0.7; text-align: right; margin-top: 3px;">${m.fecha || ''}</div>
-                        </div>
-                    `;
-                });
-
-                cajaChat.innerHTML = htmlChat;
-                cajaChat.scrollTop = cajaChat.scrollHeight;
-            } catch (err) {
-                console.error("Error al cargar chat:", err);
+            if (!usuario) {
+                alert('Por favor ingresa tu usuario.');
+                return;
             }
+            if (!motivo) {
+                alert('Por favor selecciona el motivo de tu consulta.');
+                return;
+            }
+            if (!mensajeInicial) {
+                alert('Por favor describe tu inconveniente.');
+                return;
+            }
+
+            soporteSesion.usuario = usuario;
+            soporteSesion.motivo = motivo;
+
+            // Guardar el primer mensaje del usuario
+            soporteSesion.mensajes.push({
+                emisor: 'usuario',
+                texto: mensajeInicial,
+                fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            // Respuesta automática de recepción por parte del desarrollador/soporte
+            setTimeout(() => {
+                soporteSesion.mensajes.push({
+                    emisor: 'desarrollador',
+                    texto: `Hola @${usuario}, recibimos tu reporte sobre "${motivo}". Un desarrollador revisará tu caso en breve.`,
+                    fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                });
+                renderizarMensajes();
+            }, 1000);
+
+            mostrarVistaChat();
         }
 
-        async function enviarMensajeSoporteUsuario() {
-            const usuario = document.getElementById('soporteNombreUsuario').value.trim();
-            const mensaje = document.getElementById('soporteMensajeText').value.trim();
+        function mostrarVistaChat() {
+            document.getElementById('seccionFormularioSoporte').style.display = 'none';
+            document.getElementById('seccionChatSoporte').style.display = 'block';
+            document.getElementById('chatInfoUsuario').textContent = `Usuario: @${soporteSesion.usuario}`;
+            document.getElementById('chatInfoMotivo').textContent = soporteSesion.motivo;
+            renderizarMensajes();
+        }
 
-            if (!usuario || !mensaje) return;
+        function enviarMensajeChat() {
+            const input = document.getElementById('nuevoMensajeChat');
+            const texto = input.value.trim();
 
-            try {
-                const res = await fetch('/api/soporte', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        usuario: usuario,
-                        motivo: 'Soporte / Consulta',
-                        mensaje: mensaje,
-                        emisor: 'usuario'
-                    })
-                });
+            if (!texto) return;
 
-                if (res.ok) {
-                    document.getElementById('soporteMensajeText').value = '';
-                    cargarConversacionUsuario();
-                }
-            } catch (err) {
-                alert("Error al enviar el mensaje de soporte.");
-            }
+            soporteSesion.mensajes.push({
+                emisor: 'usuario',
+                texto: texto,
+                fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            });
+
+            input.value = '';
+            renderizarMensajes();
+        }
+
+        function renderizarMensajes() {
+            const contenedor = document.getElementById('contenedorMensajesChat');
+            contenedor.innerHTML = '';
+
+            soporteSesion.mensajes.forEach(msg => {
+                const div = document.createElement('div');
+                const esUsuario = msg.emisor === 'usuario';
+
+                div.style.cssText = `
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            align-self: ${esUsuario ? 'flex-end' : 'flex-start'};
+            background: ${esUsuario ? '#4f46e5' : '#374151'};
+            color: #ffffff;
+        `;
+
+                div.innerHTML = `
+            <div>${msg.texto}</div>
+            <div style="font-size: 0.7rem; color: #d1d5db; text-align: right; margin-top: 4px;">${msg.fecha}</div>
+        `;
+
+                contenedor.appendChild(div);
+            });
+
+            contenedor.scrollTop = contenedor.scrollHeight;
         }
 
         // Cargar conversación automáticamente si el usuario ingresa su nombre
@@ -1799,30 +1913,6 @@
             }
         }
     </script>
-
-    <!-- SOPORTE EN EL INDEX -->
-    <div id="modalContactoSoporte" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2><i class="fa-solid fa-headset"></i> Contactar a Soporte</h2>
-                <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Mensaje / Consulta</label>
-                    <div class="input-wrapper">
-                        <textarea id="soporteMensajeCliente" rows="4"
-                            placeholder="Escribe tu mensaje para el desarrollador..."></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="cerrarModalSoporte()" class="btn-secondary">Cancelar</button>
-                <button type="button" onclick="enviarMensajeSoporteCliente()" class="btn-primary">Enviar</button>
-            </div>
-        </div>
-    </div>
-
 </body>
 
 </html>
