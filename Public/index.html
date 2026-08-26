@@ -871,28 +871,6 @@
         <i class="fa-solid fa-headset"></i>
     </button>
 
-    <div id="modalContactoSoporte" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2><i class="fa-solid fa-headset"></i> Contactar a Soporte</h2>
-                <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Mensaje / Consulta</label>
-                    <div class="input-wrapper">
-                        <textarea id="soporteMensajeCliente" rows="4"
-                            placeholder="Escribe tu mensaje para el desarrollador..."></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="cerrarModalSoporte()" class="btn-secondary">Cancelar</button>
-                <button type="button" onclick="enviarMensajeSoporteCliente()" class="btn-primary">Enviar</button>
-            </div>
-        </div>
-    </div>
-
     <!-- CONTENEDOR DE TOASTS -->
     <div id="toastContainer"></div>
 
@@ -1286,15 +1264,21 @@
         }
 
         // --- SOPORTE AL DESARROLLADOR ---
-        function abrirModalSoporteUsuario() {
-            document.getElementById('modalSoporteUsuario').classList.add('active');
-            cargarConversacionUsuario();
+        function abrirModalSoporte() {
+            const modal = document.getElementById('modalContactoSoporte');
+            if (modal) {
+                modal.classList.add('active');
+            } else {
+                showToast('El formulario de soporte no está disponible.', 'error');
+            }
         }
 
-        function cerrarModalSoporteUsuario() {
-            document.getElementById('modalSoporteUsuario').classList.remove('active');
+        function cerrarModalSoporte() {
+            const modal = document.getElementById('modalContactoSoporte');
+            if (modal) {
+                modal.classList.remove('active');
+            }
         }
-
         async function cargarConversacionUsuario() {
             const usuarioInput = document.getElementById('soporteNombreUsuario').value.trim();
             const cajaChat = document.getElementById('cajaMensajesUsuario');
@@ -1815,6 +1799,30 @@
             }
         }
     </script>
+
+    <!-- SOPORTE EN EL INDEX -->
+    <div id="modalContactoSoporte" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-headset"></i> Contactar a Soporte</h2>
+                <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Mensaje / Consulta</label>
+                    <div class="input-wrapper">
+                        <textarea id="soporteMensajeCliente" rows="4"
+                            placeholder="Escribe tu mensaje para el desarrollador..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="cerrarModalSoporte()" class="btn-secondary">Cancelar</button>
+                <button type="button" onclick="enviarMensajeSoporteCliente()" class="btn-primary">Enviar</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
