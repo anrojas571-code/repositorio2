@@ -865,6 +865,12 @@
         <i id="themeIcon" class="fa-solid fa-moon"></i>
     </button>
 
+    <!-- BOTÓN DE MENSAJES DE SOPORTE -->
+    <button class="support-admin-btn" onclick="abrirModalSoporte()" title="¿Necesitas ayuda?">
+        <i class="fa-solid fa-headset"></i>
+        <span id="badgeSoporte" class="badge-soporte" style="display: none;">0</span>
+    </button>
+
     <!-- Modal de Soporte con Desarrollador -->
     <div id="modalContactoSoporte" class="modal-overlay">
         <div class="modal-card" style="max-width: 520px; width: 90%;">
@@ -934,12 +940,6 @@
             </div>
         </div>
     </div>
-
-    <!-- BOTÓN DE MENSAJES DE SOPORTE -->
-    <button class="support-admin-btn" onclick="abrirModalSoporte()" title="¿Necesitas ayuda?">
-        <i class="fa-solid fa-headset"></i>
-        <span id="badgeSoporte" class="badge-soporte" style="display: none;">0</span>
-    </button>
 
     <!-- CONTENEDOR DE TOASTS -->
     <div id="toastContainer"></div>
