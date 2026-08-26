@@ -906,7 +906,7 @@
                         </div>
                     </div>
 
-                    <button type="button" onclick="iniciarOEnviarSoporte()" class="btn-primary" style="width: 100%;">
+                    <button type="button" onclick="enviarMensajeSoporte()" class="btn-primary" style="width: 100%;">
                         <i class="fa-solid fa-paper-plane"></i> Iniciar Chat de Soporte
                     </button>
                 </div>
@@ -1401,6 +1401,44 @@
             }, 1000);
 
             mostrarVistaChat();
+        }
+        async function enviarMensajeSoporte() {
+            const usuarioActivo = sessionStorage.getItem('usuario_sesion') || document.getElementById('soporteUsuarioInput')?.value || 'Invitado';
+            const motivo = document.getElementById('soporteMotivoSelect')?.value || 'Consulta General';
+            const mensajeInput = document.getElementById('soporteMensajeTextarea');
+            const mensaje = mensajeInput ? mensajeInput.value.trim() : '';
+
+            if (!mensaje) {
+                showToast('Por favor escribe un mensaje antes de enviar.', 'advertencia');
+                return;
+            }
+
+            const payload = {
+                usuario: usuarioActivo,
+                emisor: usuarioActivo,
+                motivo: motivo,
+                mensaje: mensaje,
+                fecha: new Date().toLocaleString()
+            };
+
+            try {
+                const response = await fetch('/api/soporte', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    mensajeInput.value = '';
+                    showToast('Mensaje enviado a soporte correctamente.', 'exito');
+                    cerrarModalSoporte();
+                } else {
+                    showToast('Error al enviar el mensaje a soporte.', 'error');
+                }
+            } catch (error) {
+                console.error('Error enviando mensaje de soporte:', error);
+                showToast('Error de conexión con el servidor.', 'error');
+            }
         }
 
         function mostrarVistaChat() {

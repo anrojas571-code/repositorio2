@@ -120,7 +120,6 @@
         .support-admin-btn {
             position: fixed;
             top: 74px;
-            /* 20px (posicion superior) + 44px (alto del boton de tema) + 10px (separación) */
             right: 20px;
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -1659,11 +1658,16 @@
                     const activo = usuarioSoporteSeleccionado === usr ? 'background: var(--primary-light); border-color: var(--primary);' : '';
 
                     htmlLista += `
-                        <div onclick="seleccionarUsuarioChat('${usr}')" style="padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
-                            <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
-                            <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
-                                ${ultimoMsg.emisor === 'admin' ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje}
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 6px;">
+                            <div onclick="seleccionarUsuarioChat('${usr}')" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
+                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
+                                <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                                    ${ultimoMsg.emisor === 'admin' ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje}
+                                </div>
                             </div>
+                            <button onclick="pedirConfirmacionEliminarChatUsuario('${usr}')" class="btn-action-user delete" title="Borrar conversación de ${usr}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
                     `;
                 });
@@ -1676,6 +1680,50 @@
             } catch (err) {
                 contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar</p>';
             }
+        }
+        function pedirConfirmacionVaciarSoporte() {
+            mostrarModalConfirmacion(
+                '¿Vaciar todos los mensajes?',
+                'Esta acción eliminará de forma permanente todas las conversaciones de soporte.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/soporte', { method: 'DELETE' });
+                        if (res.ok) {
+                            usuarioSoporteSeleccionado = null;
+                            showToast('Historial de soporte vaciado con éxito', 'success');
+                            cargarMensajesSoporte();
+                        } else {
+                            showToast('No se pudieron eliminar los mensajes', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión al vaciar soporte', 'error');
+                    }
+                }
+            );
+        }
+
+        // Función para eliminar la conversación de un solo usuario
+        function pedirConfirmacionEliminarChatUsuario(usuario) {
+            mostrarModalConfirmacion(
+                `¿Eliminar chat de ${usuario}?`,
+                `Esta acción borrará todas las conversaciones asociadas a ${usuario}.`,
+                async () => {
+                    try {
+                        const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuario)}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            if (usuarioSoporteSeleccionado === usuario) {
+                                usuarioSoporteSeleccionado = null;
+                            }
+                            showToast(`Chat de ${usuario} eliminado`, 'success');
+                            cargarMensajesSoporte();
+                        } else {
+                            showToast('Error al eliminar la conversación', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión', 'error');
+                    }
+                }
+            );
         }
 
         // --- FUNCIÓN CORREGIDA PARA SELECCIONAR Y HABILITAR EL CHAT ---

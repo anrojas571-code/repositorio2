@@ -1109,20 +1109,46 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
     }
 });
 
-// API: Vaciar todos los usuarios
-app.delete('/api/usuarios', async (req, res) => {
+// Endpoint para vaciar todos los chats de soporte (Truncar/Limpiar)
+app.delete('/api/soporte', async (req, res) => {
     if (pool) {
         try {
-            await pool.query('TRUNCATE TABLE usuarios');
-            res.json({ mensaje: 'Base de datos vaciada' });
+            await pool.query('TRUNCATE TABLE soporte');
+            return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
         } catch (err) {
-            res.status(500).json({ error: 'Error al vaciar la base de datos' });
+            console.error('Error al vaciar mensajes de soporte:', err);
+            return res.status(500).json({ error: 'Error al vaciar los chats de soporte' });
         }
     } else {
         const db = leerDBLocal();
-        db.usuarios = [];
+        db.soporte = [];
         guardarDBLocal(db);
-        res.json({ mensaje: 'Base de datos vaciada' });
+        return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
+    }
+});
+
+// Endpoint para borrar la conversación de un usuario específico
+app.delete('/api/soporte/usuario/:usuario', async (req, res) => {
+    const usuarioParam = req.params.usuario;
+    if (!usuarioParam) {
+        return res.status(400).json({ error: 'El parámetro usuario es requerido' });
+    }
+
+    if (pool) {
+        try {
+            await pool.query('DELETE FROM soporte WHERE LOWER(usuario) = LOWER($1)', [usuarioParam]);
+            return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
+        } catch (err) {
+            console.error(`Error al eliminar conversación de ${usuarioParam}:`, err);
+            return res.status(500).json({ error: 'Error al eliminar la conversación del usuario' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.soporte = (db.soporte || []).filter(
+            m => m.usuario && m.usuario.toLowerCase() !== usuarioParam.toLowerCase()
+        );
+        guardarDBLocal(db);
+        return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
     }
 });
 
