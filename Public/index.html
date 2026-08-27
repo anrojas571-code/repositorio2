@@ -121,7 +121,7 @@
             cursor: pointer;
             font-size: 18px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 100;
+            z-index: 10000;
             transition: transform 0.2s ease, background 0.3s ease;
         }
 
@@ -137,7 +137,7 @@
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 10000;
         }
 
         .modal-overlay.active {
@@ -753,7 +753,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 999;
+            z-index: 9999;
             opacity: 0;
             visibility: hidden;
             transition: all 0.25s ease;
@@ -1275,6 +1275,47 @@
                     <button type="submit" id="btnActualizarClave" class="btn-primary">Restablecer Clave</button>
                 </form>
             </div>
+        </div>
+    </div>
+    <!-- MODAL DE MENSAJERÍA Y SOPORTE DE USUARIO -->
+    <div id="modalSoporteCliente" class="modal-overlay">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-headset" style="color: var(--primary);"></i> Soporte Técnico y Consultas</h2>
+                <button onclick="cerrarModalSoporteCliente()" class="modal-close"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="event.preventDefault(); enviarConsultaSoporteCliente();">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Motivo de la consulta</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-circle-question field-icon"></i>
+                            <select id="soporteMotivo"
+                                style="width: 100%; padding: 10px 14px 10px 38px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">
+                                <option value="Soporte Técnico">Soporte Técnico</option>
+                                <option value="Problema con la cuenta">Problema con la cuenta</option>
+                                <option value="Facturación o Pagos">Facturación / Pagos</option>
+                                <option value="Otra consulta">Otra consulta</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Mensaje</label>
+                        <div class="input-wrapper">
+                            <textarea id="soporteMensajeText" rows="4"
+                                placeholder="Describe detalladamente tu inconveniente o duda..." required
+                                style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-family: inherit; resize: vertical;"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" onclick="cerrarModalSoporteCliente()"
+                        class="btn btn-refresh">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Enviar
+                        Ticket</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1950,6 +1991,48 @@
                 }
             } catch (e) {
                 mostrarToast('Error', 'Error de red al restablecer la contraseña.', 'error');
+            }
+        }
+        function abrirModalSoporteCliente() {
+            document.getElementById('modalSoporteCliente').classList.add('active');
+        }
+
+        function cerrarModalSoporteCliente() {
+            document.getElementById('modalSoporteCliente').classList.remove('active');
+        }
+
+        async function enviarConsultaSoporteCliente() {
+            const motivo = document.getElementById('soporteMotivo').value;
+            const mensaje = document.getElementById('soporteMensajeText').value.trim();
+
+            // Asume el usuario en sesión (puedes ajustar 'usuarioLogueado' según tu app)
+            const usuarioSesion = localStorage.getItem('usuario_activo') || 'Cliente';
+
+            if (!mensaje) return;
+
+            try {
+                const res = await fetch('/api/soporte', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuarioSesion,
+                        motivo: motivo,
+                        mensaje: mensaje,
+                        emisor: 'cliente'
+                    })
+                });
+
+                if (res.ok) {
+                    document.getElementById('soporteMensajeText').value = '';
+                    cerrarModalSoporteCliente();
+                    if (typeof showToast === 'function') {
+                        showToast('Mensaje de soporte enviado con éxito', 'success');
+                    } else {
+                        alert('Mensaje enviado con éxito');
+                    }
+                }
+            } catch (err) {
+                console.error('Error al enviar soporte:', err);
             }
         }
     </script>

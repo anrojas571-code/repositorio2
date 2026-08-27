@@ -108,7 +108,7 @@
             cursor: pointer;
             font-size: 18px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-            z-index: 9999;
+            z-index: 99999;
             transition: transform 0.2s ease, background 0.3s ease;
         }
 
@@ -133,7 +133,7 @@
             cursor: pointer;
             font-size: 18px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 100;
+            z-index: 99999;
             transition: transform 0.2s ease, background 0.3s ease;
         }
 
@@ -819,7 +819,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 20000 !important;
+            z-index: 10000 !important;
             opacity: 0;
             pointer-events: none;
             transition: all 0.3s ease;
@@ -1632,6 +1632,7 @@
         let usuarioSoporteSeleccionado = null;
         let todosMensajesSoporte = [];
 
+        // --- CARGAR MENSAJES DE SOPORTE (CORREGIDO) ---
         async function cargarMensajesSoporte() {
             const contenedorLista = document.getElementById('listaConversacionesSoporte');
             try {
@@ -1641,35 +1642,37 @@
                 if (!todosMensajesSoporte || todosMensajesSoporte.length === 0) {
                     contenedorLista.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 10px; text-align: center;">Sin mensajes</div>';
                     document.getElementById('cajaMensajesChat').innerHTML = `
-                        <div class="empty-state" style="margin: auto;">
-                            <i class="fa-solid fa-envelope-open"></i>
-                            <p>No hay mensajes de soporte recibidos.</p>
-                        </div>`;
+                <div class="empty-state" style="margin: auto;">
+                    <i class="fa-solid fa-envelope-open"></i>
+                    <p>No hay mensajes de soporte recibidos.</p>
+                </div>`;
                     return;
                 }
 
-                // Agrupar mensajes por usuario
-                const usuariosUnicos = [...new Set(todosMensajesSoporte.map(m => m.usuario))];
+                // Obtener la lista única de usuarios (soporta 'usuario', 'usuario_origen' o 'remitente')
+                const usuariosUnicos = [...new Set(todosMensajesSoporte.map(m => m.usuario || m.usuario_origen || m.remitente))].filter(Boolean);
 
                 let htmlLista = '';
                 usuariosUnicos.forEach(usr => {
-                    const mensajesUsuario = todosMensajesSoporte.filter(m => m.usuario === usr);
+                    const mensajesUsuario = todosMensajesSoporte.filter(m => (m.usuario || m.usuario_origen || m.remitente) === usr);
                     const ultimoMsg = mensajesUsuario[mensajesUsuario.length - 1];
                     const activo = usuarioSoporteSeleccionado === usr ? 'background: var(--primary-light); border-color: var(--primary);' : '';
 
+                    const esMsgAdmin = ultimoMsg.emisor === 'admin' || ultimoMsg.rol === 'Admin' || ultimoMsg.deAdmin === true;
+
                     htmlLista += `
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 6px;">
-                            <div onclick="seleccionarUsuarioChat('${usr}')" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
-                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
-                                <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
-                                    ${ultimoMsg.emisor === 'admin' ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje}
-                                </div>
-                            </div>
-                            <button onclick="pedirConfirmacionEliminarChatUsuario('${usr}')" class="btn-action-user delete" title="Borrar conversación de ${usr}">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 6px;">
+                    <div onclick="seleccionarUsuarioChat('${usr}')" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
+                        <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
+                        <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                            ${esMsgAdmin ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje || ''}
                         </div>
-                    `;
+                    </div>
+                    <button onclick="pedirConfirmacionEliminarChatUsuario('${usr}')" class="btn-action-user delete" title="Borrar conversación de ${usr}">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
                 });
 
                 contenedorLista.innerHTML = htmlLista;
@@ -1678,67 +1681,12 @@
                     seleccionarUsuarioChat(usuarioSoporteSeleccionado);
                 }
             } catch (err) {
-                contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar</p>';
+                console.error('Error en cargarMensajesSoporte:', err);
+                contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar mensajes</p>';
             }
         }
-        function pedirConfirmacionVaciarSoporte() {
-            mostrarModalConfirmacion(
-                '¿Vaciar todos los mensajes?',
-                'Esta acción eliminará de forma permanente todas las conversaciones de soporte.',
-                async () => {
-                    try {
-                        const res = await fetch('/api/soporte', { method: 'DELETE' });
-                        if (res.ok) {
-                            usuarioSoporteSeleccionado = null;
-                            document.getElementById('cajaMensajesChat').innerHTML = `
-                        <div class="empty-state" style="margin: auto;">
-                            <i class="fa-solid fa-comments"></i>
-                            <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
-                        </div>`;
-                            document.getElementById('inputRespuestaAdmin').disabled = true;
-                            document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
-                            showToast('Historial de soporte vaciado con éxito', 'success');
-                            await cargarMensajesSoporte();
-                        } else {
-                            showToast('No se pudieron eliminar los mensajes', 'error');
-                        }
-                    } catch (err) {
-                        showToast('Error de conexión al vaciar soporte', 'error');
-                    }
-                }
-            );
-        }
 
-        function pedirConfirmacionEliminarChatUsuario(usuario) {
-            mostrarModalConfirmacion(
-                `¿Eliminar chat de ${usuario}?`,
-                `Esta acción borrará todas las conversaciones asociadas a ${usuario}.`,
-                async () => {
-                    try {
-                        const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuario)}`, { method: 'DELETE' });
-                        if (res.ok) {
-                            if (usuarioSoporteSeleccionado === usuario) {
-                                usuarioSoporteSeleccionado = null;
-                                document.getElementById('cajaMensajesChat').innerHTML = `
-                            <div class="empty-state" style="margin: auto;">
-                                <i class="fa-solid fa-comments"></i>
-                                <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
-                            </div>`;
-                                document.getElementById('inputRespuestaAdmin').disabled = true;
-                                document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
-                            }
-                            showToast(`Chat de ${usuario} eliminado`, 'success');
-                            await cargarMensajesSoporte();
-                        } else {
-                            showToast('Error al eliminar la conversación', 'error');
-                        }
-                    } catch (err) {
-                        showToast('Error de conexión', 'error');
-                    }
-                }
-            );
-        }
-        // --- FUNCIÓN CORREGIDA PARA SELECCIONAR Y HABILITAR EL CHAT ---
+        // --- SELECCIONAR Y VISUALIZAR CHAT (CORREGIDO) ---
         function seleccionarUsuarioChat(usuario) {
             usuarioSoporteSeleccionado = usuario;
 
@@ -1748,14 +1696,13 @@
             const inputRespuesta = document.getElementById('inputRespuestaAdmin');
             const btnRespuesta = document.getElementById('btnEnviarRespuestaAdmin');
 
-            const mensajesUser = todosMensajesSoporte.filter(m => m.usuario === usuario);
-            const motivo = mensajesUser[0]?.motivo || 'Consulta';
+            const mensajesUser = todosMensajesSoporte.filter(m => (m.usuario || m.usuario_origen || m.remitente) === usuario);
+            const motivo = mensajesUser[0]?.motivo || 'Atención de Soporte';
 
             headerNombre.innerHTML = `<i class="fa-solid fa-user"></i> Conversación con: <strong>${usuario}</strong>`;
             headerEstado.style.display = 'inline-block';
             headerEstado.textContent = motivo;
 
-            // Habilitar controles de envío
             inputRespuesta.disabled = false;
             btnRespuesta.disabled = false;
             inputRespuesta.focus();
@@ -1767,16 +1714,17 @@
 
             let htmlChat = '';
             mensajesUser.forEach(m => {
-                // Detectar si el mensaje proviene del administrador
                 const esAdmin = m.emisor === 'admin' || m.rol === 'Admin' || m.deAdmin === true;
                 const alignment = esAdmin
                     ? 'align-self: flex-end; background: var(--primary); color: white;'
                     : 'align-self: flex-start; background: var(--item-bg); color: var(--text-main); border: 1px solid var(--border-color);';
 
+                const nombreMostrado = esAdmin ? '<i class="fa-solid fa-user-shield"></i> Soporte (Administrador)' : `<i class="fa-solid fa-user"></i> ${usuario}`;
+
                 htmlChat += `
             <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; margin-bottom: 6px; ${alignment}">
                 <div style="font-size: 10px; opacity: 0.85; margin-bottom: 2px; font-weight: 700;">
-                    ${esAdmin ? '<i class="fa-solid fa-user-shield"></i> Soporte (Administrador)' : `<i class="fa-solid fa-user"></i> ${m.usuario}`}
+                    ${nombreMostrado}
                 </div>
                 <div style="word-break: break-word;">${m.mensaje}</div>
                 <div style="font-size: 9px; opacity: 0.75; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
@@ -1788,7 +1736,7 @@
             cajaChat.scrollTop = cajaChat.scrollHeight;
         }
 
-        // --- FUNCIÓN CORREGIDA PARA ENVIAR RESPUESTA DEL ADMINISTRADOR ---
+        // --- ENVIAR RESPUESTA DEL ADMINISTRADOR (CORREGIDO) ---
         async function enviarRespuestaAdmin() {
             const input = document.getElementById('inputRespuestaAdmin');
             const mensaje = input.value.trim();
@@ -1809,15 +1757,15 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         usuario: usuarioSoporteSeleccionado,
+                        usuario_origen: usuarioSoporteSeleccionado, // Compatibilidad con endpoints variados
                         mensaje: mensaje,
-                        emisor: 'admin' // Especificar explícitamente el emisor
+                        emisor: 'admin'
                     })
                 });
 
                 if (res.ok) {
                     input.value = '';
                     showToast('Respuesta enviada con éxito', 'success');
-                    // Recargar conversaciones y actualizar la pantalla de chat actual
                     await cargarMensajesSoporte();
                     if (usuarioSoporteSeleccionado) {
                         seleccionarUsuarioChat(usuarioSoporteSeleccionado);
