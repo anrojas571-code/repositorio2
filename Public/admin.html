@@ -819,7 +819,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 20000 !important;
             opacity: 0;
             pointer-events: none;
             transition: all 0.3s ease;
@@ -1690,8 +1690,15 @@
                         const res = await fetch('/api/soporte', { method: 'DELETE' });
                         if (res.ok) {
                             usuarioSoporteSeleccionado = null;
+                            document.getElementById('cajaMensajesChat').innerHTML = `
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-comments"></i>
+                            <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                        </div>`;
+                            document.getElementById('inputRespuestaAdmin').disabled = true;
+                            document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
                             showToast('Historial de soporte vaciado con éxito', 'success');
-                            cargarMensajesSoporte();
+                            await cargarMensajesSoporte();
                         } else {
                             showToast('No se pudieron eliminar los mensajes', 'error');
                         }
@@ -1702,7 +1709,6 @@
             );
         }
 
-        // Función para eliminar la conversación de un solo usuario
         function pedirConfirmacionEliminarChatUsuario(usuario) {
             mostrarModalConfirmacion(
                 `¿Eliminar chat de ${usuario}?`,
@@ -1713,9 +1719,16 @@
                         if (res.ok) {
                             if (usuarioSoporteSeleccionado === usuario) {
                                 usuarioSoporteSeleccionado = null;
+                                document.getElementById('cajaMensajesChat').innerHTML = `
+                            <div class="empty-state" style="margin: auto;">
+                                <i class="fa-solid fa-comments"></i>
+                                <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                            </div>`;
+                                document.getElementById('inputRespuestaAdmin').disabled = true;
+                                document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
                             }
                             showToast(`Chat de ${usuario} eliminado`, 'success');
-                            cargarMensajesSoporte();
+                            await cargarMensajesSoporte();
                         } else {
                             showToast('Error al eliminar la conversación', 'error');
                         }
@@ -1725,7 +1738,6 @@
                 }
             );
         }
-
         // --- FUNCIÓN CORREGIDA PARA SELECCIONAR Y HABILITAR EL CHAT ---
         function seleccionarUsuarioChat(usuario) {
             usuarioSoporteSeleccionado = usuario;
@@ -1743,25 +1755,31 @@
             headerEstado.style.display = 'inline-block';
             headerEstado.textContent = motivo;
 
-            // Habilitar campos de entrada y botón de envío
+            // Habilitar controles de envío
             inputRespuesta.disabled = false;
             btnRespuesta.disabled = false;
             inputRespuesta.focus();
 
+            if (mensajesUser.length === 0) {
+                cajaChat.innerHTML = '<div class="empty-state" style="margin: auto;"><p>No hay mensajes en este chat.</p></div>';
+                return;
+            }
+
             let htmlChat = '';
             mensajesUser.forEach(m => {
-                const esAdmin = m.emisor === 'admin';
+                // Detectar si el mensaje proviene del administrador
+                const esAdmin = m.emisor === 'admin' || m.rol === 'Admin' || m.deAdmin === true;
                 const alignment = esAdmin
                     ? 'align-self: flex-end; background: var(--primary); color: white;'
                     : 'align-self: flex-start; background: var(--item-bg); color: var(--text-main); border: 1px solid var(--border-color);';
 
                 htmlChat += `
             <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; margin-bottom: 6px; ${alignment}">
-                <div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px; font-weight: 700;">
-                    ${esAdmin ? 'Soporte (Administrador)' : m.usuario}
+                <div style="font-size: 10px; opacity: 0.85; margin-bottom: 2px; font-weight: 700;">
+                    ${esAdmin ? '<i class="fa-solid fa-user-shield"></i> Soporte (Administrador)' : `<i class="fa-solid fa-user"></i> ${m.usuario}`}
                 </div>
-                <div>${m.mensaje}</div>
-                <div style="font-size: 9px; opacity: 0.7; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
+                <div style="word-break: break-word;">${m.mensaje}</div>
+                <div style="font-size: 9px; opacity: 0.75; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
             </div>
         `;
             });
@@ -1791,15 +1809,19 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         usuario: usuarioSoporteSeleccionado,
-                        mensaje: mensaje
+                        mensaje: mensaje,
+                        emisor: 'admin' // Especificar explícitamente el emisor
                     })
                 });
 
                 if (res.ok) {
                     input.value = '';
-                    showToast('Respuesta enviada al usuario con éxito', 'success');
-                    // Recargar mensajes para actualizar la vista de la conversación
+                    showToast('Respuesta enviada con éxito', 'success');
+                    // Recargar conversaciones y actualizar la pantalla de chat actual
                     await cargarMensajesSoporte();
+                    if (usuarioSoporteSeleccionado) {
+                        seleccionarUsuarioChat(usuarioSoporteSeleccionado);
+                    }
                 } else {
                     const errData = await res.json().catch(() => ({}));
                     showToast(errData.error || 'Error al enviar respuesta al usuario', 'error');
@@ -1808,13 +1830,6 @@
                 console.error('Error enviando respuesta:', err);
                 showToast('Error de conexión con el servidor', 'error');
             }
-        }
-
-        function cargarTemaGuardado() {
-            const savedTheme = localStorage.getItem('admin_app_theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
-            const icon = document.getElementById('themeIcon');
-            if (icon) icon.className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
         // --- SISTEMA DE TOAST NOTIFICATIONS ACORDE AL SISTEMA ---
