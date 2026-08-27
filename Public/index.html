@@ -79,28 +79,50 @@
             position: relative;
         }
 
-        /* Botón Tema Oscuro */
+        /* --- BOTÓN TEMA OSCURO/CLARO --- */
         .theme-toggle-btn {
             position: fixed;
             top: 20px;
             right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
             width: 44px;
             height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
             z-index: 9999;
-            /* Capa alta */
+            transition: transform 0.2s ease, background 0.3s ease;
         }
 
-        /* Botón Soporte */
-        .support-toggle-btn,
+        .theme-toggle-btn:hover {
+            transform: scale(1.08);
+        }
+
+        /* Botón de mensajes de soporte en la vista de Admin */
         .support-admin-btn {
             position: fixed;
             top: 74px;
-            /* Ubicado exactamente a 10px por debajo del botón de tema */
             right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
             width: 44px;
             height: 44px;
-            z-index: 9999;
-            /* Misma capa alta para evitar emparejamientos traseros */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            transition: transform 0.2s ease, background 0.3s ease;
         }
 
         /* Superposición completa (Backdrop) */
