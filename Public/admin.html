@@ -2036,6 +2036,31 @@
             contenedor.innerHTML = html;
         }
 
+        // --- SISTEMA DE CONFIRMACIONES MODALES (Z-INDEX SUPERIOR) ---
+        function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
+            document.getElementById('confirmTitulo').textContent = titulo;
+            document.getElementById('confirmMensaje').textContent = mensaje;
+
+            const modalConfirm = document.getElementById('modalConfirmacion');
+            modalConfirm.classList.add('active');
+
+            const btnConfirmar = document.getElementById('btnConfirmarAccion');
+
+            // Asignar el nuevo manejador de clic limpiando el anterior
+            btnConfirmar.onclick = async () => {
+                cerrarModalConfirmacion();
+                if (typeof onConfirm === 'function') {
+                    await onConfirm();
+                }
+            };
+        }
+
+        function cerrarModalConfirmacion() {
+            document.getElementById('modalConfirmacion').classList.remove('active');
+            accionConfirmacionPendiente = null;
+        }
+
+        // --- CONFIRMACIÓN PARA VACIAR TODOS LOS MENSAJES DE SOPORTE ---
         function pedirConfirmacionVaciarSoporte() {
             mostrarModalConfirmacion(
                 '¿Vaciar Todos los Mensajes?',
@@ -2045,11 +2070,31 @@
                         const res = await fetch('/api/soporte', { method: 'DELETE' });
                         if (res.ok) {
                             showToast('Todos los mensajes de soporte han sido eliminados', 'success');
-                            cargarMensajesSoporte();
+
+                            // Resetear variables y vista de chat local
+                            usuarioSoporteSeleccionado = null;
+                            todosMensajesSoporte = [];
+
+                            document.getElementById('listaConversacionesSoporte').innerHTML =
+                                '<div style="font-size: 12px; color: var(--text-muted); padding: 10px; text-align: center;">Sin mensajes</div>';
+
+                            document.getElementById('cajaMensajesChat').innerHTML = `
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-comments"></i>
+                            <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                        </div>`;
+
+                            document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                            document.getElementById('inputRespuestaAdmin').disabled = true;
+                            document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
+
+                            // Actualizar el contador global en el botón flotante
+                            actualizarBadgeSoporte();
                         } else {
-                            showToast('Error al eliminar mensajes', 'error');
+                            showToast('Error al eliminar mensajes en el servidor', 'error');
                         }
                     } catch (err) {
+                        console.error('Error al vaciar soporte:', err);
                         showToast('Error de conexión con el servidor', 'error');
                     }
                 }
