@@ -1318,6 +1318,36 @@
             </form>
         </div>
     </div>
+    <!-- Botón para Iniciar Chat / Enviar Mensaje -->
+    <button type="button" class="btn-primary" onclick="iniciarChatSoporte()">
+        <i class="fa-solid fa-paper-plane"></i> Iniciar Chat de Soporte
+    </button>
+
+    <!-- Botón para Vaciar Historial de Mensajes -->
+    <button type="button" class="btn btn-danger" onclick="pedirConfirmacionVaciarHistorialUsuario()">
+        <i class="fa-solid fa-trash-can"></i> Vaciar historial
+    </button>
+
+    <!-- MODAL DE CONFIRMACIÓN DE USUARIO -->
+    <div id="modalConfirmacionUsuario" class="modal-overlay">
+        <div class="modal-card" style="max-width: 440px; text-align: center;">
+            <div style="font-size: 42px; color: #ef4444; margin-bottom: 12px;">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h2 id="confirmTituloUsuario"
+                style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+                ¿Estás seguro?
+            </h2>
+            <p id="confirmMensajeUsuario" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
+                Esta acción eliminará el historial.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button type="button" class="btn btn-refresh"
+                    onclick="cerrarModalConfirmacionUsuario()">Cancelar</button>
+                <button type="button" id="btnConfirmarAccionUsuario" class="btn btn-danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         const SESSION_KEY = 'mi_sistema_sesion_activa';
@@ -1539,6 +1569,82 @@
 
         // Cargar conversación automáticamente si el usuario ingresa su nombre
         document.getElementById('soporteNombreUsuario')?.addEventListener('input', cargarConversacionUsuario);
+        let accionConfirmacionPendiente = null;
+
+        // 1. Mostrar/Cerrar Modal de Confirmación
+        function mostrarModalConfirmacionUsuario(titulo, mensaje, onConfirm) {
+            document.getElementById('confirmTituloUsuario').textContent = titulo;
+            document.getElementById('confirmMensajeUsuario').textContent = mensaje;
+            accionConfirmacionPendiente = onConfirm;
+            document.getElementById('modalConfirmacionUsuario').classList.add('active');
+
+            document.getElementById('btnConfirmarAccionUsuario').onclick = async () => {
+                cerrarModalConfirmacionUsuario();
+                if (typeof accionConfirmacionPendiente === 'function') {
+                    await accionConfirmacionPendiente();
+                }
+            };
+        }
+
+        function cerrarModalConfirmacionUsuario() {
+            document.getElementById('modalConfirmacionUsuario').classList.remove('active');
+            accionConfirmacionPendiente = null;
+        }
+
+        // 2. Iniciar Chat de Soporte (Crea el hilo y espera al Administrador)
+        async function iniciarChatSoporte() {
+            const usuarioActual = sessionStorage.getItem('usuario_activo') || 'Usuario';
+            const mensajeInput = document.getElementById('inputMensajeSoporte');
+            const mensaje = mensajeInput ? mensajeInput.value.trim() : 'Hola, necesito asistencia de soporte.';
+
+            try {
+                const res = await fetch('/api/soporte/enviar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuarioActual,
+                        usuario_origen: usuarioActual,
+                        mensaje: mensaje || 'Chat de soporte iniciado.',
+                        emisor: 'cliente'
+                    })
+                });
+
+                if (res.ok) {
+                    showToast('Chat iniciado con éxito. Esperando respuesta del administrador.', 'success');
+                    if (mensajeInput) mensajeInput.value = '';
+                    cargarChatUsuario();
+                } else {
+                    showToast('Error al iniciar la conversación de soporte.', 'error');
+                }
+            } catch (err) {
+                console.error('Error al iniciar soporte:', err);
+                showToast('Error de conexión con el servidor.', 'error');
+            }
+        }
+
+        // 3. Confirmación y Eliminación de Historial de Chat
+        function pedirConfirmacionVaciarHistorialUsuario() {
+            const usuarioActual = sessionStorage.getItem('usuario_activo') || 'Usuario';
+            mostrarModalConfirmacionUsuario(
+                '¿Vaciar todos los mensajes?',
+                'Se eliminarán todos los mensajes de tu historial de soporte.',
+                async () => {
+                    try {
+                        const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuarioActual)}`, {
+                            method: 'DELETE'
+                        });
+                        if (res.ok) {
+                            showToast('Historial de mensajes vaciado correctamente.', 'success');
+                            cargarChatUsuario();
+                        } else {
+                            showToast('No se pudo borrar el historial.', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión al eliminar los mensajes.', 'error');
+                    }
+                }
+            );
+        }
 
         // --- INDICADOR DE FUERZA DE CONTRASEÑA ---
         function evaluarFuerzaClave(clave) {

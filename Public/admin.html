@@ -1632,7 +1632,7 @@
         let usuarioSoporteSeleccionado = null;
         let todosMensajesSoporte = [];
 
-        // --- CARGAR MENSAJES DE SOPORTE (CORREGIDO) ---
+        // --- CARGAR MENSAJES DE SOPORTE CON BOTÓN DE ELIMINAR INDIVIDUAL ---
         async function cargarMensajesSoporte() {
             const contenedorLista = document.getElementById('listaConversacionesSoporte');
             try {
@@ -1649,7 +1649,7 @@
                     return;
                 }
 
-                // Obtener la lista única de usuarios (soporta 'usuario', 'usuario_origen' o 'remitente')
+                // Extraer lista única de usuarios
                 const usuariosUnicos = [...new Set(todosMensajesSoporte.map(m => m.usuario || m.usuario_origen || m.remitente))].filter(Boolean);
 
                 let htmlLista = '';
@@ -1685,7 +1685,76 @@
                 contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar mensajes</p>';
             }
         }
+        // --- PEDIR CONFIRMACIÓN PARA BORRAR CHAT DE UN USUARIO ---
+        function pedirConfirmacionEliminarChatUsuario(usuario) {
+            mostrarModalConfirmacion(
+                `¿Borrar conversación de "${usuario}"?`,
+                `Se eliminarán todos los mensajes del historial de soporte con el usuario "${usuario}".`,
+                async () => {
+                    await eliminarChatUsuario(usuario);
+                }
+            );
+        }
 
+        // --- EJECUTAR PETICIÓN DELETE AL SERVIDOR ---
+        async function eliminarChatUsuario(usuario) {
+            try {
+                const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuario)}`, {
+                    method: 'DELETE'
+                });
+
+                if (res.ok) {
+                    showToast(`Conversación con ${usuario} eliminada`, 'success');
+                    if (usuarioSoporteSeleccionado === usuario) {
+                        usuarioSoporteSeleccionado = null;
+                        document.getElementById('cajaMensajesChat').innerHTML = `
+                    <div class="empty-state" style="margin: auto;">
+                        <i class="fa-solid fa-comments"></i>
+                        <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                    </div>`;
+                        document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                        document.getElementById('inputRespuestaAdmin').disabled = true;
+                        document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
+                    }
+                    await cargarMensajesSoporte();
+                } else {
+                    showToast('No se pudo borrar la conversación', 'error');
+                }
+            } catch (err) {
+                console.error('Error al eliminar chat:', err);
+                showToast('Error de conexión al eliminar el chat', 'error');
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarTemaGuardado();
+            const sesionAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
+            if (sesionAdmin === 'true') {
+                mostrarPanelAdmin();
+                actualizarBadgeSoporte(); // <-- Añadir aquí
+            } else {
+                document.getElementById('vistaPanelAdmin').style.display = 'none';
+                document.getElementById('vistaLoginAdmin').style.display = 'block';
+            }
+        });
+
+        // Función auxiliar para mantener el contador actualizado
+        async function actualizarBadgeSoporte() {
+            try {
+                const res = await fetch('/api/soporte');
+                const mensajes = await res.json();
+                const badge = document.getElementById('badgeSoporte');
+                if (badge) {
+                    if (mensajes && mensajes.length > 0) {
+                        badge.textContent = mensajes.length;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (e) {
+                console.log("No se pudo obtener la cantidad de mensajes de soporte");
+            }
+        }
         // --- SELECCIONAR Y VISUALIZAR CHAT (CORREGIDO) ---
         function seleccionarUsuarioChat(usuario) {
             usuarioSoporteSeleccionado = usuario;
@@ -1965,6 +2034,26 @@
             });
 
             contenedor.innerHTML = html;
+        }
+
+        function pedirConfirmacionVaciarSoporte() {
+            mostrarModalConfirmacion(
+                '¿Vaciar Todos los Mensajes?',
+                'Se borrarán de forma irreversible todas las conversaciones de soporte de la base de datos.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/soporte', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Todos los mensajes de soporte han sido eliminados', 'success');
+                            cargarMensajesSoporte();
+                        } else {
+                            showToast('Error al eliminar mensajes', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión con el servidor', 'error');
+                    }
+                }
+            );
         }
 
         // --- SISTEMA DE AUDITORÍA EN FORMATO DE CARPETAS ---

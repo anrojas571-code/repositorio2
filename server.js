@@ -381,6 +381,22 @@ app.delete('/api/soporte', async (req, res) => {
         return res.json({ status: 'ok' });
     }
 });
+// Obtener todos los mensajes de soporte
+app.get('/api/soporte', (req, res) => {
+    // Retorna la lista completa de soporte
+    res.json(mensajesSoporte);
+});
+
+// Borrar conversación completa de un usuario
+app.delete('/api/soporte/usuario/:usuario', (req, res) => {
+    const { usuario } = req.params;
+    mensajesSoporte = mensajesSoporte.filter(m =>
+        (m.usuario !== usuario) &&
+        (m.usuario_origen !== usuario) &&
+        (m.remitente !== usuario)
+    );
+    res.json({ success: true, message: `Conversación de ${usuario} eliminada.` });
+});
 
 // API: Login exclusivo para Administradores
 app.post('/api/admin/login', async (req, res) => {
