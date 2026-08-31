@@ -830,6 +830,14 @@
             pointer-events: auto;
         }
 
+        #modalConfirmacion {
+            z-index: 100005 !important;
+        }
+
+        #modalConfirmacion.active {
+            z-index: 100005 !important;
+        }
+
         .modal-card {
             background: var(--modal-bg);
             border-radius: var(--radius-lg);
@@ -1620,32 +1628,55 @@
         }
 
         // --- GESTIÓN DE MENSAJES DE SOPORTE ---
+        let usuarioSoporteSeleccionado = null;
+        let todosMensajesSoporte = [];
+        let soportePollingInterval = null;
+
         function abrirModalMensajesSoporte() {
             document.getElementById('modalBuzonSoporte').classList.add('active');
             cargarMensajesSoporte();
+            if (soportePollingInterval) clearInterval(soportePollingInterval);
+            soportePollingInterval = setInterval(() => {
+                const modal = document.getElementById('modalBuzonSoporte');
+                if (modal && modal.classList.contains('active')) {
+                    cargarMensajesSoporte(true);
+                } else {
+                    clearInterval(soportePollingInterval);
+                    soportePollingInterval = null;
+                }
+            }, 3000);
         }
 
         function cerrarModalMensajesSoporte() {
             document.getElementById('modalBuzonSoporte').classList.remove('active');
+            if (soportePollingInterval) {
+                clearInterval(soportePollingInterval);
+                soportePollingInterval = null;
+            }
         }
 
-        let usuarioSoporteSeleccionado = null;
-        let todosMensajesSoporte = [];
-
         // --- CARGAR MENSAJES DE SOPORTE CON BOTÓN DE ELIMINAR INDIVIDUAL ---
-        async function cargarMensajesSoporte() {
+        async function cargarMensajesSoporte(silent = false) {
             const contenedorLista = document.getElementById('listaConversacionesSoporte');
             try {
                 const res = await fetch('/api/soporte');
                 todosMensajesSoporte = await res.json();
 
-                if (!todosMensajesSoporte || todosMensajesSoporte.length === 0) {
+                actualizarBadgeSoporte();
+
+                if (!Array.isArray(todosMensajesSoporte) || todosMensajesSoporte.length === 0) {
                     contenedorLista.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 10px; text-align: center;">Sin mensajes</div>';
-                    document.getElementById('cajaMensajesChat').innerHTML = `
-                <div class="empty-state" style="margin: auto;">
-                    <i class="fa-solid fa-envelope-open"></i>
-                    <p>No hay mensajes de soporte recibidos.</p>
-                </div>`;
+                    if (!silent || !usuarioSoporteSeleccionado) {
+                        document.getElementById('cajaMensajesChat').innerHTML = `
+                            <div class="empty-state" style="margin: auto;">
+                                <i class="fa-solid fa-envelope-open"></i>
+                                <p>No hay mensajes de soporte recibidos.</p>
+                            </div>`;
+                        document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                        document.getElementById('chatUsuarioEstado').style.display = 'none';
+                        document.getElementById('inputRespuestaAdmin').disabled = true;
+                        document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
+                    }
                     return;
                 }
 
@@ -1655,36 +1686,49 @@
                 let htmlLista = '';
                 usuariosUnicos.forEach(usr => {
                     const mensajesUsuario = todosMensajesSoporte.filter(m => (m.usuario || m.usuario_origen || m.remitente) === usr);
-                    const ultimoMsg = mensajesUsuario[mensajesUsuario.length - 1];
+                    const ultimoMsg = mensajesUsuario[mensajesUsuario.length - 1] || {};
                     const activo = usuarioSoporteSeleccionado === usr ? 'background: var(--primary-light); border-color: var(--primary);' : '';
-
                     const esMsgAdmin = ultimoMsg.emisor === 'admin' || ultimoMsg.rol === 'Admin' || ultimoMsg.deAdmin === true;
 
                     htmlLista += `
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 6px;">
-                    <div onclick="seleccionarUsuarioChat('${usr}')" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
-                        <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
-                        <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
-                            ${esMsgAdmin ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje || ''}
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 6px;">
+                            <div onclick="seleccionarUsuarioChat('${usr}')" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
+                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
+                                <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                                    ${esMsgAdmin ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje || ''}
+                                </div>
+                            </div>
+                            <button type="button" onclick="event.stopPropagation(); pedirConfirmacionEliminarChatUsuario('${usr}')" class="btn-action-user delete" title="Borrar conversación de ${usr}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
                         </div>
-                    </div>
-                    <button onclick="pedirConfirmacionEliminarChatUsuario('${usr}')" class="btn-action-user delete" title="Borrar conversación de ${usr}">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-            `;
+                    `;
                 });
 
                 contenedorLista.innerHTML = htmlLista;
 
-                if (usuarioSoporteSeleccionado) {
-                    seleccionarUsuarioChat(usuarioSoporteSeleccionado);
+                if (usuarioSoporteSeleccionado && usuariosUnicos.includes(usuarioSoporteSeleccionado)) {
+                    seleccionarUsuarioChat(usuarioSoporteSeleccionado, silent);
+                } else if (usuarioSoporteSeleccionado && !usuariosUnicos.includes(usuarioSoporteSeleccionado)) {
+                    usuarioSoporteSeleccionado = null;
+                    document.getElementById('cajaMensajesChat').innerHTML = `
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-comments"></i>
+                            <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                        </div>`;
+                    document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                    document.getElementById('chatUsuarioEstado').style.display = 'none';
+                    document.getElementById('inputRespuestaAdmin').disabled = true;
+                    document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
                 }
             } catch (err) {
                 console.error('Error en cargarMensajesSoporte:', err);
-                contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar mensajes</p>';
+                if (!silent) {
+                    contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar mensajes</p>';
+                }
             }
         }
+
         // --- PEDIR CONFIRMACIÓN PARA BORRAR CHAT DE UN USUARIO ---
         function pedirConfirmacionEliminarChatUsuario(usuario) {
             mostrarModalConfirmacion(
@@ -1704,15 +1748,16 @@
                 });
 
                 if (res.ok) {
-                    showToast(`Conversación con ${usuario} eliminada`, 'success');
+                    showToast(`Conversación con "${usuario}" eliminada`, 'success');
                     if (usuarioSoporteSeleccionado === usuario) {
                         usuarioSoporteSeleccionado = null;
                         document.getElementById('cajaMensajesChat').innerHTML = `
-                    <div class="empty-state" style="margin: auto;">
-                        <i class="fa-solid fa-comments"></i>
-                        <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
-                    </div>`;
+                            <div class="empty-state" style="margin: auto;">
+                                <i class="fa-solid fa-comments"></i>
+                                <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                            </div>`;
                         document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                        document.getElementById('chatUsuarioEstado').style.display = 'none';
                         document.getElementById('inputRespuestaAdmin').disabled = true;
                         document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
                     }
@@ -1725,26 +1770,15 @@
                 showToast('Error de conexión al eliminar el chat', 'error');
             }
         }
-        document.addEventListener('DOMContentLoaded', () => {
-            cargarTemaGuardado();
-            const sesionAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
-            if (sesionAdmin === 'true') {
-                mostrarPanelAdmin();
-                actualizarBadgeSoporte(); // <-- Añadir aquí
-            } else {
-                document.getElementById('vistaPanelAdmin').style.display = 'none';
-                document.getElementById('vistaLoginAdmin').style.display = 'block';
-            }
-        });
 
-        // Función auxiliar para mantener el contador actualizado
+        // --- ACTUALIZAR CONTADOR DE MENSAJES DE SOPORTE ---
         async function actualizarBadgeSoporte() {
             try {
                 const res = await fetch('/api/soporte');
                 const mensajes = await res.json();
                 const badge = document.getElementById('badgeSoporte');
                 if (badge) {
-                    if (mensajes && mensajes.length > 0) {
+                    if (Array.isArray(mensajes) && mensajes.length > 0) {
                         badge.textContent = mensajes.length;
                         badge.style.display = 'flex';
                     } else {
@@ -1755,8 +1789,9 @@
                 console.log("No se pudo obtener la cantidad de mensajes de soporte");
             }
         }
-        // --- SELECCIONAR Y VISUALIZAR CHAT (CORREGIDO) ---
-        function seleccionarUsuarioChat(usuario) {
+
+        // --- SELECCIONAR Y VISUALIZAR CHAT ---
+        function seleccionarUsuarioChat(usuario, silent = false) {
             usuarioSoporteSeleccionado = usuario;
 
             const headerNombre = document.getElementById('chatUsuarioNombre');
@@ -1774,7 +1809,7 @@
 
             inputRespuesta.disabled = false;
             btnRespuesta.disabled = false;
-            inputRespuesta.focus();
+            if (!silent) inputRespuesta.focus();
 
             if (mensajesUser.length === 0) {
                 cajaChat.innerHTML = '<div class="empty-state" style="margin: auto;"><p>No hay mensajes en este chat.</p></div>';
@@ -1791,21 +1826,24 @@
                 const nombreMostrado = esAdmin ? '<i class="fa-solid fa-user-shield"></i> Soporte (Administrador)' : `<i class="fa-solid fa-user"></i> ${usuario}`;
 
                 htmlChat += `
-            <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; margin-bottom: 6px; ${alignment}">
-                <div style="font-size: 10px; opacity: 0.85; margin-bottom: 2px; font-weight: 700;">
-                    ${nombreMostrado}
-                </div>
-                <div style="word-break: break-word;">${m.mensaje}</div>
-                <div style="font-size: 9px; opacity: 0.75; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
-            </div>
-        `;
+                    <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; margin-bottom: 6px; ${alignment}">
+                        <div style="font-size: 10px; opacity: 0.85; margin-bottom: 2px; font-weight: 700;">
+                            ${nombreMostrado}
+                        </div>
+                        <div style="word-break: break-word;">${m.mensaje}</div>
+                        <div style="font-size: 9px; opacity: 0.75; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
+                    </div>
+                `;
             });
 
+            const wasAtBottom = cajaChat.scrollHeight - cajaChat.clientHeight <= cajaChat.scrollTop + 50;
             cajaChat.innerHTML = htmlChat;
-            cajaChat.scrollTop = cajaChat.scrollHeight;
+            if (!silent || wasAtBottom) {
+                cajaChat.scrollTop = cajaChat.scrollHeight;
+            }
         }
 
-        // --- ENVIAR RESPUESTA DEL ADMINISTRADOR (CORREGIDO) ---
+        // --- ENVIAR RESPUESTA DEL ADMINISTRADOR ---
         async function enviarRespuestaAdmin() {
             const input = document.getElementById('inputRespuestaAdmin');
             const mensaje = input.value.trim();
@@ -1826,7 +1864,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         usuario: usuarioSoporteSeleccionado,
-                        usuario_origen: usuarioSoporteSeleccionado, // Compatibilidad con endpoints variados
                         mensaje: mensaje,
                         emisor: 'admin'
                     })
@@ -2308,26 +2345,7 @@
             }
         }
 
-        // --- SISTEMA DE CONFIRMACIONES MODALES (SIN DIÁLOGOS NATIVOS) ---
-        function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
-            document.getElementById('confirmTitulo').textContent = titulo;
-            document.getElementById('confirmMensaje').textContent = mensaje;
-            accionConfirmacionPendiente = onConfirm;
-            document.getElementById('modalConfirmacion').classList.add('active');
 
-            const btnConfirmar = document.getElementById('btnConfirmarAccion');
-            btnConfirmar.onclick = async () => {
-                cerrarModalConfirmacion();
-                if (typeof accionConfirmacionPendiente === 'function') {
-                    await accionConfirmacionPendiente();
-                }
-            };
-        }
-
-        function cerrarModalConfirmacion() {
-            document.getElementById('modalConfirmacion').classList.remove('active');
-            accionConfirmacionPendiente = null;
-        }
 
         function pedirConfirmacionEliminar(nombre) {
             mostrarModalConfirmacion(

@@ -263,19 +263,22 @@ app.get(['/admin', '/admin.html'], (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
-// --- API SOPORTE TÉCNICO (Envío del usuario) ---
+// --- API SOPORTE TÉCNICO (Envío del usuario y chat) ---
 app.post('/api/soporte', async (req, res) => {
-    const { usuario, motivo, mensaje } = req.body;
-    if (!usuario || !motivo || !mensaje) {
-        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    const usuario = req.body.usuario || req.body.usuario_origen || req.body.remitente;
+    const motivo = req.body.motivo || 'Consulta General';
+    const mensaje = req.body.mensaje;
+
+    if (!usuario || !mensaje) {
+        return res.status(400).json({ error: 'El usuario y el mensaje son requeridos' });
     }
 
     const nuevoMensaje = {
         id: Date.now().toString(),
-        usuario,
-        emisor: 'usuario',
-        motivo,
-        mensaje,
+        usuario: usuario.trim(),
+        emisor: (req.body.emisor || 'usuario').toLowerCase(),
+        motivo: motivo.trim(),
+        mensaje: mensaje.trim(),
         fecha: new Date().toLocaleString('es-ES')
     };
 
@@ -285,7 +288,7 @@ app.post('/api/soporte', async (req, res) => {
                 'INSERT INTO soporte (id, usuario, emisor, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5, $6)',
                 [nuevoMensaje.id, nuevoMensaje.usuario, nuevoMensaje.emisor, nuevoMensaje.motivo, nuevoMensaje.mensaje, nuevoMensaje.fecha]
             );
-            return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito' });
+            return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito', data: nuevoMensaje });
         } catch (err) {
             console.error('Error al guardar mensaje de soporte en PostgreSQL:', err);
             return res.status(500).json({ error: 'Error al enviar mensaje de soporte' });
@@ -293,25 +296,27 @@ app.post('/api/soporte', async (req, res) => {
     } else {
         const db = leerDBLocal();
         if (!Array.isArray(db.soporte)) db.soporte = [];
-        db.soporte.unshift(nuevoMensaje);
+        db.soporte.push(nuevoMensaje);
         guardarDBLocal(db);
-        return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito' });
+        return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito', data: nuevoMensaje });
     }
 });
 
 // --- API SOPORTE TÉCNICO (Respuesta del Administrador) ---
 app.post('/api/soporte/responder', async (req, res) => {
-    const { usuario, mensaje } = req.body;
+    const usuario = req.body.usuario || req.body.usuario_origen;
+    const { mensaje } = req.body;
+
     if (!usuario || !mensaje) {
         return res.status(400).json({ error: 'El usuario y el mensaje son requeridos' });
     }
 
     const respuestaAdmin = {
         id: Date.now().toString(),
-        usuario,
+        usuario: usuario.trim(),
         emisor: 'admin',
-        motivo: 'Respuesta de Soporte',
-        mensaje,
+        motivo: req.body.motivo || 'Respuesta de Soporte',
+        mensaje: mensaje.trim(),
         fecha: new Date().toLocaleString('es-ES')
     };
 
@@ -321,7 +326,7 @@ app.post('/api/soporte/responder', async (req, res) => {
                 'INSERT INTO soporte (id, usuario, emisor, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5, $6)',
                 [respuestaAdmin.id, respuestaAdmin.usuario, respuestaAdmin.emisor, respuestaAdmin.motivo, respuestaAdmin.mensaje, respuestaAdmin.fecha]
             );
-            return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito' });
+            return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito', data: respuestaAdmin });
         } catch (err) {
             console.error('Error al guardar respuesta de admin en PostgreSQL:', err);
             return res.status(500).json({ error: 'Error al enviar la respuesta de soporte' });
@@ -331,71 +336,114 @@ app.post('/api/soporte/responder', async (req, res) => {
         if (!Array.isArray(db.soporte)) db.soporte = [];
         db.soporte.push(respuestaAdmin);
         guardarDBLocal(db);
-        return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito' });
+        return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito', data: respuestaAdmin });
     }
 });
 
+// --- API SOPORTE TÉCNICO: Obtener todos los mensajes ---
 app.get('/api/soporte', async (req, res) => {
     if (pool) {
         try {
-            const result = await pool.query('SELECT * FROM soporte ORDER BY id DESC');
+            const result = await pool.query('SELECT * FROM soporte ORDER BY id ASC');
             return res.json(result.rows);
         } catch (err) {
+            console.error('Error al obtener mensajes de soporte en PostgreSQL:', err);
             return res.status(500).json({ error: 'Error al obtener mensajes de soporte' });
         }
     } else {
         const db = leerDBLocal();
-        return res.json(db.soporte || []);
+        const soporte = (db.soporte || []).slice().sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+        return res.json(soporte);
     }
 });
 
+// --- API SOPORTE TÉCNICO: Obtener mensajes de un usuario específico ---
+app.get('/api/soporte/usuario/:usuario', async (req, res) => {
+    const usuarioParam = (req.params.usuario || '').trim();
+    if (!usuarioParam) {
+        return res.status(400).json({ error: 'El parámetro usuario es requerido' });
+    }
+
+    if (pool) {
+        try {
+            const result = await pool.query(
+                'SELECT * FROM soporte WHERE LOWER(usuario) = LOWER($1) ORDER BY id ASC',
+                [usuarioParam]
+            );
+            return res.json(result.rows);
+        } catch (err) {
+            console.error(`Error al obtener mensajes de ${usuarioParam}:`, err);
+            return res.status(500).json({ error: 'Error al obtener mensajes del usuario' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const mensajes = (db.soporte || [])
+            .filter(m => m.usuario && m.usuario.toLowerCase() === usuarioParam.toLowerCase())
+            .sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+        return res.json(mensajes);
+    }
+});
+
+// --- API SOPORTE TÉCNICO: Eliminar conversación de un usuario ---
+app.delete('/api/soporte/usuario/:usuario', async (req, res) => {
+    const usuarioParam = (req.params.usuario || '').trim();
+    if (!usuarioParam) {
+        return res.status(400).json({ error: 'El parámetro usuario es requerido' });
+    }
+
+    if (pool) {
+        try {
+            await pool.query('DELETE FROM soporte WHERE LOWER(usuario) = LOWER($1)', [usuarioParam]);
+            return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
+        } catch (err) {
+            console.error(`Error al eliminar conversación de ${usuarioParam}:`, err);
+            return res.status(500).json({ error: 'Error al eliminar la conversación del usuario' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.soporte = (db.soporte || []).filter(
+            m => !m.usuario || m.usuario.toLowerCase() !== usuarioParam.toLowerCase()
+        );
+        guardarDBLocal(db);
+        return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
+    }
+});
+
+// --- API SOPORTE TÉCNICO: Vaciar todos los mensajes ---
+app.delete('/api/soporte', async (req, res) => {
+    if (pool) {
+        try {
+            await pool.query('TRUNCATE TABLE soporte');
+            return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
+        } catch (err) {
+            console.error('Error al vaciar mensajes de soporte:', err);
+            return res.status(500).json({ error: 'Error al vaciar los chats de soporte' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.soporte = [];
+        guardarDBLocal(db);
+        return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
+    }
+});
+
+// --- API SOPORTE TÉCNICO: Eliminar un mensaje individual por ID ---
 app.delete('/api/soporte/:id', async (req, res) => {
     const { id } = req.params;
     if (pool) {
         try {
             await pool.query('DELETE FROM soporte WHERE id = $1', [id]);
-            return res.json({ status: 'ok' });
+            return res.json({ status: 'ok', mensaje: 'Mensaje eliminado' });
         } catch (err) {
+            console.error('Error al eliminar mensaje:', err);
             return res.status(500).json({ error: 'Error al eliminar mensaje' });
         }
     } else {
         const db = leerDBLocal();
         db.soporte = (db.soporte || []).filter(m => m.id !== id);
         guardarDBLocal(db);
-        return res.json({ status: 'ok' });
+        return res.json({ status: 'ok', mensaje: 'Mensaje eliminado' });
     }
-});
-
-app.delete('/api/soporte', async (req, res) => {
-    if (pool) {
-        try {
-            await pool.query('TRUNCATE TABLE soporte');
-            return res.json({ status: 'ok' });
-        } catch (err) {
-            return res.status(500).json({ error: 'Error al vaciar mensajes' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.soporte = [];
-        guardarDBLocal(db);
-        return res.json({ status: 'ok' });
-    }
-});
-// Obtener todos los mensajes de soporte
-app.get('/api/soporte', (req, res) => {
-    // Retorna la lista completa de soporte
-    res.json(mensajesSoporte);
-});
-
-// Borrar conversación completa de un usuario
-app.delete('/api/soporte/usuario/:usuario', (req, res) => {
-    const { usuario } = req.params;
-    mensajesSoporte = mensajesSoporte.filter(m =>
-        (m.usuario !== usuario) &&
-        (m.usuario_origen !== usuario) &&
-        (m.remitente !== usuario)
-    );
-    res.json({ success: true, message: `Conversación de ${usuario} eliminada.` });
 });
 
 // API: Login exclusivo para Administradores
@@ -1125,48 +1173,6 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
     }
 });
 
-// Endpoint para vaciar todos los chats de soporte (Truncar/Limpiar)
-app.delete('/api/soporte', async (req, res) => {
-    if (pool) {
-        try {
-            await pool.query('TRUNCATE TABLE soporte');
-            return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
-        } catch (err) {
-            console.error('Error al vaciar mensajes de soporte:', err);
-            return res.status(500).json({ error: 'Error al vaciar los chats de soporte' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.soporte = [];
-        guardarDBLocal(db);
-        return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
-    }
-});
-
-// Endpoint para borrar la conversación de un usuario específico
-app.delete('/api/soporte/usuario/:usuario', async (req, res) => {
-    const usuarioParam = req.params.usuario;
-    if (!usuarioParam) {
-        return res.status(400).json({ error: 'El parámetro usuario es requerido' });
-    }
-
-    if (pool) {
-        try {
-            await pool.query('DELETE FROM soporte WHERE LOWER(usuario) = LOWER($1)', [usuarioParam]);
-            return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
-        } catch (err) {
-            console.error(`Error al eliminar conversación de ${usuarioParam}:`, err);
-            return res.status(500).json({ error: 'Error al eliminar la conversación del usuario' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.soporte = (db.soporte || []).filter(
-            m => m.usuario && m.usuario.toLowerCase() !== usuarioParam.toLowerCase()
-        );
-        guardarDBLocal(db);
-        return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
-    }
-});
 
 // --- HISTORIAL DE DESCARGAS ---
 

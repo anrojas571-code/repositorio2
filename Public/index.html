@@ -748,20 +748,30 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(5px);
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
+            z-index: 10000;
             opacity: 0;
             visibility: hidden;
+            pointer-events: none;
             transition: all 0.25s ease;
         }
 
         .modal-overlay.active {
             opacity: 1;
             visibility: visible;
+            pointer-events: auto;
+        }
+
+        #modalConfirmacionUsuario {
+            z-index: 100005 !important;
+        }
+
+        #modalConfirmacionUsuario.active {
+            z-index: 100005 !important;
         }
 
         .modal-box {
@@ -874,15 +884,18 @@
 
     <!-- Modal de Soporte con Desarrollador -->
     <div id="modalContactoSoporte" class="modal-overlay">
-        <div class="modal-card" style="max-width: 520px; width: 90%;">
-            <div class="modal-header">
-                <h2><i class="fa-solid fa-headset"></i> Soporte con el Desarrollador</h2>
+        <div class="modal-card" style="max-width: 540px; width: 92%; max-height: 88vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="flex-shrink: 0;">
+                <h2><i class="fa-solid fa-headset" style="color: var(--primary);"></i> Soporte con el Desarrollador</h2>
                 <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body" style="flex: 1; overflow-y: auto;">
                 <!-- Formulario de Selección del Problema -->
                 <div id="seccionFormularioSoporte">
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                        Comunícate directamente con el equipo de soporte técnico y administración.
+                    </p>
                     <div class="form-group">
                         <label>Nombre de Usuario</label>
                         <div class="input-wrapper">
@@ -897,10 +910,11 @@
                             <i class="fa-solid fa-circle-exclamation"></i>
                             <select id="soporteMotivo">
                                 <option value="" disabled selected>Selecciona una opción</option>
+                                <option value="Consulta General">Consulta General</option>
                                 <option value="Activo">🟢 Activo</option>
                                 <option value="Inactivo">🟡 Inactivo</option>
                                 <option value="Bloqueado">🔴 Bloqueado</option>
-                                <option value="Olvide Mi Contraseña">Olvide Mi Contraseña</option>
+                                <option value="Olvide Mi Contraseña">Olvidé Mi Contraseña</option>
                                 <option value="Otro Motivo">Otro Motivo</option>
                             </select>
                         </div>
@@ -914,28 +928,45 @@
                         </div>
                     </div>
 
-                    <button type="button" onclick="enviarMensajeSoporte()" class="btn-primary" style="width: 100%;">
+                    <button type="button" onclick="iniciarOEnviarSoporte()" class="btn-primary" style="width: 100%;">
                         <i class="fa-solid fa-paper-plane"></i> Iniciar Chat de Soporte
                     </button>
                 </div>
 
                 <!-- Vista del Chat / Mensajería -->
                 <div id="seccionChatSoporte" style="display: none;">
-                    <div class="chat-info-header" style="margin-bottom: 10px; font-size: 0.85rem; color: #8a8d9b;">
-                        <span id="chatInfoUsuario"></span> | <span id="chatInfoMotivo"
-                            style="font-weight: bold; color: #a5b4fc;"></span>
+                    <div class="chat-info-header"
+                        style="margin-bottom: 10px; font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div>
+                            <span id="chatInfoUsuario" style="font-weight: 700; color: var(--text-main);"></span>
+                            <span id="chatInfoMotivo"
+                                style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: rgba(99, 102, 241, 0.2); color: var(--primary); margin-left: 6px; font-weight: 600;"></span>
+                        </div>
+                        <div style="display: flex; gap: 6px;">
+                            <button type="button" onclick="pedirConfirmacionVaciarHistorialUsuario()"
+                                title="Vaciar conversación"
+                                style="padding: 4px 8px; font-size: 11px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-trash-can"></i> Vaciar
+                            </button>
+                            <button type="button" onclick="mostrarFormularioNuevoSoporte()"
+                                title="Nueva consulta"
+                                style="padding: 4px 8px; font-size: 11px; background: rgba(99, 102, 241, 0.15); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-plus"></i> Nueva
+                            </button>
+                        </div>
                     </div>
 
                     <div id="contenedorMensajesChat"
-                        style="height: 250px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        style="height: 270px; overflow-y: auto; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                         <!-- Mensajes dinámicos aquí -->
                     </div>
 
                     <div class="input-wrapper" style="margin-top: 10px; display: flex; gap: 8px;">
                         <input type="text" id="nuevoMensajeChat" placeholder="Escribe un mensaje..."
-                            onkeypress="if(event.key==='Enter') enviarMensajeChat()">
+                            onkeypress="if(event.key==='Enter') enviarMensajeChat()"
+                            style="flex: 1; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--card-bg, #1e293b); color: var(--text-main); font-size: 13px;">
                         <button type="button" onclick="enviarMensajeChat()" class="btn-primary"
-                            style="padding: 0 15px;">
+                            style="padding: 0 16px; margin: 0;">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </div>
@@ -1277,47 +1308,7 @@
             </div>
         </div>
     </div>
-    <!-- MODAL DE MENSAJERÍA Y SOPORTE DE USUARIO -->
-    <div id="modalSoporteCliente" class="modal-overlay">
-        <div class="modal-card" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2><i class="fa-solid fa-headset" style="color: var(--primary);"></i> Soporte Técnico y Consultas</h2>
-                <button onclick="cerrarModalSoporteCliente()" class="modal-close"><i
-                        class="fa-solid fa-xmark"></i></button>
-            </div>
-            <form onsubmit="event.preventDefault(); enviarConsultaSoporteCliente();">
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Motivo de la consulta</label>
-                        <div class="input-wrapper">
-                            <i class="fa-solid fa-circle-question field-icon"></i>
-                            <select id="soporteMotivo"
-                                style="width: 100%; padding: 10px 14px 10px 38px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main);">
-                                <option value="Soporte Técnico">Soporte Técnico</option>
-                                <option value="Problema con la cuenta">Problema con la cuenta</option>
-                                <option value="Facturación o Pagos">Facturación / Pagos</option>
-                                <option value="Otra consulta">Otra consulta</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Mensaje</label>
-                        <div class="input-wrapper">
-                            <textarea id="soporteMensajeText" rows="4"
-                                placeholder="Describe detalladamente tu inconveniente o duda..." required
-                                style="width: 100%; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-family: inherit; resize: vertical;"></textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" onclick="cerrarModalSoporteCliente()"
-                        class="btn btn-refresh">Cancelar</button>
-                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Enviar
-                        Ticket</button>
-                </div>
-            </form>
-        </div>
-    </div>
+
     <!-- MODAL DE CONFIRMACIÓN DE USUARIO -->
     <div id="modalConfirmacionUsuario" class="modal-overlay">
         <div class="modal-card" style="max-width: 440px; text-align: center;">
@@ -1397,159 +1388,231 @@
             document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
-        // Estructura local para almacenar la conversación del usuario
+        // --- SISTEMA DE SOPORTE CON EL DESARROLLADOR / ADMINISTRADOR ---
         let soporteSesion = {
             usuario: '',
             motivo: '',
             mensajes: []
         };
+        let soportePollingInterval = null;
 
-        function abrirModalSoporte() {
+        async function abrirModalSoporte() {
             const modal = document.getElementById('modalContactoSoporte');
-            if (modal) {
-                modal.classList.add('active');
-                // Si ya hay un chat activo iniciado, mostrar la vista del chat
-                if (soporteSesion.mensajes.length > 0) {
-                    mostrarVistaChat();
-                } else {
-                    document.getElementById('seccionFormularioSoporte').style.display = 'block';
-                    document.getElementById('seccionChatSoporte').style.display = 'none';
+            if (!modal) return;
+
+            // Auto-detectar usuario si está en sesión
+            let usuarioActual = '';
+            if (usuarioActualEnSesion && usuarioActualEnSesion.usuario) {
+                usuarioActual = usuarioActualEnSesion.usuario;
+            } else {
+                const sesion = localStorage.getItem(SESSION_KEY);
+                if (sesion) {
+                    try {
+                        const parsed = JSON.parse(sesion);
+                        if (parsed && parsed.usuario) usuarioActual = parsed.usuario;
+                    } catch(e) {}
                 }
             }
+
+            if (usuarioActual) {
+                const inputUsuario = document.getElementById('soporteUsuario');
+                if (inputUsuario) inputUsuario.value = usuarioActual;
+                soporteSesion.usuario = usuarioActual;
+            }
+
+            modal.classList.add('active');
+
+            // Si hay un usuario definido, intentar cargar su chat activo desde el servidor
+            if (soporteSesion.usuario) {
+                await recargarChatUsuarioSilencioso(true);
+            } else {
+                mostrarFormularioNuevoSoporte();
+            }
+
+            // Iniciar polling en tiempo real para recibir respuestas del administrador
+            if (soportePollingInterval) clearInterval(soportePollingInterval);
+            soportePollingInterval = setInterval(() => {
+                if (modal.classList.contains('active')) {
+                    recargarChatUsuarioSilencioso(false);
+                } else {
+                    clearInterval(soportePollingInterval);
+                    soportePollingInterval = null;
+                }
+            }, 3000);
         }
 
         function cerrarModalSoporte() {
             const modal = document.getElementById('modalContactoSoporte');
-            if (modal) {
-                modal.classList.remove('active');
+            if (modal) modal.classList.remove('active');
+            if (soportePollingInterval) {
+                clearInterval(soportePollingInterval);
+                soportePollingInterval = null;
             }
         }
 
-        function iniciarOEnviarSoporte() {
-            const usuario = document.getElementById('soporteUsuario').value.trim();
-            const motivo = document.getElementById('soporteMotivo').value;
-            const mensajeInicial = document.getElementById('soporteMensajeCliente').value.trim();
-
-            if (!usuario) {
-                alert('Por favor ingresa tu usuario.');
-                return;
-            }
-            if (!motivo) {
-                alert('Por favor selecciona el motivo de tu consulta.');
-                return;
-            }
-            if (!mensajeInicial) {
-                alert('Por favor describe tu inconveniente.');
-                return;
-            }
-
-            soporteSesion.usuario = usuario;
-            soporteSesion.motivo = motivo;
-
-            // Guardar el primer mensaje del usuario
-            soporteSesion.mensajes.push({
-                emisor: 'usuario',
-                texto: mensajeInicial,
-                fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            });
-
-            // Respuesta automática de recepción por parte del desarrollador/soporte
-            setTimeout(() => {
-                soporteSesion.mensajes.push({
-                    emisor: 'desarrollador',
-                    texto: `Hola @${usuario}, recibimos tu reporte sobre "${motivo}". Un desarrollador revisará tu caso en breve.`,
-                    fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
-                renderizarMensajes();
-            }, 1000);
-
-            mostrarVistaChat();
-        }
-        async function enviarMensajeSoporte() {
-            const usuarioActivo = sessionStorage.getItem('usuario_sesion') || document.getElementById('soporteUsuarioInput')?.value || 'Invitado';
-            const motivo = document.getElementById('soporteMotivoSelect')?.value || 'Consulta General';
-            const mensajeInput = document.getElementById('soporteMensajeTextarea');
-            const mensaje = mensajeInput ? mensajeInput.value.trim() : '';
-
-            if (!mensaje) {
-                showToast('Por favor escribe un mensaje antes de enviar.', 'advertencia');
-                return;
-            }
-
-            const payload = {
-                usuario: usuarioActivo,
-                emisor: usuarioActivo,
-                motivo: motivo,
-                mensaje: mensaje,
-                fecha: new Date().toLocaleString()
-            };
-
-            try {
-                const response = await fetch('/api/soporte', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    mensajeInput.value = '';
-                    showToast('Mensaje enviado a soporte correctamente.', 'exito');
-                    cerrarModalSoporte();
-                } else {
-                    showToast('Error al enviar el mensaje a soporte.', 'error');
-                }
-            } catch (error) {
-                console.error('Error enviando mensaje de soporte:', error);
-                showToast('Error de conexión con el servidor.', 'error');
-            }
+        function mostrarFormularioNuevoSoporte() {
+            document.getElementById('seccionFormularioSoporte').style.display = 'block';
+            document.getElementById('seccionChatSoporte').style.display = 'none';
         }
 
         function mostrarVistaChat() {
             document.getElementById('seccionFormularioSoporte').style.display = 'none';
             document.getElementById('seccionChatSoporte').style.display = 'block';
-            document.getElementById('chatInfoUsuario').textContent = `Usuario: @${soporteSesion.usuario}`;
-            document.getElementById('chatInfoMotivo').textContent = soporteSesion.motivo;
-            renderizarMensajes();
+            document.getElementById('chatInfoUsuario').textContent = `@${soporteSesion.usuario || 'Usuario'}`;
+            document.getElementById('chatInfoMotivo').textContent = soporteSesion.motivo || 'Consulta General';
+            renderizarMensajesUsuario();
         }
 
-        function enviarMensajeChat() {
+        async function recargarChatUsuarioSilencioso(forzarApertura = false) {
+            const usuario = soporteSesion.usuario || document.getElementById('soporteUsuario')?.value.trim();
+            if (!usuario) return;
+
+            try {
+                const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuario)}`);
+                if (res.ok) {
+                    const mensajes = await res.json();
+                    if (Array.isArray(mensajes) && mensajes.length > 0) {
+                        soporteSesion.usuario = usuario;
+                        soporteSesion.motivo = mensajes[0].motivo || 'Consulta General';
+                        soporteSesion.mensajes = mensajes;
+
+                        const seccionChat = document.getElementById('seccionChatSoporte');
+                        if (forzarApertura || (seccionChat && seccionChat.style.display !== 'none')) {
+                            mostrarVistaChat();
+                        }
+                    } else if (forzarApertura) {
+                        mostrarFormularioNuevoSoporte();
+                    }
+                }
+            } catch (err) {
+                console.error('Error al recargar mensajes de soporte:', err);
+            }
+        }
+
+        async function iniciarOEnviarSoporte() {
+            const usuarioInput = document.getElementById('soporteUsuario');
+            const motivoSelect = document.getElementById('soporteMotivo');
+            const mensajeInput = document.getElementById('soporteMensajeCliente');
+
+            const usuario = usuarioInput ? usuarioInput.value.trim() : '';
+            const motivo = motivoSelect ? motivoSelect.value : '';
+            const mensaje = mensajeInput ? mensajeInput.value.trim() : '';
+
+            if (!usuario) {
+                mostrarToast('Usuario requerido', 'Por favor ingresa tu nombre de usuario.', 'advertencia');
+                return;
+            }
+            if (!motivo) {
+                mostrarToast('Motivo requerido', 'Por favor selecciona el motivo de tu consulta.', 'advertencia');
+                return;
+            }
+            if (!mensaje) {
+                mostrarToast('Mensaje requerido', 'Por favor describe brevemente tu inconveniente.', 'advertencia');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/soporte', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuario,
+                        motivo: motivo,
+                        mensaje: mensaje,
+                        emisor: 'usuario'
+                    })
+                });
+
+                if (res.ok) {
+                    soporteSesion.usuario = usuario;
+                    soporteSesion.motivo = motivo;
+                    if (mensajeInput) mensajeInput.value = '';
+
+                    mostrarToast('Mensaje Enviado', 'Tu mensaje ha sido enviado al equipo de soporte.', 'exito');
+                    await recargarChatUsuarioSilencioso(true);
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    mostrarToast('Error', data.error || 'No se pudo enviar el mensaje a soporte.', 'error');
+                }
+            } catch (err) {
+                console.error('Error al enviar soporte:', err);
+                mostrarToast('Error de conexión', 'No se pudo conectar con el servidor.', 'error');
+            }
+        }
+
+        async function enviarMensajeChat() {
             const input = document.getElementById('nuevoMensajeChat');
-            const texto = input.value.trim();
+            const texto = input ? input.value.trim() : '';
 
             if (!texto) return;
 
-            soporteSesion.mensajes.push({
-                emisor: 'usuario',
-                texto: texto,
-                fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            });
+            const usuario = soporteSesion.usuario || (usuarioActualEnSesion && usuarioActualEnSesion.usuario) || 'Usuario';
+            const motivo = soporteSesion.motivo || 'Consulta General';
 
-            input.value = '';
-            renderizarMensajes();
+            try {
+                const res = await fetch('/api/soporte', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuario,
+                        motivo: motivo,
+                        mensaje: texto,
+                        emisor: 'usuario'
+                    })
+                });
+
+                if (res.ok) {
+                    if (input) input.value = '';
+                    await recargarChatUsuarioSilencioso(false);
+                    const contenedor = document.getElementById('contenedorMensajesChat');
+                    if (contenedor) contenedor.scrollTop = contenedor.scrollHeight;
+                } else {
+                    mostrarToast('Error', 'No se pudo enviar el mensaje.', 'error');
+                }
+            } catch (err) {
+                console.error('Error al enviar mensaje:', err);
+                mostrarToast('Error de conexión', 'Error al enviar mensaje.', 'error');
+            }
         }
 
-        function renderizarMensajes() {
+        function renderizarMensajesUsuario() {
             const contenedor = document.getElementById('contenedorMensajesChat');
+            if (!contenedor) return;
             contenedor.innerHTML = '';
+
+            if (!soporteSesion.mensajes || soporteSesion.mensajes.length === 0) {
+                contenedor.innerHTML = '<div style="text-align:center; color: var(--text-muted); font-size: 12px; margin: auto;">No hay mensajes en este chat.</div>';
+                return;
+            }
 
             soporteSesion.mensajes.forEach(msg => {
                 const div = document.createElement('div');
-                const esUsuario = msg.emisor === 'usuario';
+                const esAdmin = msg.emisor === 'admin' || msg.rol === 'Admin';
+                const esUsuario = !esAdmin;
 
                 div.style.cssText = `
-            max-width: 80%;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            align-self: ${esUsuario ? 'flex-end' : 'flex-start'};
-            background: ${esUsuario ? '#4f46e5' : '#374151'};
-            color: #ffffff;
-        `;
+                    max-width: 82%;
+                    padding: 8px 12px;
+                    border-radius: 12px;
+                    font-size: 13px;
+                    line-height: 1.4;
+                    align-self: ${esUsuario ? 'flex-end' : 'flex-start'};
+                    background: ${esUsuario ? 'var(--primary, #6366f1)' : 'var(--card-bg, #1e293b)'};
+                    color: ${esUsuario ? '#ffffff' : 'var(--text-main, #f8fafc)'};
+                    border: ${esUsuario ? 'none' : '1px solid var(--border-color, rgba(255,255,255,0.1))'};
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    margin-bottom: 4px;
+                `;
+
+                const emisorLabel = esAdmin
+                    ? '<div style="font-size: 10px; font-weight: 700; color: #818cf8; margin-bottom: 2px;"><i class="fa-solid fa-user-shield"></i> Soporte (Desarrollador / Admin)</div>'
+                    : '';
 
                 div.innerHTML = `
-            <div>${msg.texto}</div>
-            <div style="font-size: 0.7rem; color: #d1d5db; text-align: right; margin-top: 4px;">${msg.fecha}</div>
-        `;
+                    ${emisorLabel}
+                    <div style="word-break: break-word;">${msg.mensaje || msg.texto || ''}</div>
+                    <div style="font-size: 9px; opacity: 0.75; text-align: right; margin-top: 4px;">${msg.fecha || ''}</div>
+                `;
 
                 contenedor.appendChild(div);
             });
@@ -1557,83 +1620,61 @@
             contenedor.scrollTop = contenedor.scrollHeight;
         }
 
-        // Cargar conversación automáticamente si el usuario ingresa su nombre
-        document.getElementById('soporteNombreUsuario')?.addEventListener('input', cargarConversacionUsuario);
-        let accionConfirmacionPendiente = null;
-
-        // 1. Mostrar/Cerrar Modal de Confirmación
-        function mostrarModalConfirmacionUsuario(titulo, mensaje, onConfirm) {
-            document.getElementById('confirmTituloUsuario').textContent = titulo;
-            document.getElementById('confirmMensajeUsuario').textContent = mensaje;
-            accionConfirmacionPendiente = onConfirm;
-            document.getElementById('modalConfirmacionUsuario').classList.add('active');
-
-            document.getElementById('btnConfirmarAccionUsuario').onclick = async () => {
-                cerrarModalConfirmacionUsuario();
-                if (typeof accionConfirmacionPendiente === 'function') {
-                    await accionConfirmacionPendiente();
-                }
-            };
-        }
-
-        function cerrarModalConfirmacionUsuario() {
-            document.getElementById('modalConfirmacionUsuario').classList.remove('active');
-            accionConfirmacionPendiente = null;
-        }
-
-        // 2. Iniciar Chat de Soporte (Crea el hilo y espera al Administrador)
-        async function iniciarChatSoporte() {
-            const usuarioActual = sessionStorage.getItem('usuario_activo') || 'Usuario';
-            const mensajeInput = document.getElementById('inputMensajeSoporte');
-            const mensaje = mensajeInput ? mensajeInput.value.trim() : 'Hola, necesito asistencia de soporte.';
-
-            try {
-                const res = await fetch('/api/soporte/enviar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        usuario: usuarioActual,
-                        usuario_origen: usuarioActual,
-                        mensaje: mensaje || 'Chat de soporte iniciado.',
-                        emisor: 'cliente'
-                    })
-                });
-
-                if (res.ok) {
-                    showToast('Chat iniciado con éxito. Esperando respuesta del administrador.', 'success');
-                    if (mensajeInput) mensajeInput.value = '';
-                    cargarChatUsuario();
-                } else {
-                    showToast('Error al iniciar la conversación de soporte.', 'error');
-                }
-            } catch (err) {
-                console.error('Error al iniciar soporte:', err);
-                showToast('Error de conexión con el servidor.', 'error');
-            }
-        }
-
-        // 3. Confirmación y Eliminación de Historial de Chat
+        // --- CONFIRMACIÓN Y VACIADO DE HISTORIAL DE CHAT DEL USUARIO ---
         function pedirConfirmacionVaciarHistorialUsuario() {
-            const usuarioActual = sessionStorage.getItem('usuario_activo') || 'Usuario';
+            const usuarioActual = soporteSesion.usuario || document.getElementById('soporteUsuario')?.value.trim();
+            if (!usuarioActual) {
+                mostrarToast('Sin usuario', 'No se ha seleccionado una conversación.', 'advertencia');
+                return;
+            }
+
             mostrarModalConfirmacionUsuario(
                 '¿Vaciar todos los mensajes?',
-                'Se eliminarán todos los mensajes de tu historial de soporte.',
+                `Se eliminarán de forma permanente todos los mensajes de soporte con "${usuarioActual}".`,
                 async () => {
                     try {
                         const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuarioActual)}`, {
                             method: 'DELETE'
                         });
                         if (res.ok) {
-                            showToast('Historial de mensajes vaciado correctamente.', 'success');
-                            cargarChatUsuario();
+                            soporteSesion.mensajes = [];
+                            mostrarToast('Historial Vaciado', 'Tu historial de mensajes se ha vaciado correctamente.', 'exito');
+                            mostrarFormularioNuevoSoporte();
                         } else {
-                            showToast('No se pudo borrar el historial.', 'error');
+                            mostrarToast('Error', 'No se pudo vaciar el historial.', 'error');
                         }
                     } catch (err) {
-                        showToast('Error de conexión al eliminar los mensajes.', 'error');
+                        console.error('Error al vaciar chat:', err);
+                        mostrarToast('Error de conexión', 'Error de conexión al eliminar los mensajes.', 'error');
                     }
                 }
             );
+        }
+
+        let accionConfirmacionUsuarioPendiente = null;
+
+        function mostrarModalConfirmacionUsuario(titulo, mensaje, onConfirm) {
+            document.getElementById('confirmTituloUsuario').textContent = titulo;
+            document.getElementById('confirmMensajeUsuario').textContent = mensaje;
+            accionConfirmacionUsuarioPendiente = onConfirm;
+
+            const modal = document.getElementById('modalConfirmacionUsuario');
+            modal.classList.add('active');
+
+            const btnConfirmar = document.getElementById('btnConfirmarAccionUsuario');
+            btnConfirmar.onclick = async () => {
+                const accion = accionConfirmacionUsuarioPendiente;
+                cerrarModalConfirmacionUsuario();
+                if (typeof accion === 'function') {
+                    await accion();
+                }
+            };
+        }
+
+        function cerrarModalConfirmacionUsuario() {
+            const modal = document.getElementById('modalConfirmacionUsuario');
+            if (modal) modal.classList.remove('active');
+            accionConfirmacionUsuarioPendiente = null;
         }
 
         // --- INDICADOR DE FUERZA DE CONTRASEÑA ---
@@ -2089,48 +2130,7 @@
                 mostrarToast('Error', 'Error de red al restablecer la contraseña.', 'error');
             }
         }
-        function abrirModalSoporteCliente() {
-            document.getElementById('modalSoporteCliente').classList.add('active');
-        }
 
-        function cerrarModalSoporteCliente() {
-            document.getElementById('modalSoporteCliente').classList.remove('active');
-        }
-
-        async function enviarConsultaSoporteCliente() {
-            const motivo = document.getElementById('soporteMotivo').value;
-            const mensaje = document.getElementById('soporteMensajeText').value.trim();
-
-            // Asume el usuario en sesión (puedes ajustar 'usuarioLogueado' según tu app)
-            const usuarioSesion = localStorage.getItem('usuario_activo') || 'Cliente';
-
-            if (!mensaje) return;
-
-            try {
-                const res = await fetch('/api/soporte', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        usuario: usuarioSesion,
-                        motivo: motivo,
-                        mensaje: mensaje,
-                        emisor: 'cliente'
-                    })
-                });
-
-                if (res.ok) {
-                    document.getElementById('soporteMensajeText').value = '';
-                    cerrarModalSoporteCliente();
-                    if (typeof showToast === 'function') {
-                        showToast('Mensaje de soporte enviado con éxito', 'success');
-                    } else {
-                        alert('Mensaje enviado con éxito');
-                    }
-                }
-            } catch (err) {
-                console.error('Error al enviar soporte:', err);
-            }
-        }
     </script>
 </body>
 
