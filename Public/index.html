@@ -866,6 +866,174 @@
             text-align: center;
             display: none;
         }
+
+        /* --- ESTILOS MEJORADOS PARA EL CHAT DE SOPORTE --- */
+        .chat-info-header {
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--input-bg);
+            padding: 8px 14px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-status-pill {
+            font-size: 11px;
+            padding: 3px 9px;
+            border-radius: 12px;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary);
+            margin-left: 8px;
+            font-weight: 600;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            display: inline-block;
+        }
+
+        .chat-header-btn {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 20px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .chat-header-btn.danger {
+            background: rgba(239, 68, 68, 0.12);
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .chat-header-btn.danger:hover {
+            background: rgba(239, 68, 68, 0.22);
+            border-color: #ef4444;
+            transform: translateY(-1px);
+        }
+
+        .chat-header-btn.primary {
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--primary);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .chat-header-btn.primary:hover {
+            background: rgba(99, 102, 241, 0.22);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        #contenedorMensajesChat {
+            height: 280px;
+            overflow-y: auto;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollbar estilizada y moderna */
+        #contenedorMensajesChat::-webkit-scrollbar,
+        #cajaMensajesChat::-webkit-scrollbar,
+        #listaConversacionesSoporte::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #contenedorMensajesChat::-webkit-scrollbar-track,
+        #cajaMensajesChat::-webkit-scrollbar-track,
+        #listaConversacionesSoporte::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        #contenedorMensajesChat::-webkit-scrollbar-thumb,
+        #cajaMensajesChat::-webkit-scrollbar-thumb,
+        #listaConversacionesSoporte::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.35);
+            border-radius: 4px;
+        }
+
+        #contenedorMensajesChat::-webkit-scrollbar-thumb:hover,
+        #cajaMensajesChat::-webkit-scrollbar-thumb:hover,
+        #listaConversacionesSoporte::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+
+        /* Barra de envío de mensaje inferior uniforme */
+        .chat-input-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 12px;
+            background: var(--input-bg);
+            padding: 6px 6px 6px 16px;
+            border-radius: 30px;
+            border: 1.5px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .chat-input-bar:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            background: var(--modal-bg);
+        }
+
+        .chat-input-field {
+            flex: 1;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            padding: 8px 0 !important;
+            font-size: 13.5px;
+            color: var(--text-main);
+            width: auto !important;
+        }
+
+        .chat-input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        .chat-send-btn {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .chat-send-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 5px 14px rgba(99, 102, 241, 0.5);
+        }
+
+        .chat-send-btn:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 
@@ -935,38 +1103,32 @@
 
                 <!-- Vista del Chat / Mensajería -->
                 <div id="seccionChatSoporte" style="display: none;">
-                    <div class="chat-info-header"
-                        style="margin-bottom: 10px; font-size: 0.85rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
-                        <div>
-                            <span id="chatInfoUsuario" style="font-weight: 700; color: var(--text-main);"></span>
-                            <span id="chatInfoMotivo"
-                                style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: rgba(99, 102, 241, 0.2); color: var(--primary); margin-left: 6px; font-weight: 600;"></span>
+                    <div class="chat-info-header">
+                        <div style="display: flex; align-items: center;">
+                            <span id="chatInfoUsuario" style="font-weight: 700; color: var(--text-main); font-size: 14px;"></span>
+                            <span id="chatInfoMotivo" class="chat-status-pill"></span>
                         </div>
-                        <div style="display: flex; gap: 6px;">
+                        <div style="display: flex; gap: 8px;">
                             <button type="button" onclick="pedirConfirmacionVaciarHistorialUsuario()"
-                                title="Vaciar conversación"
-                                style="padding: 4px 8px; font-size: 11px; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                title="Vaciar conversación" class="chat-header-btn danger">
                                 <i class="fa-solid fa-trash-can"></i> Vaciar
                             </button>
                             <button type="button" onclick="mostrarFormularioNuevoSoporte()"
-                                title="Nueva consulta"
-                                style="padding: 4px 8px; font-size: 11px; background: rgba(99, 102, 241, 0.15); color: var(--primary); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                title="Nueva consulta" class="chat-header-btn primary">
                                 <i class="fa-solid fa-plus"></i> Nueva
                             </button>
                         </div>
                     </div>
 
-                    <div id="contenedorMensajesChat"
-                        style="height: 270px; overflow-y: auto; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                    <div id="contenedorMensajesChat">
                         <!-- Mensajes dinámicos aquí -->
                     </div>
 
-                    <div class="input-wrapper" style="margin-top: 10px; display: flex; gap: 8px;">
-                        <input type="text" id="nuevoMensajeChat" placeholder="Escribe un mensaje..."
-                            onkeypress="if(event.key==='Enter') enviarMensajeChat()"
-                            style="flex: 1; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--card-bg, #1e293b); color: var(--text-main); font-size: 13px;">
-                        <button type="button" onclick="enviarMensajeChat()" class="btn-primary"
-                            style="padding: 0 16px; margin: 0;">
+                    <div class="chat-input-bar">
+                        <input type="text" id="nuevoMensajeChat" class="chat-input-field"
+                            placeholder="Escribe un mensaje aquí..."
+                            onkeypress="if(event.key==='Enter') enviarMensajeChat()">
+                        <button type="button" onclick="enviarMensajeChat()" class="chat-send-btn" title="Enviar mensaje">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </div>
@@ -1581,7 +1743,7 @@
             contenedor.innerHTML = '';
 
             if (!soporteSesion.mensajes || soporteSesion.mensajes.length === 0) {
-                contenedor.innerHTML = '<div style="text-align:center; color: var(--text-muted); font-size: 12px; margin: auto;">No hay mensajes en este chat.</div>';
+                contenedor.innerHTML = '<div style="text-align:center; color: var(--text-muted); font-size: 13px; margin: auto; padding: 24px;"><i class="fa-solid fa-comments" style="font-size: 26px; opacity: 0.4; margin-bottom: 8px; display: block;"></i>No hay mensajes en este chat.<br><span style="font-size: 11px; opacity: 0.8;">Escribe un mensaje para continuar la conversación.</span></div>';
                 return;
             }
 
@@ -1592,26 +1754,27 @@
 
                 div.style.cssText = `
                     max-width: 82%;
-                    padding: 8px 12px;
-                    border-radius: 12px;
-                    font-size: 13px;
-                    line-height: 1.4;
+                    padding: 10px 14px;
+                    border-radius: ${esUsuario ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};
+                    font-size: 13.5px;
+                    line-height: 1.45;
                     align-self: ${esUsuario ? 'flex-end' : 'flex-start'};
-                    background: ${esUsuario ? 'var(--primary, #6366f1)' : 'var(--card-bg, #1e293b)'};
+                    background: ${esUsuario ? 'linear-gradient(135deg, var(--primary, #6366f1), var(--primary-hover, #4f46e5))' : 'var(--modal-bg, #1e293b)'};
                     color: ${esUsuario ? '#ffffff' : 'var(--text-main, #f8fafc)'};
-                    border: ${esUsuario ? 'none' : '1px solid var(--border-color, rgba(255,255,255,0.1))'};
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    border: ${esUsuario ? 'none' : '1px solid var(--border-color, rgba(255,255,255,0.12))'};
+                    box-shadow: ${esUsuario ? '0 3px 10px rgba(99, 102, 241, 0.25)' : '0 3px 10px rgba(0,0,0,0.1)'};
                     margin-bottom: 4px;
+                    word-break: break-word;
                 `;
 
                 const emisorLabel = esAdmin
-                    ? '<div style="font-size: 10px; font-weight: 700; color: #818cf8; margin-bottom: 2px;"><i class="fa-solid fa-user-shield"></i> Soporte (Desarrollador / Admin)</div>'
+                    ? '<div style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #818cf8; margin-bottom: 4px;"><i class="fa-solid fa-headset"></i> Soporte (Desarrollador / Admin)</div>'
                     : '';
 
                 div.innerHTML = `
                     ${emisorLabel}
-                    <div style="word-break: break-word;">${msg.mensaje || msg.texto || ''}</div>
-                    <div style="font-size: 9px; opacity: 0.75; text-align: right; margin-top: 4px;">${msg.fecha || ''}</div>
+                    <div>${msg.mensaje || msg.texto || ''}</div>
+                    <div style="font-size: 10px; opacity: 0.75; text-align: right; margin-top: 5px;">${msg.fecha || ''}</div>
                 `;
 
                 contenedor.appendChild(div);

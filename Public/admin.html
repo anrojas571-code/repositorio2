@@ -853,6 +853,97 @@
             border: 1px solid var(--border-color);
         }
 
+        /* Scrollbars para chats de soporte */
+        #cajaMensajesChat::-webkit-scrollbar,
+        #listaConversacionesSoporte::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #cajaMensajesChat::-webkit-scrollbar-track,
+        #listaConversacionesSoporte::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        #cajaMensajesChat::-webkit-scrollbar-thumb,
+        #listaConversacionesSoporte::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.35);
+            border-radius: 4px;
+        }
+
+        #cajaMensajesChat::-webkit-scrollbar-thumb:hover,
+        #listaConversacionesSoporte::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+
+        /* Barra de entrada de mensaje de admin */
+        .chat-input-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            background: var(--input-bg);
+            padding: 6px 6px 6px 16px;
+            border-radius: 30px;
+            border: 1.5px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease;
+        }
+
+        .chat-input-bar:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+            background: var(--modal-bg);
+        }
+
+        .chat-input-field {
+            flex: 1;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            padding: 8px 0 !important;
+            font-size: 13.5px;
+            color: var(--text-main);
+            width: auto !important;
+        }
+
+        .chat-input-field::placeholder {
+            color: var(--text-muted);
+        }
+
+        .chat-send-btn {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 3px 10px rgba(99, 102, 241, 0.35);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .chat-send-btn:hover:not(:disabled) {
+            transform: scale(1.08);
+            box-shadow: 0 5px 14px rgba(99, 102, 241, 0.5);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
         .modal-overlay.active .modal-card {
             transform: translateY(0);
         }
@@ -1572,14 +1663,11 @@
                     </div>
 
                     <!-- Formulario de respuesta del admin -->
-                    <form id="formRespuestaAdmin" onsubmit="event.preventDefault(); enviarRespuestaAdmin();"
-                        style="margin-top: 8px; display: flex; gap: 8px;">
-                        <input type="text" id="inputRespuestaAdmin"
+                    <form id="formRespuestaAdmin" class="chat-input-bar" onsubmit="event.preventDefault(); enviarRespuestaAdmin();">
+                        <input type="text" id="inputRespuestaAdmin" class="chat-input-field"
                             placeholder="Escribe una respuesta para el usuario..."
-                            style="flex: 1; padding: 10px 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); background: var(--item-bg); color: var(--text-main); font-size: 13px;"
                             disabled>
-                        <button type="submit" id="btnEnviarRespuestaAdmin" class="btn btn-primary"
-                            style="margin: 0; padding: 0 16px;" disabled>
+                        <button type="submit" id="btnEnviarRespuestaAdmin" class="chat-send-btn" title="Enviar respuesta" disabled>
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </form>
