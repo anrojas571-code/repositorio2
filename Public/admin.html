@@ -1432,11 +1432,6 @@
                         <input type="text" id="adminSearchInput" placeholder="Buscar por usuario, correo o teléfono..."
                             oninput="filtrarUsuarios()">
                     </div>
-                    <select id="adminFilterRole" class="filter-select" onchange="filtrarUsuarios()">
-                        <option value="todos">Todos los Roles</option>
-                        <option value="Admin">Solo Admin</option>
-                        <option value="Cliente">Solo Clientes</option>
-                    </select>
                     <select id="adminFilterStatus" class="filter-select" onchange="filtrarUsuarios()">
                         <option value="todos">Todos los Estados</option>
                         <option value="Activo">🟢 Activos</option>
@@ -1663,11 +1658,12 @@
                     </div>
 
                     <!-- Formulario de respuesta del admin -->
-                    <form id="formRespuestaAdmin" class="chat-input-bar" onsubmit="event.preventDefault(); enviarRespuestaAdmin();">
+                    <form id="formRespuestaAdmin" class="chat-input-bar"
+                        onsubmit="event.preventDefault(); enviarRespuestaAdmin();">
                         <input type="text" id="inputRespuestaAdmin" class="chat-input-field"
-                            placeholder="Escribe una respuesta para el usuario..."
-                            disabled>
-                        <button type="submit" id="btnEnviarRespuestaAdmin" class="chat-send-btn" title="Enviar respuesta" disabled>
+                            placeholder="Escribe una respuesta para el usuario..." disabled>
+                        <button type="submit" id="btnEnviarRespuestaAdmin" class="chat-send-btn"
+                            title="Enviar respuesta" disabled>
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </form>
