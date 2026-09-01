@@ -448,30 +448,44 @@ app.delete('/api/soporte/:id', async (req, res) => {
 
 // API: Login exclusivo para Administradores
 app.post('/api/admin/login', async (req, res) => {
-    const { usuario, clave } = req.body;
+    const usuario = req.body.usuario?.trim();
+    const clave = req.body.clave?.trim();
+
+    if (!usuario || !clave) {
+        return res.status(400).json({ ok: false, error: 'Usuario y contraseña requeridos' });
+    }
 
     if (pool) {
         try {
             const result = await pool.query(
-                'SELECT usuario FROM administradores WHERE usuario = $1 AND clave = $2',
+                'SELECT usuario FROM administradores WHERE LOWER(usuario) = LOWER($1) AND clave = $2',
                 [usuario, clave]
             );
 
             if (result.rows.length > 0) {
-                res.json({ ok: true, usuario: result.rows[0].usuario });
+                return res.json({ ok: true, usuario: result.rows[0].usuario, message: 'Acceso concedido' });
             } else {
-                res.status(401).json({ error: 'Credenciales no válidas' });
+                return res.status(401).json({ ok: false, error: 'Credenciales no válidas' });
             }
         } catch (err) {
-            res.status(500).json({ error: 'Error en el servidor' });
+            console.error('Error en Login Admin (DB):', err);
+            return res.status(500).json({ ok: false, error: 'Error en el servidor' });
         }
     } else {
-        const db = leerDBLocal();
-        const adminExiste = db.administradores.find(a => a.usuario === usuario && a.clave === clave);
-        if (adminExiste) {
-            res.json({ ok: true, usuario: adminExiste.usuario });
-        } else {
-            res.status(401).json({ error: 'Credenciales no válidas' });
+        try {
+            const db = leerDBLocal();
+            const adminExiste = db.administradores?.find(
+                a => a.usuario.trim().toLowerCase() === usuario.toLowerCase() && a.clave === clave
+            );
+
+            if (adminExiste) {
+                return res.json({ ok: true, usuario: adminExiste.usuario, message: 'Acceso concedido' });
+            } else {
+                return res.status(401).json({ ok: false, error: 'Credenciales no válidas' });
+            }
+        } catch (err) {
+            console.error('Error en Login Admin (Local):', err);
+            return res.status(500).json({ ok: false, error: 'Error al leer la base local' });
         }
     }
 });
