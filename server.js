@@ -27,7 +27,9 @@ app.use(express.static(PUBLIC_DIR));
 // Credenciales del administrador inicial
 const ADMIN_DEFAULT = {
     usuario: 'Admin',
-    clave: 'An12345*'
+    clave: 'An12345*',
+    usuario: 'Angel',
+    clave: 'Samuel20'
 };
 
 // Función auxiliar para obtener la API Key de Resend desde process.env
