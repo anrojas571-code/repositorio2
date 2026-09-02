@@ -1052,7 +1052,8 @@
 
     <!-- Modal de Soporte con Desarrollador -->
     <div id="modalContactoSoporte" class="modal-overlay">
-        <div class="modal-card" style="max-width: 540px; width: 92%; max-height: 88vh; display: flex; flex-direction: column;">
+        <div class="modal-card"
+            style="max-width: 540px; width: 92%; max-height: 88vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="flex-shrink: 0;">
                 <h2><i class="fa-solid fa-headset" style="color: var(--primary);"></i> Soporte con el Desarrollador</h2>
                 <button onclick="cerrarModalSoporte()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
@@ -1078,11 +1079,10 @@
                             <i class="fa-solid fa-circle-exclamation"></i>
                             <select id="soporteMotivo">
                                 <option value="" disabled selected>Selecciona una opción</option>
-                                <option value="Consulta General">Consulta General</option>
                                 <option value="Activo">🟢 Activo</option>
                                 <option value="Inactivo">🟡 Inactivo</option>
                                 <option value="Bloqueado">🔴 Bloqueado</option>
-                                <option value="Olvide Mi Contraseña">Olvidé Mi Contraseña</option>
+                                <option value="Olvide Mi Correo electrónico">Olvidé mi correo electrónico</option>
                                 <option value="Otro Motivo">Otro Motivo</option>
                             </select>
                         </div>
@@ -1105,7 +1105,8 @@
                 <div id="seccionChatSoporte" style="display: none;">
                     <div class="chat-info-header">
                         <div style="display: flex; align-items: center;">
-                            <span id="chatInfoUsuario" style="font-weight: 700; color: var(--text-main); font-size: 14px;"></span>
+                            <span id="chatInfoUsuario"
+                                style="font-weight: 700; color: var(--text-main); font-size: 14px;"></span>
                             <span id="chatInfoMotivo" class="chat-status-pill"></span>
                         </div>
                         <div style="display: flex; gap: 8px;">
@@ -1113,8 +1114,8 @@
                                 title="Vaciar conversación" class="chat-header-btn danger">
                                 <i class="fa-solid fa-trash-can"></i> Vaciar
                             </button>
-                            <button type="button" onclick="mostrarFormularioNuevoSoporte()"
-                                title="Nueva consulta" class="chat-header-btn primary">
+                            <button type="button" onclick="mostrarFormularioNuevoSoporte()" title="Nueva consulta"
+                                class="chat-header-btn primary">
                                 <i class="fa-solid fa-plus"></i> Nueva
                             </button>
                         </div>
@@ -1128,7 +1129,8 @@
                         <input type="text" id="nuevoMensajeChat" class="chat-input-field"
                             placeholder="Escribe un mensaje aquí..."
                             onkeypress="if(event.key==='Enter') enviarMensajeChat()">
-                        <button type="button" onclick="enviarMensajeChat()" class="chat-send-btn" title="Enviar mensaje">
+                        <button type="button" onclick="enviarMensajeChat()" class="chat-send-btn"
+                            title="Enviar mensaje">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
                     </div>
@@ -1572,7 +1574,7 @@
                     try {
                         const parsed = JSON.parse(sesion);
                         if (parsed && parsed.usuario) usuarioActual = parsed.usuario;
-                    } catch(e) {}
+                    } catch (e) { }
                 }
             }
 
