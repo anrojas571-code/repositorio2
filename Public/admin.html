@@ -1705,10 +1705,16 @@
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('admin_app_theme', newTheme);
+            localStorage.setItem('app_theme', newTheme);
 
             const icon = document.getElementById('themeIcon');
-            if (icon) icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+            icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+
+        function cargarTemaGuardado() {
+            const savedTheme = localStorage.getItem('app_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
         // --- GESTIÓN DE MENSAJES DE SOPORTE ---
