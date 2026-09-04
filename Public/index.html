@@ -1971,7 +1971,7 @@
         // --- AUTENTICACIÓN Y PERFIL ---
         async function iniciarSesion() {
             if (estaBloqueado) {
-                mostrarToast('Espera un momento', 'Demasiados intentos fallidos.', 'advertencia');
+                mostrarToast('Espera un momento', 'Demasiados intentos fallidos. Por favor espera.', 'advertencia');
                 return;
             }
 
@@ -1987,7 +1987,6 @@
                 const response = await fetch('/api/usuarios/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include', // <--- IMPORTANTE
                     body: JSON.stringify({ usuario, clave })
                 });
 
@@ -1995,18 +1994,46 @@
 
                 if (response.ok) {
                     intentosFallidos = 0;
-                    usuarioActualEnSesion = data.usuario; // data.usuario es el objeto con datos del usuario
-                    renderizarPerfil(usuarioActualEnSesion);
-                    mostrarToast('¡Bienvenido!', `Sesión iniciada como ${data.usuario.usuario}`, 'exito');
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+
+                    // Sincronizar en caché local para resiliencia offline
+                    let cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
+                    const cIdx = cache.findIndex(u => u.usuario.toLowerCase() === data.usuario.toLowerCase());
+                    if (cIdx >= 0) cache[cIdx] = data; else cache.push(data);
+                    localStorage.setItem('cached_usuarios', JSON.stringify(cache));
+
+                    renderizarPerfil(data);
+                    mostrarToast('¡Bienvenido!', `Sesión iniciada como ${data.usuario}`, 'exito');
                 } else if (response.status === 403) {
-                    mostrarToast('Acceso Restringido', data.error || 'Cuenta bloqueada o inactiva.', 'error');
+                    mostrarToast('Acceso Restringido', data.error || 'Tu cuenta se encuentra bloqueada.', 'error');
                 } else {
                     registrarIntentoFallido();
                 }
             } catch (e) {
-                mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
+                // Modo resiliente híbrido: verificación contra almacenamiento local si falla la red
+                const cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
+                const encontrado = cache.find(u =>
+                    (u.usuario && u.usuario.toLowerCase() === usuario.toLowerCase() || (u.correo && u.correo.toLowerCase() === usuario.toLowerCase())) &&
+                    u.clave === clave
+                );
+                if (encontrado) {
+                    if (encontrado.estado === 'Bloqueado') {
+                        mostrarToast('Acceso Restringido', 'Tu cuenta se encuentra bloqueada por el administrador.', 'error');
+                        return;
+                    }
+                    if (encontrado.estado === 'Inactivo') {
+                        mostrarToast('Acceso Restringido', 'Tu cuenta se encuentra inactiva.', 'error');
+                        return;
+                    }
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(encontrado));
+                    renderizarPerfil(encontrado);
+                    mostrarToast('Modo Fuera de Línea', `Sesión iniciada offline como ${encontrado.usuario}`, 'advertencia');
+                } else {
+                    mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
+                }
             }
         }
+
         function renderizarPerfil(user) {
             usuarioActualEnSesion = user;
             document.getElementById('formLoginWrapper').style.display = 'none';
@@ -2038,31 +2065,29 @@
             `;
         }
 
-        async function cerrarSesion() {
-            await fetch('/api/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
+        function cerrarSesion() {
+            localStorage.removeItem(SESSION_KEY);
             usuarioActualEnSesion = null;
             document.getElementById('formLoginWrapper').style.display = 'block';
             document.getElementById('perfilUsuario').style.display = 'none';
             document.getElementById('formLogin').reset();
             mostrarToast('Sesión Cerrada', 'Has salido del sistema correctamente.', 'exito');
         }
-        async function verificarSesionGuardada() {
-            try {
-                const res = await fetch('/api/usuarios/perfil', {
-                    credentials: 'include'
-                });
-                if (res.ok) {
-                    const user = await res.json();
-                    usuarioActualEnSesion = user;
-                    renderizarPerfil(user);
+
+        function verificarSesionGuardada() {
+            const sesion = localStorage.getItem(SESSION_KEY);
+            if (sesion) {
+                try {
+                    const parsed = JSON.parse(sesion);
+                    if (parsed && parsed.usuario) {
+                        renderizarPerfil(parsed);
+                    }
+                } catch (e) {
+                    localStorage.removeItem(SESSION_KEY);
                 }
-            } catch (e) {
-                // No hay sesión activa, no hacer nada
             }
         }
+
         // --- EDICIÓN DE PERFIL ---
         function abrirModalEditarPerfil() {
             if (!usuarioActualEnSesion) return;

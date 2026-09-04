@@ -1889,23 +1889,15 @@
         let usuariosSeleccionados = new Set();
         let auditoriaCargada = [];
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             cargarTemaGuardado();
-            // Verificar si la sesión admin es válida con el servidor
-            try {
-                const res = await fetch('/api/verify', { credentials: 'include' });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.rol === 'admin') {
-                        sessionStorage.setItem('admin_session_active', 'true');
-                        mostrarPanelAdmin();
-                        return;
-                    }
-                }
-            } catch (e) { }
-            // Si no, mostrar login
-            document.getElementById('vistaPanelAdmin').style.display = 'none';
-            document.getElementById('vistaLoginAdmin').style.display = 'block';
+            const sesionAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
+            if (sesionAdmin === 'true') {
+                mostrarPanelAdmin();
+            } else {
+                document.getElementById('vistaPanelAdmin').style.display = 'none';
+                document.getElementById('vistaLoginAdmin').style.display = 'block';
+            }
         });
 
         // --- MODO OSCURO / CLARO ---
@@ -2251,37 +2243,37 @@
                 const response = await fetch('/api/admin/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
                     body: JSON.stringify({ usuario, clave })
                 });
 
                 if (response.ok) {
-                    sessionStorage.setItem('admin_session_active', 'true');
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
                     mostrarPanelAdmin();
-                    showToast('Sesión iniciada correctamente', 'success', 'Bienvenido');
+                    showToast('Sesión iniciada correctamente en el panel', 'success', 'Bienvenido');
                 } else {
                     errorElem.style.display = 'block';
-                    showToast('Credenciales no válidas', 'error', 'Acceso Denegado');
+                    showToast('Credenciales de Administrador no válidas', 'error', 'Acceso Denegado');
                 }
             } catch (err) {
                 showToast('Error al conectar con el servidor', 'error');
             }
         }
+
         function mostrarPanelAdmin() {
             document.getElementById('vistaLoginAdmin').style.display = 'none';
             document.getElementById('vistaPanelAdmin').style.display = 'block';
             cargarDatos();
         }
 
-        async function cerrarSesionAdmin() {
-            await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-            sessionStorage.removeItem('admin_session_active');
+        function cerrarSesionAdmin() {
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
             document.getElementById('vistaPanelAdmin').style.display = 'none';
             document.getElementById('vistaLoginAdmin').style.display = 'block';
             document.getElementById('adminUser').value = '';
             document.getElementById('adminPass').value = '';
             showToast('Has cerrado la sesión del panel', 'info', 'Sesión Finalizada');
         }
+
         // --- CARGAR Y RENDERIZAR USUARIOS ---
         async function cargarDatos() {
             try {
