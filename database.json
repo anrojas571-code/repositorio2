@@ -1,0 +1,166 @@
+{
+  "usuarios": [
+    {
+      "usuario": "user_1786974180256",
+      "clave": "ClaveOriginal123",
+      "correo": "test_1786974180256@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 0,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786974185000",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786974185000@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786976993489",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786976993489@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786978928184",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786978928184@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786979454301",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786979454301@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786980581629",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786980581629@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786981312607",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786981312606@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786991936634",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786991936634@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    },
+    {
+      "usuario": "user_1786993317167",
+      "clave": "NuevaClave456!",
+      "correo": "test_1786993317167@ejemplo.com",
+      "telefono": "04140000000",
+      "direccion": "Calle Test",
+      "fechaRegistro": "17/8/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
+    }
+  ],
+  "administradores": [
+    {
+      "usuario": "Admin",
+      "clave": "An12345*"
+    },
+    {
+      "usuario": "Angel",
+      "clave": "Samuel20"
+    }
+  ],
+  "descargas": [
+    {
+      "id": 1787673690916,
+      "formato": "Excel",
+      "fecha": "25/8/2026",
+      "hora": "12:01:30"
+    },
+    {
+      "id": 1787673721506,
+      "formato": "Excel",
+      "fecha": "25/8/2026",
+      "hora": "12:02:01"
+    }
+  ],
+  "soporte": [],
+  "auditoria": [
+    {
+      "id": "1787700000000",
+      "fecha": "04/09/2026",
+      "hora": "09:30:00",
+      "tipo": "INICIALIZACION",
+      "usuario": "Sistema",
+      "detalle": "Inicialización de la base de datos database.json con persistencia unificada",
+      "ip": "127.0.0.1"
+    }
+  ]
+}

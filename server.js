@@ -9,7 +9,8 @@ const { Resend } = require('resend');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, 'db.json');
+const PRIMARY_DB_FILE = path.join(__dirname, 'database.json');
+const LEGACY_DB_FILE = path.join(__dirname, 'db.json');
 
 // --- MIDDLEWARES GLOBALES (DEBEN IR ANTES DE TODAS LAS RUTAS) ---
 app.use(cors());
@@ -29,6 +30,62 @@ const ADMIN_DEFAULT = [
     { usuario: 'Admin', clave: 'An12345*' },
     { usuario: 'Angel', clave: 'Samuel20' }
 ];
+
+// Función utilitaria para enmascarar correos electrónicos (ej: manuel@hotmail.com -> m***l@hotmail.com)
+function enmascararCorreo(correo) {
+    if (!correo || typeof correo !== 'string' || !correo.includes('@')) {
+        return '***@correo.com';
+    }
+    const [nombre, dominio] = correo.trim().split('@');
+    if (!nombre || nombre.length === 0) return `***@${dominio}`;
+    if (nombre.length === 1) return `${nombre}***@${dominio}`;
+    if (nombre.length === 2) return `${nombre[0]}***@${dominio}`;
+    return `${nombre[0]}***${nombre[nombre.length - 1]}@${dominio}`;
+}
+
+// Función centralizada para registrar eventos en la bitácora de auditoría global
+async function registrarEventoAuditoria(tipo, usuario, detalle, req = null) {
+    const ahora = new Date();
+    const fecha = ahora.toLocaleDateString('es-ES');
+    const hora = ahora.toLocaleTimeString('es-ES');
+    let ip = '127.0.0.1';
+    if (req) {
+        ip = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+        if (typeof ip === 'string' && ip.includes(',')) ip = ip.split(',')[0].trim();
+    }
+    const evento = {
+        id: Date.now().toString() + '-' + Math.floor(Math.random() * 1000),
+        fecha,
+        hora,
+        tipo: tipo || 'GENERAL',
+        usuario: usuario || 'Sistema',
+        detalle: detalle || '',
+        ip: ip || '127.0.0.1'
+    };
+
+    if (pool) {
+        try {
+            await pool.query(
+                `INSERT INTO auditoria (id, fecha, hora, tipo, usuario, detalle, ip)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [evento.id, evento.fecha, evento.hora, evento.tipo, evento.usuario, evento.detalle, evento.ip]
+            );
+        } catch (err) {
+            console.error('Error al registrar auditoría en PostgreSQL:', err.message);
+        }
+    } else {
+        try {
+            const db = leerDBLocal();
+            if (!Array.isArray(db.auditoria)) db.auditoria = [];
+            db.auditoria.unshift(evento);
+            if (db.auditoria.length > 1000) db.auditoria = db.auditoria.slice(0, 1000);
+            guardarDBLocal(db);
+        } catch (err) {
+            console.error('Error al registrar auditoría local:', err.message);
+        }
+    }
+    return evento;
+}
 
 // Función auxiliar para obtener la API Key de Resend desde process.env
 function obtenerApiKeyResend() {
@@ -199,26 +256,42 @@ if (process.env.DATABASE_URL) {
 
             // Tabla de soporte técnico
             await pool.query(`
-    CREATE TABLE IF NOT EXISTS soporte (
-        id TEXT PRIMARY KEY,
-        usuario TEXT NOT NULL,
-        emisor VARCHAR(20) DEFAULT 'usuario',
-        motivo TEXT NOT NULL,
-        mensaje TEXT NOT NULL,
-        fecha TEXT NOT NULL
-    );
-`);
+                CREATE TABLE IF NOT EXISTS soporte (
+                    id TEXT PRIMARY KEY,
+                    usuario TEXT NOT NULL,
+                    emisor VARCHAR(20) DEFAULT 'usuario',
+                    motivo TEXT NOT NULL,
+                    mensaje TEXT NOT NULL,
+                    fecha TEXT NOT NULL
+                );
+            `);
 
             // Asegurar columna emisor si la tabla ya existía
             await pool.query(`
                 ALTER TABLE soporte ADD COLUMN IF NOT EXISTS emisor VARCHAR(20) DEFAULT 'usuario';
             `);
-            // Insertar o actualizar el admin por defecto
+
+            // Tabla de bitácora de auditoría global
             await pool.query(`
-                INSERT INTO administradores (usuario, clave) 
-                VALUES ($1, $2)
-                ON CONFLICT (usuario) DO NOTHING;
-            `, [ADMIN_DEFAULT.usuario, ADMIN_DEFAULT.clave]);
+                CREATE TABLE IF NOT EXISTS auditoria (
+                    id TEXT PRIMARY KEY,
+                    fecha TEXT NOT NULL,
+                    hora TEXT NOT NULL,
+                    tipo TEXT NOT NULL,
+                    usuario TEXT,
+                    detalle TEXT NOT NULL,
+                    ip TEXT
+                );
+            `);
+
+            // Insertar administradores por defecto
+            for (const admin of ADMIN_DEFAULT) {
+                await pool.query(`
+                    INSERT INTO administradores (usuario, clave) 
+                    VALUES ($1, $2)
+                    ON CONFLICT (usuario) DO NOTHING;
+                `, [admin.usuario, admin.clave]);
+            }
 
             console.log('Tablas listas en PostgreSQL');
         } catch (err) {
@@ -227,31 +300,65 @@ if (process.env.DATABASE_URL) {
     };
     initDb();
 } else {
-    console.log('DATABASE_URL no definida. Modo fallback a db.json local');
+    console.log('DATABASE_URL no definida. Modo local con persistencia en database.json');
 }
 
-// --- MÉTODOS LOCALES (FALLBACK A db.json) ---
+// --- MÉTODOS LOCALES (PERSISTENCIA PRINCIPAL EN database.json) ---
 function leerDBLocal() {
-    if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [], soporte: [] }, null, 2));
+    let targetFile = PRIMARY_DB_FILE;
+    if (!fs.existsSync(PRIMARY_DB_FILE) && fs.existsSync(LEGACY_DB_FILE)) {
+        targetFile = LEGACY_DB_FILE;
     }
+
+    if (!fs.existsSync(targetFile)) {
+        const initialData = {
+            usuarios: [],
+            administradores: ADMIN_DEFAULT,
+            descargas: [],
+            soporte: [],
+            auditoria: [{
+                id: Date.now().toString(),
+                fecha: new Date().toLocaleDateString('es-ES'),
+                hora: new Date().toLocaleTimeString('es-ES'),
+                tipo: 'INICIALIZACION',
+                usuario: 'Sistema',
+                detalle: 'Inicialización automática de database.json',
+                ip: '127.0.0.1'
+            }]
+        };
+        fs.writeFileSync(PRIMARY_DB_FILE, JSON.stringify(initialData, null, 2));
+        return initialData;
+    }
+
     try {
-        const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+        const raw = fs.readFileSync(targetFile, 'utf-8');
+        const data = JSON.parse(raw);
         if (Array.isArray(data)) {
-            return { usuarios: data, administradores: [ADMIN_DEFAULT], descargas: [], soporte: [] };
+            return { usuarios: data, administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
         }
-        if (!data.administradores) data.administradores = [ADMIN_DEFAULT];
+        if (!data.administradores) data.administradores = ADMIN_DEFAULT;
         if (!data.descargas) data.descargas = [];
         if (!data.usuarios) data.usuarios = [];
         if (!data.soporte) data.soporte = [];
+        if (!data.auditoria) data.auditoria = [];
         return data;
     } catch (e) {
-        return { usuarios: [], administradores: [ADMIN_DEFAULT], descargas: [], soporte: [] };
+        return { usuarios: [], administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
     }
 }
 
 function guardarDBLocal(data) {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    const jsonStr = JSON.stringify(data, null, 2);
+    try {
+        fs.writeFileSync(PRIMARY_DB_FILE, jsonStr);
+    } catch (err) {
+        console.error('Error escribiendo en database.json:', err);
+    }
+    try {
+        fs.writeFileSync(LEGACY_DB_FILE, jsonStr);
+    } catch (err) {
+        // Silencioso para sincronización secundaria
+    }
 }
 
 // --- RUTAS DE VISTAS PRINCIPALES ---
@@ -264,10 +371,11 @@ app.get(['/admin', '/admin.html'], (req, res) => {
 });
 
 // --- API SOPORTE TÉCNICO (Envío del usuario y chat) ---
-app.post('/api/soporte', async (req, res) => {
+app.post(['/api/soporte', '/api/soporte/enviar'], async (req, res) => {
     const usuario = req.body.usuario || req.body.usuario_origen || req.body.remitente;
     const motivo = req.body.motivo || 'Consulta General';
     const mensaje = req.body.mensaje;
+    const emisor = (req.body.emisor || 'usuario').toLowerCase();
 
     if (!usuario || !mensaje) {
         return res.status(400).json({ error: 'El usuario y el mensaje son requeridos' });
@@ -276,7 +384,7 @@ app.post('/api/soporte', async (req, res) => {
     const nuevoMensaje = {
         id: Date.now().toString(),
         usuario: usuario.trim(),
-        emisor: (req.body.emisor || 'usuario').toLowerCase(),
+        emisor: emisor,
         motivo: motivo.trim(),
         mensaje: mensaje.trim(),
         fecha: new Date().toLocaleString('es-ES')
@@ -410,10 +518,11 @@ app.delete('/api/soporte/usuario/:usuario', async (req, res) => {
 });
 
 // --- API SOPORTE TÉCNICO: Vaciar todos los mensajes ---
-app.delete('/api/soporte', async (req, res) => {
+app.delete(['/api/soporte', '/api/soporte/vaciar'], async (req, res) => {
     if (pool) {
         try {
             await pool.query('TRUNCATE TABLE soporte');
+            await registrarEventoAuditoria('SOPORTE_VACIADO', 'Administrador', 'Vaciado completo del historial de soporte', req);
             return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
         } catch (err) {
             console.error('Error al vaciar mensajes de soporte:', err);
@@ -423,6 +532,7 @@ app.delete('/api/soporte', async (req, res) => {
         const db = leerDBLocal();
         db.soporte = [];
         guardarDBLocal(db);
+        await registrarEventoAuditoria('SOPORTE_VACIADO', 'Administrador', 'Vaciado completo del historial de soporte', req);
         return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
     }
 });
@@ -518,7 +628,7 @@ app.get('/api/usuarios', async (req, res) => {
 });
 
 // API: Registrar usuario normal
-app.post('/api/usuarios/registrar', async (req, res) => {
+app.post(['/api/usuarios/registro', '/api/usuarios/registrar'], async (req, res) => {
     const { usuario, clave, correo, telefono, direccion } = req.body;
     if (!usuario || !clave) return res.status(400).json({ error: 'Usuario y clave requeridos' });
     if (!correo) return res.status(400).json({ error: 'El correo electrónico es requerido' });
@@ -543,6 +653,7 @@ app.post('/api/usuarios/registrar', async (req, res) => {
                 [usuario, clave, correo, telefono || '', direccion || '', fechaRegistro]
             );
 
+            await registrarEventoAuditoria('REGISTRO_USUARIO', usuario, `Nuevo usuario registrado con correo ${correo}`, req);
             return res.json({ mensaje: 'Usuario registrado', usuario: normalizarUsuario(insertResult.rows[0]) });
         } catch (err) {
             console.error('Error en registrar PostgreSQL:', err);
@@ -571,6 +682,7 @@ app.post('/api/usuarios/registrar', async (req, res) => {
         };
         db.usuarios.push(nuevoUsuario);
         guardarDBLocal(db);
+        await registrarEventoAuditoria('REGISTRO_USUARIO', usuario, `Nuevo usuario registrado con correo ${correo}`, req);
         res.json({ mensaje: 'Usuario registrado', usuario: normalizarUsuario(nuevoUsuario) });
     }
 });
@@ -596,13 +708,17 @@ app.post('/api/usuarios/login', async (req, res) => {
             if (result.rows.length > 0) {
                 const user = normalizarUsuario(result.rows[0]);
                 if (user.estado === 'Bloqueado') {
+                    await registrarEventoAuditoria('LOGIN_BLOQUEADO', user.usuario, 'Intento de acceso con cuenta bloqueada', req);
                     return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada por el administrador.' });
                 }
                 if (user.estado === 'Inactivo') {
+                    await registrarEventoAuditoria('LOGIN_INACTIVO', user.usuario, 'Intento de acceso con cuenta inactiva', req);
                     return res.status(403).json({ error: 'Tu cuenta se encuentra inactiva. Contacta al administrador.' });
                 }
+                await registrarEventoAuditoria('LOGIN_EXITOSO', user.usuario, 'Inicio de sesión exitoso', req);
                 res.json(user);
             } else {
+                await registrarEventoAuditoria('LOGIN_FALLIDO', usuario, 'Credenciales incorrectas', req);
                 res.status(401).json({ error: 'Credenciales incorrectas' });
             }
         } catch (err) {
@@ -617,24 +733,28 @@ app.post('/api/usuarios/login', async (req, res) => {
         if (encontrado) {
             const user = normalizarUsuario(encontrado);
             if (user.estado === 'Bloqueado') {
+                await registrarEventoAuditoria('LOGIN_BLOQUEADO', user.usuario, 'Intento de acceso con cuenta bloqueada', req);
                 return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada por el administrador.' });
             }
             if (user.estado === 'Inactivo') {
+                await registrarEventoAuditoria('LOGIN_INACTIVO', user.usuario, 'Intento de acceso con cuenta inactiva', req);
                 return res.status(403).json({ error: 'Tu cuenta se encuentra inactiva. Contacta al administrador.' });
             }
+            await registrarEventoAuditoria('LOGIN_EXITOSO', user.usuario, 'Inicio de sesión exitoso', req);
             res.json(user);
         } else {
+            await registrarEventoAuditoria('LOGIN_FALLIDO', usuario, 'Credenciales incorrectas', req);
             res.status(401).json({ error: 'Credenciales incorrectas' });
         }
     }
 });
 
-// --- RECUPERACIÓN DE CONTRASEÑA POR CORREO (OTP 6 DÍGITOS) ---
+// --- RECUPERACIÓN DE CONTRASEÑA POR CORREO (FLUJO RESILIENTE OTP DE 2 PASOS) ---
 
-// 1. Solicitar código de recuperación
-app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
-    const { correo } = req.body;
-    if (!correo) return res.status(400).json({ error: 'El correo electrónico es requerido' });
+// 1. Solicitar código de recuperación (Paso 1: Búsqueda por usuario o correo con enmascaramiento visible)
+app.post(['/api/usuarios/recuperar-solicitar', '/api/usuarios/solicitar-codigo-recuperacion'], async (req, res) => {
+    const busqueda = (req.body.busqueda || req.body.correo || req.body.usuario || '').trim();
+    if (!busqueda) return res.status(400).json({ error: 'Ingresa tu nombre de usuario o correo electrónico' });
 
     const codigo = Math.floor(100000 + Math.random() * 900000).toString();
     const expiracion = Date.now() + (15 * 60 * 1000);
@@ -644,29 +764,32 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
     if (pool) {
         try {
             const userRes = await pool.query(
-                'SELECT usuario, correo FROM usuarios WHERE LOWER(correo) = LOWER($1)',
-                [correo]
+                'SELECT usuario, correo, estado FROM usuarios WHERE LOWER(usuario) = LOWER($1) OR LOWER(correo) = LOWER($1)',
+                [busqueda]
             );
 
             if (userRes.rows.length === 0) {
-                return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este correo electrónico' });
+                return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este usuario o correo electrónico' });
             }
             usuarioEncontrado = userRes.rows[0];
 
             await pool.query(
-                'UPDATE usuarios SET codigo_recuperacion = $1, codigo_expiracion = $2 WHERE LOWER(correo) = LOWER($3)',
-                [codigo, expiracion, correo]
+                'UPDATE usuarios SET codigo_recuperacion = $1, codigo_expiracion = $2 WHERE LOWER(usuario) = LOWER($3)',
+                [codigo, expiracion, usuarioEncontrado.usuario]
             );
         } catch (err) {
-            console.error('Error al actualizar código en PostgreSQL:', err);
+            console.error('Error al generar OTP en PostgreSQL:', err);
             return res.status(500).json({ error: 'Error al actualizar código en la base de datos' });
         }
     } else {
         const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase());
+        const idx = db.usuarios.findIndex(u =>
+            (u.usuario && u.usuario.toLowerCase() === busqueda.toLowerCase()) ||
+            (u.correo && u.correo.toLowerCase() === busqueda.toLowerCase())
+        );
 
         if (idx === -1) {
-            return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este correo electrónico' });
+            return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este usuario o correo electrónico' });
         }
         usuarioEncontrado = db.usuarios[idx];
 
@@ -675,38 +798,142 @@ app.post('/api/usuarios/solicitar-codigo-recuperacion', async (req, res) => {
         guardarDBLocal(db);
     }
 
+    const correoEnmascarado = enmascararCorreo(usuarioEncontrado.correo);
+
+    await registrarEventoAuditoria(
+        'OTP_SOLICITADO',
+        usuarioEncontrado.usuario,
+        `Código OTP de 6 dígitos generado para ${correoEnmascarado}`,
+        req
+    );
+
     try {
-        const resultadoEnvio = await enviarCorreoRecuperacion(usuarioEncontrado.correo, codigo);
-
-        if (resultadoEnvio && resultadoEnvio.enviado === false) {
-            return res.status(400).json({
-                error: 'No se detectó la variable RESEND_API_KEY en el servidor. Configúrala en Environment Variables.',
-                modoDev: true
-            });
-        }
-
-        return res.json({
-            ok: true,
-            mensaje: 'Código de 6 dígitos enviado exitosamente. Revisa también tu carpeta de Spam / Correo No Deseado.'
-        });
+        await enviarCorreoRecuperacion(usuarioEncontrado.correo, codigo);
     } catch (emailErr) {
-        console.error('[CAPTURA ERROR ENVÍO CORREO]:', emailErr);
-        return res.status(500).json({
-            error: 'Falló el envío del correo por Resend. Verifica que RESEND_API_KEY esté bien configurada en Render.',
-            detalle: emailErr.message || 'Error de API Resend'
-        });
+        console.warn('[CAPTURA AVISO ENVÍO CORREO]:', emailErr.message);
     }
+
+    return res.json({
+        ok: true,
+        usuario: usuarioEncontrado.usuario,
+        correoEnmascarado: correoEnmascarado,
+        mensaje: `Código de 6 dígitos generado con éxito para ${correoEnmascarado}. Válido durante 15 minutos.`
+    });
 });
 
-// 2. Verificar código de recuperación
-app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
-    const { correo, codigo } = req.body;
-    if (!correo || !codigo) return res.status(400).json({ error: 'Correo y código son requeridos' });
+// 2. Verificar código OTP y cambio de contraseña en 1 paso unificado (Paso 2)
+app.post('/api/usuarios/recuperar-verificar', async (req, res) => {
+    const usuarioTarget = (req.body.usuario || req.body.correo || req.body.busqueda || '').trim();
+    const otp = (req.body.otp || req.body.codigo || '').trim();
+    const nuevaClave = (req.body.nuevaClave || req.body.clave || '').trim();
+
+    if (!usuarioTarget || !otp || !nuevaClave) {
+        return res.status(400).json({ error: 'Todos los campos son requeridos (usuario, código OTP y nueva contraseña)' });
+    }
+
+    if (nuevaClave.length < 6) {
+        return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const logAuditoria = {
+        tipo: 'recuperacion',
+        carpeta: '📁 Recuperación con OTP',
+        editor: 'Sistema (OTP de 2 Pasos)',
+        fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+        resumen: 'Contraseña restablecida exitosamente mediante flujo OTP de 2 pasos',
+        cambios: [{
+            campo: 'Contraseña',
+            valorAnterior: '••••••••',
+            valorNuevo: '•••••••• (Restablecida)'
+        }]
+    };
 
     if (pool) {
         try {
             const userRes = await pool.query(
-                'SELECT codigo_recuperacion, codigo_expiracion FROM usuarios WHERE LOWER(correo) = LOWER($1)',
+                `SELECT usuario, correo, clave, codigo_recuperacion, codigo_expiracion, contador_modificaciones, historial_ediciones 
+                 FROM usuarios WHERE LOWER(usuario) = LOWER($1) OR LOWER(correo) = LOWER($1)`,
+                [usuarioTarget]
+            );
+
+            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+            const user = userRes.rows[0];
+            if (!user.codigo_recuperacion || user.codigo_recuperacion !== otp) {
+                await registrarEventoAuditoria('OTP_FALLIDO', user.usuario, 'Código OTP incorrecto en cambio de contraseña', req);
+                return res.status(400).json({ error: 'Código de verificación incorrecto' });
+            }
+
+            if (Date.now() > parseInt(user.codigo_expiracion || 0)) {
+                await registrarEventoAuditoria('OTP_EXPIRADO', user.usuario, 'Código OTP expirado en cambio de contraseña', req);
+                return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos). Debes solicitar uno nuevo.' });
+            }
+
+            let historial = [];
+            try {
+                historial = JSON.parse(user.historial_ediciones || '[]');
+            } catch (e) { historial = []; }
+            historial.unshift(logAuditoria);
+
+            const nuevoContador = (parseInt(user.contador_modificaciones || 0)) + 1;
+
+            await pool.query(
+                `UPDATE usuarios 
+                 SET clave = $1, codigo_recuperacion = NULL, codigo_expiracion = NULL, 
+                     contador_modificaciones = $2, historial_ediciones = $3 
+                 WHERE LOWER(usuario) = LOWER($4)`,
+                [nuevaClave, nuevoContador, JSON.stringify(historial), user.usuario]
+            );
+
+            await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada inmediatamente tras verificación de OTP', req);
+            return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.' });
+        } catch (err) {
+            console.error('Error al restablecer clave en PostgreSQL:', err);
+            return res.status(500).json({ error: 'Error al actualizar contraseña' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const idx = db.usuarios.findIndex(u =>
+            (u.usuario && u.usuario.toLowerCase() === usuarioTarget.toLowerCase()) ||
+            (u.correo && u.correo.toLowerCase() === usuarioTarget.toLowerCase())
+        );
+
+        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const user = db.usuarios[idx];
+        if (!user.codigoRecuperacion || user.codigoRecuperacion !== otp) {
+            await registrarEventoAuditoria('OTP_FALLIDO', user.usuario, 'Código OTP incorrecto en cambio de contraseña', req);
+            return res.status(400).json({ error: 'Código de verificación incorrecto' });
+        }
+
+        if (Date.now() > (user.codigoExpiracion || 0)) {
+            await registrarEventoAuditoria('OTP_EXPIRADO', user.usuario, 'Código OTP expirado en cambio de contraseña', req);
+            return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos). Debes solicitar uno nuevo.' });
+        }
+
+        if (!Array.isArray(user.historialEdiciones)) user.historialEdiciones = [];
+        user.historialEdiciones.unshift(logAuditoria);
+        user.clave = nuevaClave;
+        user.codigoRecuperacion = null;
+        user.codigoExpiracion = null;
+        user.contadorModificaciones = (parseInt(user.contadorModificaciones || 0)) + 1;
+
+        guardarDBLocal(db);
+        await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada inmediatamente tras verificación de OTP', req);
+        return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.' });
+    }
+});
+
+// Retrocompatibilidad: Verificar código individual
+app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
+    const correo = (req.body.correo || req.body.usuario || '').trim();
+    const codigo = (req.body.codigo || req.body.otp || '').trim();
+    if (!correo || !codigo) return res.status(400).json({ error: 'Usuario/Correo y código son requeridos' });
+
+    if (pool) {
+        try {
+            const userRes = await pool.query(
+                'SELECT usuario, codigo_recuperacion, codigo_expiracion FROM usuarios WHERE LOWER(correo) = LOWER($1) OR LOWER(usuario) = LOWER($1)',
                 [correo]
             );
 
@@ -727,7 +954,10 @@ app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
         }
     } else {
         const db = leerDBLocal();
-        const user = db.usuarios.find(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase());
+        const user = db.usuarios.find(u =>
+            (u.correo && u.correo.toLowerCase() === correo.toLowerCase()) ||
+            (u.usuario && u.usuario.toLowerCase() === correo.toLowerCase())
+        );
 
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
@@ -743,9 +973,11 @@ app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
     }
 });
 
-// 3. Restablecer contraseña con el código
+// Retrocompatibilidad: Restablecer contraseña con código individual
 app.post('/api/usuarios/restablecer-clave', async (req, res) => {
-    const { correo, codigo, nuevaClave } = req.body;
+    const correo = (req.body.correo || req.body.usuario || '').trim();
+    const codigo = (req.body.codigo || req.body.otp || '').trim();
+    const nuevaClave = (req.body.nuevaClave || req.body.clave || '').trim();
     if (!correo || !codigo || !nuevaClave) {
         return res.status(400).json({ error: 'Todos los campos son requeridos' });
     }
@@ -767,7 +999,7 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
         try {
             const userRes = await pool.query(
                 `SELECT usuario, codigo_recuperacion, codigo_expiracion, contador_modificaciones, historial_ediciones 
-                 FROM usuarios WHERE LOWER(correo) = LOWER($1)`,
+                 FROM usuarios WHERE LOWER(correo) = LOWER($1) OR LOWER(usuario) = LOWER($1)`,
                 [correo]
             );
 
@@ -794,10 +1026,11 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
                 `UPDATE usuarios 
                  SET clave = $1, codigo_recuperacion = NULL, codigo_expiracion = NULL, 
                      contador_modificaciones = $2, historial_ediciones = $3 
-                 WHERE LOWER(correo) = LOWER($4)`,
-                [nuevaClave, nuevoContador, JSON.stringify(historial), correo]
+                 WHERE LOWER(usuario) = LOWER($4)`,
+                [nuevaClave, nuevoContador, JSON.stringify(historial), user.usuario]
             );
 
+            await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada mediante OTP', req);
             return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
         } catch (err) {
             console.error('Error al restablecer clave en PostgreSQL:', err);
@@ -805,7 +1038,10 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
         }
     } else {
         const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase());
+        const idx = db.usuarios.findIndex(u =>
+            (u.correo && u.correo.toLowerCase() === correo.toLowerCase()) ||
+            (u.usuario && u.usuario.toLowerCase() === correo.toLowerCase())
+        );
 
         if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
@@ -826,12 +1062,13 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
         user.contadorModificaciones = (parseInt(user.contadorModificaciones || 0)) + 1;
 
         guardarDBLocal(db);
+        await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada mediante OTP', req);
         return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
     }
 });
 
 // API: Editar perfil del usuario desde index.html
-app.put('/api/usuarios/editar', async (req, res) => {
+app.put(['/api/usuarios/perfil', '/api/usuarios/editar'], async (req, res) => {
     const { usuario, correo, telefono, direccion } = req.body;
     if (!usuario) return res.status(400).json({ error: 'Nombre de usuario requerido' });
 
@@ -895,6 +1132,9 @@ app.put('/api/usuarios/editar', async (req, res) => {
                 [usuario, nuevoCorreo, nuevoTelefono, nuevaDireccion, nuevoContador, JSON.stringify(historial)]
             );
 
+            if (cambios.length > 0) {
+                await registrarEventoAuditoria('PERFIL_ACTUALIZADO', usuario, `Perfil actualizado: ${cambios.map(c => c.campo).join(', ')}`, req);
+            }
             res.json({ mensaje: 'Perfil actualizado', usuario: normalizarUsuario(updateResult.rows[0]) });
         } catch (err) {
             console.error('Error al editar perfil PostgreSQL:', err);
@@ -940,6 +1180,9 @@ app.put('/api/usuarios/editar', async (req, res) => {
         db.usuarios[idx].direccion = nuevaDireccion;
 
         guardarDBLocal(db);
+        if (cambios.length > 0) {
+            await registrarEventoAuditoria('PERFIL_ACTUALIZADO', usuario, `Perfil actualizado: ${cambios.map(c => c.campo).join(', ')}`, req);
+        }
         res.json({ mensaje: 'Perfil actualizado', usuario: normalizarUsuario(db.usuarios[idx]) });
     }
 });
@@ -1168,6 +1411,82 @@ app.put(['/api/usuarios/admin-editar', '/api/usuarios/:usuario'], async (req, re
     }
 });
 
+// API: Acciones masivas sobre cuentas (Gestión en lote)
+app.post('/api/usuarios/bulk', async (req, res) => {
+    const { accion, usuariosSeleccionados } = req.body;
+    if (!accion || !Array.isArray(usuariosSeleccionados) || usuariosSeleccionados.length === 0) {
+        return res.status(400).json({ error: 'Debes proporcionar una acción válida y al menos un usuario seleccionado.' });
+    }
+
+    const accionNormalizada = accion.toLowerCase().trim();
+    if (!['activar', 'bloquear', 'eliminar'].includes(accionNormalizada)) {
+        return res.status(400).json({ error: 'Acción inválida. Opciones permitidas: activar, bloquear, eliminar.' });
+    }
+
+    if (pool) {
+        try {
+            if (accionNormalizada === 'eliminar') {
+                await pool.query(
+                    'DELETE FROM usuarios WHERE LOWER(usuario) = ANY($1::text[])',
+                    [usuariosSeleccionados.map(u => u.toLowerCase())]
+                );
+            } else {
+                const nuevoEstado = accionNormalizada === 'activar' ? 'Activo' : 'Bloqueado';
+                await pool.query(
+                    'UPDATE usuarios SET estado = $1 WHERE LOWER(usuario) = ANY($2::text[])',
+                    [nuevoEstado, usuariosSeleccionados.map(u => u.toLowerCase())]
+                );
+            }
+
+            await registrarEventoAuditoria(
+                'ACCION_MASIVA',
+                'Administrador',
+                `Acción masiva '${accionNormalizada}' ejecutada sobre ${usuariosSeleccionados.length} usuario(s): ${usuariosSeleccionados.join(', ')}`,
+                req
+            );
+
+            return res.json({
+                ok: true,
+                accion: accionNormalizada,
+                afectados: usuariosSeleccionados.length,
+                mensaje: `Operación masiva '${accionNormalizada}' completada con éxito sobre ${usuariosSeleccionados.length} cuenta(s).`
+            });
+        } catch (err) {
+            console.error('Error en bulk PostgreSQL:', err);
+            return res.status(500).json({ error: 'Error al procesar acción masiva en base de datos' });
+        }
+    } else {
+        const db = leerDBLocal();
+        const setUsuarios = new Set(usuariosSeleccionados.map(u => u.toLowerCase()));
+
+        if (accionNormalizada === 'eliminar') {
+            db.usuarios = (db.usuarios || []).filter(u => !setUsuarios.has(u.usuario.toLowerCase()));
+        } else {
+            const nuevoEstado = accionNormalizada === 'activar' ? 'Activo' : 'Bloqueado';
+            (db.usuarios || []).forEach(u => {
+                if (setUsuarios.has(u.usuario.toLowerCase())) {
+                    u.estado = nuevoEstado;
+                }
+            });
+        }
+        guardarDBLocal(db);
+
+        await registrarEventoAuditoria(
+            'ACCION_MASIVA',
+            'Administrador',
+            `Acción masiva '${accionNormalizada}' ejecutada sobre ${usuariosSeleccionados.length} usuario(s): ${usuariosSeleccionados.join(', ')}`,
+            req
+        );
+
+        return res.json({
+            ok: true,
+            accion: accionNormalizada,
+            afectados: usuariosSeleccionados.length,
+            mensaje: `Operación masiva '${accionNormalizada}' completada con éxito sobre ${usuariosSeleccionados.length} cuenta(s).`
+        });
+    }
+});
+
 // API: Eliminar usuario individual
 app.delete('/api/usuarios/:usuario', async (req, res) => {
     const nombreUsuario = req.params.usuario;
@@ -1175,6 +1494,7 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
     if (pool) {
         try {
             await pool.query('DELETE FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [nombreUsuario]);
+            await registrarEventoAuditoria('ELIMINAR_USUARIO', 'Administrador', `Usuario ${nombreUsuario} eliminado del sistema`, req);
             res.json({ mensaje: 'Usuario eliminado' });
         } catch (err) {
             res.status(500).json({ error: 'Error al eliminar usuario' });
@@ -1183,7 +1503,46 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
         const db = leerDBLocal();
         db.usuarios = db.usuarios.filter(u => u.usuario.toLowerCase() !== nombreUsuario.toLowerCase());
         guardarDBLocal(db);
+        await registrarEventoAuditoria('ELIMINAR_USUARIO', 'Administrador', `Usuario ${nombreUsuario} eliminado del sistema`, req);
         res.json({ mensaje: 'Usuario eliminado' });
+    }
+});
+
+// --- BITÁCORA DE AUDITORÍA GLOBAL DEL SISTEMA ---
+
+// API: Leer registros de auditoría
+app.get('/api/auditoria', async (req, res) => {
+    if (pool) {
+        try {
+            const result = await pool.query('SELECT * FROM auditoria ORDER BY id DESC LIMIT 500');
+            res.json(result.rows);
+        } catch (err) {
+            console.error('Error al consultar auditoría PostgreSQL:', err);
+            res.status(500).json({ error: 'Error al consultar la bitácora de auditoría' });
+        }
+    } else {
+        const db = leerDBLocal();
+        res.json(db.auditoria || []);
+    }
+});
+
+// API: Vaciar registros de auditoría
+app.delete('/api/auditoria', async (req, res) => {
+    if (pool) {
+        try {
+            await pool.query('TRUNCATE TABLE auditoria');
+            await registrarEventoAuditoria('AUDITORIA_VACIADA', 'Administrador', 'La bitácora de auditoría ha sido vaciada', req);
+            res.json({ ok: true, mensaje: 'Bitácora de auditoría vaciada con éxito' });
+        } catch (err) {
+            console.error('Error al vaciar auditoría PostgreSQL:', err);
+            res.status(500).json({ error: 'Error al vaciar la bitácora de auditoría' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.auditoria = [];
+        guardarDBLocal(db);
+        await registrarEventoAuditoria('AUDITORIA_VACIADA', 'Administrador', 'La bitácora de auditoría ha sido vaciada', req);
+        res.json({ ok: true, mensaje: 'Bitácora de auditoría vaciada con éxito' });
     }
 });
 

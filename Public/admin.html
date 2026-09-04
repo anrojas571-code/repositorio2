@@ -473,6 +473,67 @@
             margin-top: 4px;
         }
 
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .stat-card-item {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+
+        .stat-card-item.active-card {
+            border-left: 4px solid #10b981;
+        }
+
+        .stat-card-item.inactive-card {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .stat-card-item.blocked-card {
+            border-left: 4px solid #ef4444;
+        }
+
+        .stat-card-item.total-card {
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card-item .num {
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .stat-card-item .lbl {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .progress-segmented {
+            height: 10px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 999px;
+            overflow: hidden;
+            display: flex;
+            width: 100%;
+            margin-top: 6px;
+        }
+
         .content-panel {
             background: var(--card-bg);
             border-radius: var(--radius-lg);
@@ -1385,28 +1446,62 @@
             <div class="header-panel">
                 <div class="header-info">
                     <h1><i class="fa-solid fa-sliders"></i> Panel de Administración</h1>
-                    <p>Monitoreo de usuarios, control de estados y auditoría de modificaciones</p>
+                    <p>Monitoreo en tiempo real, gestión masiva de cuentas y bitácora de auditoría</p>
                 </div>
-                <div style="display: flex; gap: 15px; align-items: center;">
-                    <div class="stat-card">
-                        <div class="number" id="totalUsuariosCount">0</div>
-                        <div class="label">Usuarios Registrados</div>
-                    </div>
-                    <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;"
-                        title="Cerrar sesión">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="abrirModalAuditoriaGlobal()" class="btn btn-history" style="height: fit-content;" title="Bitácora de Auditoría Global">
+                        <i class="fa-solid fa-clipboard-list"></i> Auditoría
+                    </button>
+                    <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;" title="Cerrar sesión">
                         <i class="fa-solid fa-power-off"></i> Salir
                     </button>
+                </div>
+            </div>
+
+            <!-- DASHBOARD DE MÉTRICAS Y ANALÍTICA EN TIEMPO REAL -->
+            <div class="stats-grid">
+                <div class="stat-card-item total-card">
+                    <div class="num" id="totalUsuariosCount" style="color: var(--primary);">0</div>
+                    <div class="lbl">Total Cuentas</div>
+                </div>
+                <div class="stat-card-item active-card">
+                    <div class="num" id="activosCount" style="color: #10b981;">0</div>
+                    <div class="lbl">🟢 Activos</div>
+                </div>
+                <div class="stat-card-item inactive-card">
+                    <div class="num" id="inactivosCount" style="color: #f59e0b;">0</div>
+                    <div class="lbl">🟡 Inactivos</div>
+                </div>
+                <div class="stat-card-item blocked-card">
+                    <div class="num" id="bloqueadosCount" style="color: #ef4444;">0</div>
+                    <div class="lbl">🔴 Bloqueados</div>
+                </div>
+            </div>
+
+            <!-- BARRA DE PROGRESO GRÁFICA DE DISTRIBUCIÓN DE ESTADOS -->
+            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 18px; margin: 15px 0 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700;">
+                    <span><i class="fa-solid fa-chart-pie"></i> Distribución de Estados</span>
+                    <span id="distribucionLegend" style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">0% Activos | 0% Inactivos | 0% Bloqueados</span>
+                </div>
+                <div class="progress-segmented">
+                    <div id="progresoActivos" style="height: 100%; width: 0%; background: #10b981; transition: width 0.4s ease;" title="Activos"></div>
+                    <div id="progresoInactivos" style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.4s ease;" title="Inactivos"></div>
+                    <div id="progresoBloqueados" style="height: 100%; width: 0%; background: #ef4444; transition: width 0.4s ease;" title="Bloqueados"></div>
                 </div>
             </div>
 
             <div class="content-panel">
                 <div class="controls-bar">
                     <span style="font-weight: 800; font-size: 16px; color: var(--text-main);">
-                        <i class="fa-solid fa-users"></i> Directorio y Auditoría
+                        <i class="fa-solid fa-users"></i> Directorio y Gestión Masiva
                     </span>
                     <div class="btn-group">
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
                             <i class="fa-solid fa-rotate-right"></i> Actualizar
+                        </button>
+                        <button onclick="abrirModalAuditoriaGlobal()" class="btn btn-history" title="Ver bitácora de auditoría">
+                            <i class="fa-solid fa-clipboard-list"></i> Auditoría
                         </button>
                         <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xlsx)">
                             <i class="fa-solid fa-file-excel"></i> Excel
@@ -1414,18 +1509,16 @@
                         <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
                             <i class="fa-solid fa-file-code"></i> JSON
                         </button>
-                        <button onclick="abrirModalDescargas()" class="btn btn-history"
-                            title="Ver Historial de Descargas">
+                        <button onclick="abrirModalDescargas()" class="btn btn-history" title="Ver Historial de Descargas">
                             <i class="fa-solid fa-clock-rotate-left"></i> Historial
                         </button>
-                        <button onclick="pedirConfirmacionVaciarBD()" class="btn btn-danger"
-                            title="Borrar toda la base de datos">
+                        <button onclick="pedirConfirmacionVaciarBD()" class="btn btn-danger" title="Borrar toda la base de datos">
                             <i class="fa-solid fa-trash-can"></i> Vaciar BD
                         </button>
                     </div>
                 </div>
 
-                <!-- BARRA DE BÚSQUEDA Y FILTRADO EN TIEMPO REAL -->
+                <!-- BARRA DE BÚSQUEDA Y FILTRADO COMBINADO EN TIEMPO REAL -->
                 <div class="filter-search-bar">
                     <div class="search-box">
                         <i class="fa-solid fa-magnifying-glass"></i>
@@ -1438,6 +1531,33 @@
                         <option value="Inactivo">🟡 Inactivos</option>
                         <option value="Bloqueado">🔴 Bloqueados</option>
                     </select>
+                    <select id="adminFilterRole" class="filter-select" onchange="filtrarUsuarios()">
+                        <option value="todos">Todos los Roles</option>
+                        <option value="Admin">🛡️ Administrador</option>
+                        <option value="Cliente">👤 Cliente</option>
+                    </select>
+                </div>
+
+                <!-- BARRA DE ACCIONES EN LOTE (BULK ACTIONS) -->
+                <div id="bulkActionsToolbar" style="display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; font-size: 13px; color: var(--text-main);">
+                            <input type="checkbox" id="checkSelectAll" onchange="toggleSelectAllUsuarios(this.checked)" style="width: 18px; height: 18px; cursor: pointer;">
+                            <span>Seleccionar Todos</span>
+                        </label>
+                        <span id="bulkSelectedCount" style="font-size: 12px; color: var(--text-muted); font-weight: 600;">(0 seleccionados)</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="ejecutarAccionLote('activar')" class="btn" style="background: #10b981; color: white; padding: 6px 12px; font-size: 12px;" title="Activar seleccionados">
+                            <i class="fa-solid fa-user-check"></i> Activar
+                        </button>
+                        <button onclick="ejecutarAccionLote('bloquear')" class="btn" style="background: #f59e0b; color: white; padding: 6px 12px; font-size: 12px;" title="Bloquear seleccionados">
+                            <i class="fa-solid fa-user-lock"></i> Bloquear
+                        </button>
+                        <button onclick="ejecutarAccionLote('eliminar')" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" title="Eliminar seleccionados">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </button>
+                    </div>
                 </div>
 
                 <div id="contenedorLista" class="users-list"></div>
@@ -1679,6 +1799,53 @@
         </div>
     </div>
 
+    <!-- MODAL BITÁCORA DE AUDITORÍA GLOBAL DEL SISTEMA -->
+    <div id="modalAuditoriaGlobal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 860px; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header" style="flex-shrink: 0;">
+                <div>
+                    <h2><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> Bitácora de Auditoría del Sistema</h2>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        Registro de eventos críticos: accesos, registros, recuperaciones OTP y operaciones administrativas.
+                    </p>
+                </div>
+                <button onclick="cerrarModalAuditoriaGlobal()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Barra de búsqueda y filtros de auditoría -->
+            <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-shrink: 0; flex-wrap: wrap;">
+                <div class="search-box" style="flex: 1; min-width: 220px;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="busquedaAuditoriaInput" placeholder="Buscar por usuario, IP o descripción..." oninput="filtrarAuditoriaGlobal()">
+                </div>
+                <select id="filtroTipoAuditoria" class="filter-select" onchange="filtrarAuditoriaGlobal()" style="min-width: 180px;">
+                    <option value="todos">Todos los Eventos</option>
+                    <option value="LOGIN">Autenticación (Login)</option>
+                    <option value="REGISTRO">Nuevos Registros</option>
+                    <option value="OTP">Recuperación OTP</option>
+                    <option value="CLAVE">Cambios de Contraseña</option>
+                    <option value="PERFIL">Edición de Perfil</option>
+                    <option value="ACCION_MASIVA">Acciones en Lote</option>
+                    <option value="ELIMINAR">Eliminaciones</option>
+                    <option value="SOPORTE">Soporte Técnico</option>
+                </select>
+                <button onclick="cargarAuditoriaGlobal()" class="btn btn-refresh" title="Actualizar auditoría">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+
+            <!-- Lista de eventos de auditoría -->
+            <div id="listaAuditoriaGlobal" class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 6px;"></div>
+
+            <div class="modal-footer" style="flex-shrink: 0; margin-top: 12px; justify-content: space-between;">
+                <button onclick="pedirConfirmacionVaciarAuditoria()" class="btn btn-danger" style="font-size: 12px;">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Bitácora
+                </button>
+                <button onclick="cerrarModalAuditoriaGlobal()" class="btn btn-refresh">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- CONTENEDOR DE TOASTS -->
     <div id="toastContainer"></div>
 
@@ -1688,6 +1855,8 @@
         let usuarioAuditoriaActual = null;
         let filtroAuditoriaActivo = 'todas';
         let accionConfirmacionPendiente = null;
+        let usuariosSeleccionados = new Set();
+        let auditoriaCargada = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             cargarTemaGuardado();
@@ -2078,13 +2247,74 @@
         async function cargarDatos() {
             try {
                 const response = await fetch('/api/usuarios');
+                if (!response.ok) throw new Error('Error al consultar usuarios');
                 usuariosCargados = await response.json();
-                filtrarUsuarios();
+                try {
+                    localStorage.setItem('admin_cached_usuarios', JSON.stringify(usuariosCargados));
+                } catch (e) {}
             } catch (err) {
-                showToast('Error al cargar la lista de usuarios del servidor', 'error');
+                console.warn('Fallo cargando usuarios del servidor, consultando caché offline...', err);
+                const cached = localStorage.getItem('admin_cached_usuarios');
+                if (cached) {
+                    try {
+                        usuariosCargados = JSON.parse(cached);
+                        showToast('Modo sin conexión: mostrando usuarios desde caché local', 'advertencia');
+                    } catch (e) {
+                        usuariosCargados = [];
+                        showToast('Error al cargar la lista de usuarios del servidor', 'error');
+                    }
+                } else {
+                    usuariosCargados = [];
+                    showToast('Error al cargar la lista de usuarios del servidor', 'error');
+                }
+            }
+            actualizarMetricasYProgreso();
+            filtrarUsuarios();
+        }
+
+        // --- CÁLCULO DE MÉTRICAS EN TIEMPO REAL Y BARRA DE PROGRESO ---
+        function actualizarMetricasYProgreso() {
+            const total = usuariosCargados.length;
+            const activos = usuariosCargados.filter(u => (!u.estado || u.estado.toLowerCase() === 'activo')).length;
+            const inactivos = usuariosCargados.filter(u => (u.estado && u.estado.toLowerCase() === 'inactivo')).length;
+            const bloqueados = usuariosCargados.filter(u => (u.estado && u.estado.toLowerCase() === 'bloqueado')).length;
+
+            const elemTotal = document.getElementById('statTotalUsuarios');
+            const elemActivos = document.getElementById('statUsuariosActivos');
+            const elemInactivos = document.getElementById('statUsuariosInactivos');
+            const elemBloqueados = document.getElementById('statUsuariosBloqueados');
+
+            if (elemTotal) elemTotal.textContent = total;
+            if (elemActivos) elemActivos.textContent = activos;
+            if (elemInactivos) elemInactivos.textContent = inactivos;
+            if (elemBloqueados) elemBloqueados.textContent = bloqueados;
+
+            const barActivos = document.getElementById('progresoActivos');
+            const barInactivos = document.getElementById('progresoInactivos');
+            const barBloqueados = document.getElementById('progresoBloqueados');
+
+            if (barActivos && barInactivos && barBloqueados) {
+                if (total === 0) {
+                    barActivos.style.width = '0%';
+                    barInactivos.style.width = '0%';
+                    barBloqueados.style.width = '0%';
+                } else {
+                    const pAct = ((activos / total) * 100).toFixed(1);
+                    const pIna = ((inactivos / total) * 100).toFixed(1);
+                    const pBlo = ((bloqueados / total) * 100).toFixed(1);
+
+                    barActivos.style.width = `${pAct}%`;
+                    barInactivos.style.width = `${pIna}%`;
+                    barBloqueados.style.width = `${pBlo}%`;
+
+                    barActivos.title = `Activos: ${activos} (${pAct}%)`;
+                    barInactivos.title = `Inactivos: ${inactivos} (${pIna}%)`;
+                    barBloqueados.title = `Bloqueados: ${bloqueados} (${pBlo}%)`;
+                }
             }
         }
 
+        // --- FILTRADO DE USUARIOS Y GESTIÓN DE SELECCIÓN ---
         function filtrarUsuarios() {
             const busqueda = (document.getElementById('adminSearchInput')?.value || '').toLowerCase().trim();
             const filtroRol = document.getElementById('adminFilterRole')?.value || 'todos';
@@ -2105,7 +2335,7 @@
                 return matchTexto && matchRol && matchEstado;
             });
 
-            contadorElem.textContent = usuariosCargados.length;
+            if (contadorElem) contadorElem.textContent = usuariosCargados.length;
 
             if (usuariosFiltrados.length === 0) {
                 contenedor.innerHTML = `
@@ -2114,6 +2344,7 @@
                         <p>${usuariosCargados.length === 0 ? 'No hay usuarios registrados en la base de datos.' : 'No se encontraron usuarios con los filtros aplicados.'}</p>
                     </div>
                 `;
+                actualizarToolbarLote();
                 return;
             }
 
@@ -2130,18 +2361,23 @@
                 if (estado === 'Inactivo') statusBadgeClass = 'badge-status-inactive';
                 if (estado === 'Bloqueado') statusBadgeClass = 'badge-status-blocked';
 
+                const isChecked = usuariosSeleccionados.has(u.usuario) ? 'checked' : '';
+
                 html += `
                     <div class="user-item">
-                        <div class="user-detail">
-                            <div class="avatar">${inicial}</div>
-                            <div class="user-data">
-                                <h3>
-                                    #${index + 1} - ${u.usuario}
-                                    <span class="${roleBadgeClass}">${rol}</span>
-                                    <span class="${statusBadgeClass}">${estado}</span>
-                                </h3>
-                                <p><i class="fa-solid fa-envelope"></i> ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> ${u.telefono || 'Sin teléfono'}</p>
-                                <p><i class="fa-solid fa-key"></i> Clave: <strong>${u.clave}</strong> ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                            <input type="checkbox" class="user-select-chk" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0;" value="${u.usuario}" ${isChecked} onchange="toggleSeleccionUsuario('${u.usuario}', this.checked)">
+                            <div class="user-detail" style="flex: 1; min-width: 0;">
+                                <div class="avatar">${inicial}</div>
+                                <div class="user-data">
+                                    <h3>
+                                        #${index + 1} - ${u.usuario}
+                                        <span class="${roleBadgeClass}">${rol}</span>
+                                        <span class="${statusBadgeClass}">${estado}</span>
+                                    </h3>
+                                    <p><i class="fa-solid fa-envelope"></i> ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> ${u.telefono || 'Sin teléfono'}</p>
+                                    <p><i class="fa-solid fa-key"></i> Clave: <strong>${u.clave}</strong> ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
+                                </div>
                             </div>
                         </div>
                         <div class="badges-group">
@@ -2161,6 +2397,121 @@
             });
 
             contenedor.innerHTML = html;
+            actualizarToolbarLote();
+        }
+
+        // --- GESTIÓN DE ACCIONES MASIVAS EN LOTE ---
+        function toggleSeleccionUsuario(usuario, isChecked) {
+            if (isChecked) {
+                usuariosSeleccionados.add(usuario);
+            } else {
+                usuariosSeleccionados.delete(usuario);
+            }
+            actualizarToolbarLote();
+        }
+
+        function toggleSelectAllUsuarios(isChecked) {
+            const busqueda = (document.getElementById('adminSearchInput')?.value || '').toLowerCase().trim();
+            const filtroRol = document.getElementById('adminFilterRole')?.value || 'todos';
+            const filtroEstado = document.getElementById('adminFilterStatus')?.value || 'todos';
+
+            const visibles = usuariosCargados.filter(u => {
+                const matchTexto = !busqueda ||
+                    (u.usuario && u.usuario.toLowerCase().includes(busqueda)) ||
+                    (u.correo && u.correo.toLowerCase().includes(busqueda)) ||
+                    (u.telefono && u.telefono.toLowerCase().includes(busqueda)) ||
+                    (u.direccion && u.direccion.toLowerCase().includes(busqueda));
+                const matchRol = filtroRol === 'todos' || (u.rol && u.rol.toLowerCase() === filtroRol.toLowerCase());
+                const matchEstado = filtroEstado === 'todos' || (u.estado && u.estado.toLowerCase() === filtroEstado.toLowerCase());
+                return matchTexto && matchRol && matchEstado;
+            });
+
+            if (isChecked) {
+                visibles.forEach(u => usuariosSeleccionados.add(u.usuario));
+            } else {
+                visibles.forEach(u => usuariosSeleccionados.delete(u.usuario));
+            }
+
+            document.querySelectorAll('.user-select-chk').forEach(chk => {
+                chk.checked = isChecked;
+            });
+
+            actualizarToolbarLote();
+        }
+
+        function actualizarToolbarLote() {
+            const countBadge = document.getElementById('selectedCountBadge');
+            const selectAllChk = document.getElementById('selectAllUsersChk');
+            const btnActivar = document.getElementById('btnBulkActivar');
+            const btnBloquear = document.getElementById('btnBulkBloquear');
+            const btnEliminar = document.getElementById('btnBulkEliminar');
+
+            const totalSel = usuariosSeleccionados.size;
+            if (countBadge) {
+                countBadge.textContent = `${totalSel} seleccionado${totalSel === 1 ? '' : 's'}`;
+                countBadge.style.display = totalSel > 0 ? 'inline-block' : 'none';
+            }
+
+            const disabled = totalSel === 0;
+            if (btnActivar) btnActivar.disabled = disabled;
+            if (btnBloquear) btnBloquear.disabled = disabled;
+            if (btnEliminar) btnEliminar.disabled = disabled;
+
+            const chks = Array.from(document.querySelectorAll('.user-select-chk'));
+            if (selectAllChk && chks.length > 0) {
+                selectAllChk.checked = chks.every(c => c.checked);
+            } else if (selectAllChk) {
+                selectAllChk.checked = false;
+            }
+        }
+
+        async function ejecutarAccionLote(accion) {
+            if (usuariosSeleccionados.size === 0) {
+                showToast('Selecciona al menos un usuario para ejecutar una acción en lote', 'advertencia');
+                return;
+            }
+
+            const lista = Array.from(usuariosSeleccionados);
+            let titulo = '';
+            let mensaje = '';
+
+            if (accion === 'activar') {
+                titulo = `¿Activar ${lista.length} usuario(s)?`;
+                mensaje = `Se cambiará el estado a 'Activo' para los usuarios seleccionados.`;
+            } else if (accion === 'bloquear') {
+                titulo = `¿Bloquear ${lista.length} usuario(s)?`;
+                mensaje = `Los usuarios seleccionados no podrán acceder al sistema hasta ser desbloqueados.`;
+            } else if (accion === 'eliminar') {
+                titulo = `¿Eliminar ${lista.length} usuario(s)?`;
+                mensaje = `Esta acción eliminará de forma permanente las cuentas seleccionadas.`;
+            } else {
+                return;
+            }
+
+            mostrarModalConfirmacion(titulo, mensaje, async () => {
+                try {
+                    const res = await fetch('/api/usuarios/bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            usuarios: lista,
+                            accion: accion
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast(data.mensaje || `Acción '${accion}' procesada con éxito`, 'success');
+                        usuariosSeleccionados.clear();
+                        await cargarDatos();
+                    } else {
+                        showToast(data.error || 'Error al ejecutar acción en lote', 'error');
+                    }
+                } catch (err) {
+                    console.error('Error en lote:', err);
+                    showToast('Error de comunicación con el servidor', 'error');
+                }
+            });
         }
 
         // --- SISTEMA DE CONFIRMACIONES MODALES (Z-INDEX SUPERIOR) ---
@@ -2624,6 +2975,172 @@
                         }
                     } catch (err) {
                         showToast('Error al vaciar historial', 'error');
+                    }
+                }
+            );
+        }
+
+        // --- GESTIÓN DE AUDITORÍA GLOBAL DEL SISTEMA (MODAL) ---
+        function abrirModalAuditoriaGlobal() {
+            document.getElementById('modalAuditoriaGlobal').classList.add('active');
+            cargarAuditoriaGlobal();
+        }
+
+        function cerrarModalAuditoriaGlobal() {
+            document.getElementById('modalAuditoriaGlobal').classList.remove('active');
+        }
+
+        async function cargarAuditoriaGlobal() {
+            const contenedor = document.getElementById('listaAuditoriaGlobal');
+            if (contenedor) {
+                contenedor.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 8px;"></i><p>Cargando bitácora de auditoría...</p></div>';
+            }
+
+            try {
+                const res = await fetch('/api/auditoria');
+                if (!res.ok) throw new Error('Respuesta inválida');
+                auditoriaCargada = await res.json();
+                try {
+                    localStorage.setItem('admin_cached_auditoria', JSON.stringify(auditoriaCargada));
+                } catch (e) {}
+            } catch (err) {
+                console.warn('Error al cargar auditoría del servidor, revisando caché:', err);
+                const cached = localStorage.getItem('admin_cached_auditoria');
+                if (cached) {
+                    try {
+                        auditoriaCargada = JSON.parse(cached);
+                        showToast('Modo sin conexión: mostrando auditoría desde caché local', 'advertencia');
+                    } catch (e) {
+                        auditoriaCargada = [];
+                    }
+                } else {
+                    auditoriaCargada = [];
+                    showToast('Error al conectar con la bitácora de auditoría', 'error');
+                }
+            }
+            filtrarAuditoriaGlobal();
+        }
+
+        function filtrarAuditoriaGlobal() {
+            const query = (document.getElementById('busquedaAuditoriaInput')?.value || '').toLowerCase().trim();
+            const filtroTipo = document.getElementById('filtroTipoAuditoria')?.value || 'todos';
+            const contenedor = document.getElementById('listaAuditoriaGlobal');
+
+            if (!contenedor) return;
+
+            const listaFiltrada = (auditoriaCargada || []).filter(ev => {
+                const tipoMatch = filtroTipo === 'todos' || (ev.tipo && ev.tipo.toUpperCase().includes(filtroTipo.toUpperCase()));
+
+                let detalleStr = '';
+                if (ev.detalle) {
+                    detalleStr = typeof ev.detalle === 'object' ? JSON.stringify(ev.detalle) : String(ev.detalle);
+                }
+
+                const queryMatch = !query ||
+                    (ev.usuario && ev.usuario.toLowerCase().includes(query)) ||
+                    (ev.tipo && ev.tipo.toLowerCase().includes(query)) ||
+                    (ev.ip && ev.ip.toLowerCase().includes(query)) ||
+                    detalleStr.toLowerCase().includes(query);
+
+                return tipoMatch && queryMatch;
+            });
+
+            if (listaFiltrada.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <p>${auditoriaCargada.length === 0 ? 'No hay eventos registrados en la bitácora de auditoría.' : 'No se encontraron eventos con los filtros aplicados.'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+            listaFiltrada.forEach(ev => {
+                const tipo = (ev.tipo || 'INFO').toUpperCase();
+                let badgeClass = 'badge-role-client';
+                let iconClass = 'fa-info-circle';
+
+                if (tipo.includes('LOGIN')) {
+                    badgeClass = (tipo.includes('FALLIDO') || tipo.includes('BLOQUEADO')) ? 'badge-status-blocked' : 'badge-status-active';
+                    iconClass = 'fa-right-to-bracket';
+                } else if (tipo.includes('REGISTRO')) {
+                    badgeClass = 'badge-status-active';
+                    iconClass = 'fa-user-plus';
+                } else if (tipo.includes('OTP')) {
+                    badgeClass = 'badge-mods';
+                    iconClass = 'fa-shield-halved';
+                } else if (tipo.includes('CLAVE')) {
+                    badgeClass = 'badge-status-inactive';
+                    iconClass = 'fa-key';
+                } else if (tipo.includes('PERFIL') || tipo.includes('EDIT')) {
+                    badgeClass = 'badge-role-admin';
+                    iconClass = 'fa-user-pen';
+                } else if (tipo.includes('MASIVA') || tipo.includes('BULK')) {
+                    badgeClass = 'badge-status-blocked';
+                    iconClass = 'fa-layer-group';
+                } else if (tipo.includes('ELIMINAR')) {
+                    badgeClass = 'badge-status-blocked';
+                    iconClass = 'fa-trash';
+                } else if (tipo.includes('SOPORTE')) {
+                    badgeClass = 'badge-csv';
+                    iconClass = 'fa-headset';
+                }
+
+                let detalleFormateado = '';
+                if (ev.detalle) {
+                    if (typeof ev.detalle === 'object') {
+                        detalleFormateado = Object.entries(ev.detalle)
+                            .map(([k, v]) => `<strong>${k}:</strong> ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+                            .join(' | ');
+                    } else {
+                        detalleFormateado = String(ev.detalle);
+                    }
+                }
+
+                html += `
+                    <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                                <span class="${badgeClass}" style="font-size: 11px; padding: 3px 8px;">
+                                    <i class="fa-solid ${iconClass}"></i> ${tipo}
+                                </span>
+                                <strong style="font-size: 13px; color: var(--text-main);"><i class="fa-solid fa-user"></i> ${ev.usuario || 'Sistema / Anónimo'}</strong>
+                                <span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-network-wired"></i> ${ev.ip || '127.0.0.1'}</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); word-break: break-word; line-height: 1.4;">
+                                ${detalleFormateado || 'Sin detalles adicionales'}
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); white-space: nowrap; text-align: right; flex-shrink: 0;">
+                            <i class="fa-regular fa-clock"></i> ${ev.fecha || 'Sin fecha'}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            contenedor.innerHTML = html;
+        }
+
+        function pedirConfirmacionVaciarAuditoria() {
+            mostrarModalConfirmacion(
+                '¿Vaciar Bitácora de Auditoría?',
+                'Se eliminarán de forma permanente todos los registros históricos de auditoría de la base de datos.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/auditoria', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Bitácora de auditoría vaciada con éxito', 'success');
+                            auditoriaCargada = [];
+                            try { localStorage.removeItem('admin_cached_auditoria'); } catch (e) {}
+                            filtrarAuditoriaGlobal();
+                        } else {
+                            showToast('Error al vaciar la bitácora de auditoría', 'error');
+                        }
+                    } catch (err) {
+                        console.error('Error al vaciar auditoría:', err);
+                        showToast('Error de conexión con el servidor', 'error');
                     }
                 }
             );

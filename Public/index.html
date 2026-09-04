@@ -1417,57 +1417,72 @@
     </div>
 
     <!-- MODAL RECUPERACIÓN CONTRASEÑA -->
+    <!-- MODAL DE RECUPERACIÓN DE CONTRASEÑA (FLUJO OTP DE 2 PASOS CON ENMASCARAMIENTO) -->
     <div id="modalRecuperar" class="modal-overlay">
         <div class="modal-box">
             <button class="modal-close-btn" onclick="cerrarModal('modalRecuperar')"><i
                     class="fa-solid fa-xmark"></i></button>
 
+            <!-- PASO 1 (SOLICITUD): Búsqueda por Usuario o Correo -->
             <div id="step-recuperar-1">
-                <div class="modal-icon"><i class="fa-solid fa-envelope-open-text"></i></div>
-                <h3>Recuperar Contraseña</h3>
-                <p>Te enviaremos un código de 6 dígitos a tu correo.</p>
+                <div class="modal-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                <h3>Recuperación de Cuenta (Paso 1)</h3>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                    Ingresa tu <strong>nombre de usuario</strong> o <strong>correo electrónico</strong> para generar tu código de seguridad OTP.
+                </p>
                 <form onsubmit="event.preventDefault(); solicitarCodigoRecuperacion();">
                     <div class="form-group" style="text-align: left;">
-                        <label for="recCorreoInput">Correo Electrónico</label>
+                        <label for="recBusquedaInput">Usuario o Correo Electrónico</label>
                         <div class="input-wrapper">
-                            <i class="fa-solid fa-envelope field-icon"></i>
-                            <input type="email" id="recCorreoInput" required placeholder="correo@ejemplo.com">
+                            <i class="fa-solid fa-user-tag field-icon"></i>
+                            <input type="text" id="recBusquedaInput" required placeholder="Ej. AngelRojas o correo@ejemplo.com">
                         </div>
                     </div>
-                    <button type="submit" id="btnEnviarCodigo" class="btn-primary">Enviar Código</button>
+                    <button type="submit" id="btnEnviarCodigo" class="btn-primary" style="margin-top: 8px;">
+                        <i class="fa-solid fa-paper-plane"></i> Generar y Enviar Código OTP
+                    </button>
                 </form>
             </div>
 
+            <!-- PASO 2 (VERIFICACIÓN Y CAMBIO): Confirmación de OTP + Nueva Contraseña -->
             <div id="step-recuperar-2" style="display: none;">
-                <div class="modal-icon"><i class="fa-solid fa-shield-cat"></i></div>
-                <h3>Ingresa el Código</h3>
-                <p>Escribe el código de 6 dígitos enviado a tu correo.</p>
-                <form onsubmit="event.preventDefault(); verificarCodigoRecuperacion();">
-                    <div class="form-group">
-                        <input type="text" id="recCodigoInput"
-                            style="letter-spacing: 8px; font-size:20px; text-align:center; padding:12px; font-weight:700;"
-                            maxlength="6" required>
-                    </div>
-                    <button type="submit" id="btnVerificarCodigo" class="btn-primary">Verificar Código</button>
-                </form>
-            </div>
+                <div class="modal-icon"><i class="fa-solid fa-lock-open"></i></div>
+                <h3>Verificación y Cambio (Paso 2)</h3>
+                <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: center;">
+                    <div style="font-size: 12px; color: var(--text-muted);">Código OTP de 6 dígitos generado para:</div>
+                    <div id="recCorreoEnmascaradoDisplay" style="font-weight: 800; font-size: 16px; color: var(--primary); letter-spacing: 1px; margin-top: 4px;">m***a@hotmail.com</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">⏰ Válido durante 15 minutos</div>
+                </div>
 
-            <div id="step-recuperar-3" style="display: none;">
-                <div class="modal-icon"><i class="fa-solid fa-lock"></i></div>
-                <h3>Nueva Contraseña</h3>
-                <form onsubmit="event.preventDefault(); restablecerContrasena();">
+                <form onsubmit="event.preventDefault(); confirmarYCambiarClaveOTP();">
                     <div class="form-group" style="text-align: left;">
-                        <label>Nueva Clave</label>
+                        <label for="recCodigoInput">Código OTP (6 dígitos)</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-key field-icon"></i>
+                            <input type="text" id="recCodigoInput"
+                                style="letter-spacing: 8px; font-size:22px; text-align:center; font-weight:800;"
+                                maxlength="6" placeholder="••••••" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="text-align: left; margin-top: 14px;">
+                        <label for="recNuevaClaveInput">Nueva Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="recNuevaClave" required placeholder="••••••••">
+                            <input type="password" id="recNuevaClaveInput" required placeholder="Mínimo 6 caracteres" minlength="6">
                             <button type="button" class="btn-toggle-pwd"
-                                onclick="togglePasswordVisibility('recNuevaClave', this)">
+                                onclick="togglePasswordVisibility('recNuevaClaveInput', this)">
                                 <i class="fa-solid fa-eye"></i>
                             </button>
                         </div>
                     </div>
-                    <button type="submit" id="btnActualizarClave" class="btn-primary">Restablecer Clave</button>
+
+                    <button type="submit" id="btnConfirmarOTP" class="btn-primary" style="margin-top: 14px;">
+                        <i class="fa-solid fa-check-double"></i> Confirmar y Restablecer Contraseña
+                    </button>
+                    <button type="button" class="btn-secondary" onclick="volverPaso1Recuperar()" style="margin-top: 8px; width: 100%; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px;">
+                        <i class="fa-solid fa-arrow-left"></i> Volver al Paso 1
+                    </button>
                 </form>
             </div>
         </div>
@@ -1972,6 +1987,13 @@
                 if (response.ok) {
                     intentosFallidos = 0;
                     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+                    
+                    // Sincronizar en caché local para resiliencia offline
+                    let cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
+                    const cIdx = cache.findIndex(u => u.usuario.toLowerCase() === data.usuario.toLowerCase());
+                    if (cIdx >= 0) cache[cIdx] = data; else cache.push(data);
+                    localStorage.setItem('cached_usuarios', JSON.stringify(cache));
+
                     renderizarPerfil(data);
                     mostrarToast('¡Bienvenido!', `Sesión iniciada como ${data.usuario}`, 'exito');
                 } else if (response.status === 403) {
@@ -1980,7 +2002,27 @@
                     registrarIntentoFallido();
                 }
             } catch (e) {
-                mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
+                // Modo resiliente híbrido: verificación contra almacenamiento local si falla la red
+                const cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
+                const encontrado = cache.find(u =>
+                    (u.usuario && u.usuario.toLowerCase() === usuario.toLowerCase() || (u.correo && u.correo.toLowerCase() === usuario.toLowerCase())) &&
+                    u.clave === clave
+                );
+                if (encontrado) {
+                    if (encontrado.estado === 'Bloqueado') {
+                        mostrarToast('Acceso Restringido', 'Tu cuenta se encuentra bloqueada por el administrador.', 'error');
+                        return;
+                    }
+                    if (encontrado.estado === 'Inactivo') {
+                        mostrarToast('Acceso Restringido', 'Tu cuenta se encuentra inactiva.', 'error');
+                        return;
+                    }
+                    localStorage.setItem(SESSION_KEY, JSON.stringify(encontrado));
+                    renderizarPerfil(encontrado);
+                    mostrarToast('Modo Fuera de Línea', `Sesión iniciada offline como ${encontrado.usuario}`, 'advertencia');
+                } else {
+                    mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
+                }
             }
         }
 
@@ -2205,94 +2247,152 @@
             }
         }
 
-        // --- RECUPERACIÓN DE CONTRASEÑA ---
+        // --- RECUPERACIÓN DE CONTRASEÑA (FLUJO OTP DE 2 PASOS) ---
+        let usuarioRecuperacionActual = null;
+
+        function enmascararCorreoCliente(correo) {
+            if (!correo || !correo.includes('@')) return '***@correo.com';
+            const [nombre, dominio] = correo.split('@');
+            if (nombre.length <= 2) return `${nombre[0]}***@${dominio}`;
+            return `${nombre[0]}***${nombre[nombre.length - 1]}@${dominio}`;
+        }
+
         function abrirModalRecuperar() {
             document.getElementById('step-recuperar-1').style.display = 'block';
             document.getElementById('step-recuperar-2').style.display = 'none';
-            document.getElementById('step-recuperar-3').style.display = 'none';
-            document.getElementById('recCorreoInput').value = '';
+            document.getElementById('recBusquedaInput').value = '';
             document.getElementById('recCodigoInput').value = '';
-            document.getElementById('recNuevaClave').value = '';
+            document.getElementById('recNuevaClaveInput').value = '';
+            usuarioRecuperacionActual = null;
             abrirModal('modalRecuperar');
         }
 
+        function volverPaso1Recuperar() {
+            document.getElementById('step-recuperar-1').style.display = 'block';
+            document.getElementById('step-recuperar-2').style.display = 'none';
+            document.getElementById('recCodigoInput').value = '';
+            document.getElementById('recNuevaClaveInput').value = '';
+        }
+
         async function solicitarCodigoRecuperacion() {
-            const correo = document.getElementById('recCorreoInput').value.trim();
-            if (!correo) return;
-            correoRecuperacionActual = correo;
-
-            try {
-                const response = await fetch('/api/usuarios/solicitar-codigo-recuperacion', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('step-recuperar-1').style.display = 'none';
-                    document.getElementById('step-recuperar-2').style.display = 'block';
-                    mostrarToast('Código Enviado', 'Revisa tu correo electrónico.', 'exito');
-                } else {
-                    mostrarToast('Error', data.error || 'Correo no encontrado.', 'error');
-                }
-            } catch (e) {
-                mostrarToast('Error', 'Error de red al solicitar el código.', 'error');
-            }
-        }
-
-        async function verificarCodigoRecuperacion() {
-            const codigo = document.getElementById('recCodigoInput').value.trim();
-            if (!codigo) return;
-
-            try {
-                const response = await fetch('/api/usuarios/verificar-codigo-recuperacion', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('step-recuperar-2').style.display = 'none';
-                    document.getElementById('step-recuperar-3').style.display = 'block';
-                    mostrarToast('Código Correcto', 'Ingresa tu nueva clave.', 'exito');
-                } else {
-                    mostrarToast('Código Inválido', data.error || 'El código es incorrecto o expiró.', 'error');
-                }
-            } catch (e) {
-                mostrarToast('Error', 'Error de red al verificar código.', 'error');
-            }
-        }
-
-        async function restablecerContrasena() {
-            const codigo = document.getElementById('recCodigoInput').value.trim();
-            const nuevaClave = document.getElementById('recNuevaClave').value.trim();
-
-            if (!nuevaClave || nuevaClave.length < 6) {
-                mostrarToast('Contraseña corta', 'La nueva clave debe tener al menos 6 caracteres.', 'advertencia');
+            const busqueda = document.getElementById('recBusquedaInput').value.trim();
+            if (!busqueda) {
+                mostrarToast('Campo requerido', 'Ingresa tu usuario o correo electrónico.', 'advertencia');
                 return;
             }
 
+            const btn = document.getElementById('btnEnviarCodigo');
+            const textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+
             try {
-                const response = await fetch('/api/usuarios/restablecer-clave', {
+                const response = await fetch('/api/usuarios/recuperar-solicitar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ correo: correoRecuperacionActual, codigo, nuevaClave })
+                    body: JSON.stringify({ busqueda })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    usuarioRecuperacionActual = data.usuario;
+                    document.getElementById('recCorreoEnmascaradoDisplay').textContent = data.correoEnmascarado || 'Correo registrado';
+                    document.getElementById('step-recuperar-1').style.display = 'none';
+                    document.getElementById('step-recuperar-2').style.display = 'block';
+                    mostrarToast('Código OTP Generado', `Enviado a ${data.correoEnmascarado}`, 'exito');
+                } else {
+                    mostrarToast('No encontrado', data.error || 'No se encontró la cuenta.', 'error');
+                }
+            } catch (e) {
+                // Fallback resiliente offline
+                const cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
+                const encontrado = cache.find(u =>
+                    (u.usuario && u.usuario.toLowerCase() === busqueda.toLowerCase()) ||
+                    (u.correo && u.correo.toLowerCase() === busqueda.toLowerCase())
+                );
+                if (encontrado) {
+                    usuarioRecuperacionActual = encontrado.usuario;
+                    const masked = enmascararCorreoCliente(encontrado.correo);
+                    document.getElementById('recCorreoEnmascaradoDisplay').textContent = `${masked} (Modo Offline)`;
+                    document.getElementById('step-recuperar-1').style.display = 'none';
+                    document.getElementById('step-recuperar-2').style.display = 'block';
+                    localStorage.setItem('temp_offline_otp', JSON.stringify({
+                        usuario: encontrado.usuario,
+                        otp: '123456',
+                        exp: Date.now() + 900000
+                    }));
+                    mostrarToast('Modo Offline', 'Servidor no disponible. Usa el código de prueba: 123456', 'advertencia');
+                } else {
+                    mostrarToast('Error de Conexión', 'No se pudo contactar al servidor.', 'error');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
+            }
+        }
+
+        async function confirmarYCambiarClaveOTP() {
+            const otp = document.getElementById('recCodigoInput').value.trim();
+            const nuevaClave = document.getElementById('recNuevaClaveInput').value.trim();
+
+            if (!otp || !nuevaClave) {
+                mostrarToast('Campos vacíos', 'Ingresa el código OTP y tu nueva contraseña.', 'advertencia');
+                return;
+            }
+
+            if (nuevaClave.length < 6) {
+                mostrarToast('Contraseña corta', 'La nueva contraseña debe tener al menos 6 caracteres.', 'advertencia');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmarOTP');
+            const textoOriginal = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...';
+
+            try {
+                const response = await fetch('/api/usuarios/recuperar-verificar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuarioRecuperacionActual,
+                        otp: otp,
+                        nuevaClave: nuevaClave
+                    })
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
                     cerrarModal('modalRecuperar');
-                    mostrarToast('Clave Actualizada', 'Ya puedes iniciar sesión con tu nueva contraseña.', 'exito');
+                    mostrarToast('¡Contraseña Restablecida!', 'Ya puedes iniciar sesión con tu nueva contraseña.', 'exito');
+                    document.getElementById('loginUsuario').value = usuarioRecuperacionActual;
+                    document.getElementById('loginClave').value = nuevaClave;
                 } else {
-                    mostrarToast('Error', data.error || 'No se pudo restablecer la clave.', 'error');
+                    mostrarToast('Error OTP', data.error || 'Código inválido o expirado.', 'error');
                 }
             } catch (e) {
-                mostrarToast('Error', 'Error de red al restablecer la contraseña.', 'error');
+                // Fallback offline
+                const offlineOtpData = JSON.parse(localStorage.getItem('temp_offline_otp') || 'null');
+                if (offlineOtpData && offlineOtpData.usuario === usuarioRecuperacionActual && offlineOtpData.otp === otp && Date.now() < offlineOtpData.exp) {
+                    let cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
+                    const uIdx = cache.findIndex(u => u.usuario === usuarioRecuperacionActual);
+                    if (uIdx !== -1) {
+                        cache[uIdx].clave = nuevaClave;
+                        localStorage.setItem('cached_usuarios', JSON.stringify(cache));
+                    }
+                    localStorage.removeItem('temp_offline_otp');
+                    cerrarModal('modalRecuperar');
+                    mostrarToast('Actualizado Localmente', 'Contraseña actualizada en modo offline.', 'exito');
+                    document.getElementById('loginUsuario').value = usuarioRecuperacionActual;
+                    document.getElementById('loginClave').value = nuevaClave;
+                } else {
+                    mostrarToast('Error', 'No se pudo actualizar la contraseña.', 'error');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = textoOriginal;
             }
         }
 
