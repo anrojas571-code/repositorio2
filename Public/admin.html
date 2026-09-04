@@ -491,7 +491,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
 
         .stat-card-item.active-card {
@@ -526,7 +526,7 @@
 
         .progress-segmented {
             height: 10px;
-            background: rgba(0,0,0,0.06);
+            background: rgba(0, 0, 0, 0.06);
             border-radius: 999px;
             overflow: hidden;
             display: flex;
@@ -1449,10 +1449,12 @@
                     <p>Monitoreo en tiempo real, gestión masiva de cuentas y bitácora de auditoría</p>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <button onclick="abrirModalAuditoriaGlobal()" class="btn btn-history" style="height: fit-content;" title="Bitácora de Auditoría Global">
+                    <button onclick="abrirModalAuditoriaGlobal()" class="btn btn-history" style="height: fit-content;"
+                        title="Bitácora de Auditoría Global">
                         <i class="fa-solid fa-clipboard-list"></i> Auditoría
                     </button>
-                    <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;" title="Cerrar sesión">
+                    <button onclick="cerrarSesionAdmin()" class="btn btn-danger" style="height: fit-content;"
+                        title="Cerrar sesión">
                         <i class="fa-solid fa-power-off"></i> Salir
                     </button>
                 </div>
@@ -1479,15 +1481,25 @@
             </div>
 
             <!-- BARRA DE PROGRESO GRÁFICA DE DISTRIBUCIÓN DE ESTADOS -->
-            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 18px; margin: 15px 0 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700;">
+            <div
+                style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 18px; margin: 15px 0 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700;">
                     <span><i class="fa-solid fa-chart-pie"></i> Distribución de Estados</span>
-                    <span id="distribucionLegend" style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">0% Activos | 0% Inactivos | 0% Bloqueados</span>
+                    <span id="distribucionLegend"
+                        style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">0% Activos | 0% Inactivos
+                        | 0% Bloqueados</span>
                 </div>
                 <div class="progress-segmented">
-                    <div id="progresoActivos" style="height: 100%; width: 0%; background: #10b981; transition: width 0.4s ease;" title="Activos"></div>
-                    <div id="progresoInactivos" style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.4s ease;" title="Inactivos"></div>
-                    <div id="progresoBloqueados" style="height: 100%; width: 0%; background: #ef4444; transition: width 0.4s ease;" title="Bloqueados"></div>
+                    <div id="progresoActivos"
+                        style="height: 100%; width: 0%; background: #10b981; transition: width 0.4s ease;"
+                        title="Activos"></div>
+                    <div id="progresoInactivos"
+                        style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.4s ease;"
+                        title="Inactivos"></div>
+                    <div id="progresoBloqueados"
+                        style="height: 100%; width: 0%; background: #ef4444; transition: width 0.4s ease;"
+                        title="Bloqueados"></div>
                 </div>
             </div>
 
@@ -1500,7 +1512,8 @@
                         <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
                             <i class="fa-solid fa-rotate-right"></i> Actualizar
                         </button>
-                        <button onclick="abrirModalAuditoriaGlobal()" class="btn btn-history" title="Ver bitácora de auditoría">
+                        <button onclick="abrirModalAuditoriaGlobal()" class="btn btn-history"
+                            title="Ver bitácora de auditoría">
                             <i class="fa-solid fa-clipboard-list"></i> Auditoría
                         </button>
                         <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xlsx)">
@@ -1509,10 +1522,12 @@
                         <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
                             <i class="fa-solid fa-file-code"></i> JSON
                         </button>
-                        <button onclick="abrirModalDescargas()" class="btn btn-history" title="Ver Historial de Descargas">
+                        <button onclick="abrirModalDescargas()" class="btn btn-history"
+                            title="Ver Historial de Descargas">
                             <i class="fa-solid fa-clock-rotate-left"></i> Historial
                         </button>
-                        <button onclick="pedirConfirmacionVaciarBD()" class="btn btn-danger" title="Borrar toda la base de datos">
+                        <button onclick="pedirConfirmacionVaciarBD()" class="btn btn-danger"
+                            title="Borrar toda la base de datos">
                             <i class="fa-solid fa-trash-can"></i> Vaciar BD
                         </button>
                     </div>
@@ -1539,22 +1554,32 @@
                 </div>
 
                 <!-- BARRA DE ACCIONES EN LOTE (BULK ACTIONS) -->
-                <div id="bulkActionsToolbar" style="display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; margin-bottom: 14px;">
+                <div id="bulkActionsToolbar"
+                    style="display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; margin-bottom: 14px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; font-size: 13px; color: var(--text-main);">
-                            <input type="checkbox" id="checkSelectAll" onchange="toggleSelectAllUsuarios(this.checked)" style="width: 18px; height: 18px; cursor: pointer;">
+                        <label
+                            style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; font-size: 13px; color: var(--text-main);">
+                            <input type="checkbox" id="checkSelectAll" onchange="toggleSelectAllUsuarios(this.checked)"
+                                style="width: 18px; height: 18px; cursor: pointer;">
                             <span>Seleccionar Todos</span>
                         </label>
-                        <span id="bulkSelectedCount" style="font-size: 12px; color: var(--text-muted); font-weight: 600;">(0 seleccionados)</span>
+                        <span id="bulkSelectedCount"
+                            style="font-size: 12px; color: var(--text-muted); font-weight: 600;">(0
+                            seleccionados)</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="ejecutarAccionLote('activar')" class="btn" style="background: #10b981; color: white; padding: 6px 12px; font-size: 12px;" title="Activar seleccionados">
+                        <button onclick="ejecutarAccionLote('activar')" class="btn"
+                            style="background: #10b981; color: white; padding: 6px 12px; font-size: 12px;"
+                            title="Activar seleccionados">
                             <i class="fa-solid fa-user-check"></i> Activar
                         </button>
-                        <button onclick="ejecutarAccionLote('bloquear')" class="btn" style="background: #f59e0b; color: white; padding: 6px 12px; font-size: 12px;" title="Bloquear seleccionados">
+                        <button onclick="ejecutarAccionLote('bloquear')" class="btn"
+                            style="background: #f59e0b; color: white; padding: 6px 12px; font-size: 12px;"
+                            title="Bloquear seleccionados">
                             <i class="fa-solid fa-user-lock"></i> Bloquear
                         </button>
-                        <button onclick="ejecutarAccionLote('eliminar')" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;" title="Eliminar seleccionados">
+                        <button onclick="ejecutarAccionLote('eliminar')" class="btn btn-danger"
+                            style="padding: 6px 12px; font-size: 12px;" title="Eliminar seleccionados">
                             <i class="fa-solid fa-trash"></i> Eliminar
                         </button>
                     </div>
@@ -1804,21 +1829,26 @@
         <div class="modal-card" style="max-width: 860px; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="flex-shrink: 0;">
                 <div>
-                    <h2><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> Bitácora de Auditoría del Sistema</h2>
+                    <h2><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> Bitácora de Auditoría
+                        del Sistema</h2>
                     <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                        Registro de eventos críticos: accesos, registros, recuperaciones OTP y operaciones administrativas.
+                        Registro de eventos críticos: accesos, registros, recuperaciones OTP y operaciones
+                        administrativas.
                     </p>
                 </div>
-                <button onclick="cerrarModalAuditoriaGlobal()" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+                <button onclick="cerrarModalAuditoriaGlobal()" class="modal-close"><i
+                        class="fa-solid fa-xmark"></i></button>
             </div>
 
             <!-- Barra de búsqueda y filtros de auditoría -->
             <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-shrink: 0; flex-wrap: wrap;">
                 <div class="search-box" style="flex: 1; min-width: 220px;">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="busquedaAuditoriaInput" placeholder="Buscar por usuario, IP o descripción..." oninput="filtrarAuditoriaGlobal()">
+                    <input type="text" id="busquedaAuditoriaInput" placeholder="Buscar por usuario, IP o descripción..."
+                        oninput="filtrarAuditoriaGlobal()">
                 </div>
-                <select id="filtroTipoAuditoria" class="filter-select" onchange="filtrarAuditoriaGlobal()" style="min-width: 180px;">
+                <select id="filtroTipoAuditoria" class="filter-select" onchange="filtrarAuditoriaGlobal()"
+                    style="min-width: 180px;">
                     <option value="todos">Todos los Eventos</option>
                     <option value="LOGIN">Autenticación (Login)</option>
                     <option value="REGISTRO">Nuevos Registros</option>
@@ -1835,7 +1865,8 @@
             </div>
 
             <!-- Lista de eventos de auditoría -->
-            <div id="listaAuditoriaGlobal" class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 6px;"></div>
+            <div id="listaAuditoriaGlobal" class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 6px;">
+            </div>
 
             <div class="modal-footer" style="flex-shrink: 0; margin-top: 12px; justify-content: space-between;">
                 <button onclick="pedirConfirmacionVaciarAuditoria()" class="btn btn-danger" style="font-size: 12px;">
@@ -1858,15 +1889,23 @@
         let usuariosSeleccionados = new Set();
         let auditoriaCargada = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             cargarTemaGuardado();
-            const sesionAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
-            if (sesionAdmin === 'true') {
-                mostrarPanelAdmin();
-            } else {
-                document.getElementById('vistaPanelAdmin').style.display = 'none';
-                document.getElementById('vistaLoginAdmin').style.display = 'block';
-            }
+            // Verificar si la sesión admin es válida con el servidor
+            try {
+                const res = await fetch('/api/verify', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.rol === 'admin') {
+                        sessionStorage.setItem('admin_session_active', 'true');
+                        mostrarPanelAdmin();
+                        return;
+                    }
+                }
+            } catch (e) { }
+            // Si no, mostrar login
+            document.getElementById('vistaPanelAdmin').style.display = 'none';
+            document.getElementById('vistaLoginAdmin').style.display = 'block';
         });
 
         // --- MODO OSCURO / CLARO ---
@@ -2212,37 +2251,37 @@
                 const response = await fetch('/api/admin/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({ usuario, clave })
                 });
 
                 if (response.ok) {
-                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                    sessionStorage.setItem('admin_session_active', 'true');
                     mostrarPanelAdmin();
-                    showToast('Sesión iniciada correctamente en el panel', 'success', 'Bienvenido');
+                    showToast('Sesión iniciada correctamente', 'success', 'Bienvenido');
                 } else {
                     errorElem.style.display = 'block';
-                    showToast('Credenciales de Administrador no válidas', 'error', 'Acceso Denegado');
+                    showToast('Credenciales no válidas', 'error', 'Acceso Denegado');
                 }
             } catch (err) {
                 showToast('Error al conectar con el servidor', 'error');
             }
         }
-
         function mostrarPanelAdmin() {
             document.getElementById('vistaLoginAdmin').style.display = 'none';
             document.getElementById('vistaPanelAdmin').style.display = 'block';
             cargarDatos();
         }
 
-        function cerrarSesionAdmin() {
-            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+        async function cerrarSesionAdmin() {
+            await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+            sessionStorage.removeItem('admin_session_active');
             document.getElementById('vistaPanelAdmin').style.display = 'none';
             document.getElementById('vistaLoginAdmin').style.display = 'block';
             document.getElementById('adminUser').value = '';
             document.getElementById('adminPass').value = '';
             showToast('Has cerrado la sesión del panel', 'info', 'Sesión Finalizada');
         }
-
         // --- CARGAR Y RENDERIZAR USUARIOS ---
         async function cargarDatos() {
             try {
@@ -2251,7 +2290,7 @@
                 usuariosCargados = await response.json();
                 try {
                     localStorage.setItem('admin_cached_usuarios', JSON.stringify(usuariosCargados));
-                } catch (e) {}
+                } catch (e) { }
             } catch (err) {
                 console.warn('Fallo cargando usuarios del servidor, consultando caché offline...', err);
                 const cached = localStorage.getItem('admin_cached_usuarios');
@@ -3002,7 +3041,7 @@
                 auditoriaCargada = await res.json();
                 try {
                     localStorage.setItem('admin_cached_auditoria', JSON.stringify(auditoriaCargada));
-                } catch (e) {}
+                } catch (e) { }
             } catch (err) {
                 console.warn('Error al cargar auditoría del servidor, revisando caché:', err);
                 const cached = localStorage.getItem('admin_cached_auditoria');
@@ -3133,7 +3172,7 @@
                         if (res.ok) {
                             showToast('Bitácora de auditoría vaciada con éxito', 'success');
                             auditoriaCargada = [];
-                            try { localStorage.removeItem('admin_cached_auditoria'); } catch (e) {}
+                            try { localStorage.removeItem('admin_cached_auditoria'); } catch (e) { }
                             filtrarAuditoriaGlobal();
                         } else {
                             showToast('Error al vaciar la bitácora de auditoría', 'error');

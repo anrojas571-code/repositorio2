@@ -1428,14 +1428,16 @@
                 <div class="modal-icon"><i class="fa-solid fa-shield-halved"></i></div>
                 <h3>Recuperación de Cuenta (Paso 1)</h3>
                 <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
-                    Ingresa tu <strong>nombre de usuario</strong> o <strong>correo electrónico</strong> para generar tu código de seguridad OTP.
+                    Ingresa tu <strong>nombre de usuario</strong> o <strong>correo electrónico</strong> para generar tu
+                    código de seguridad OTP.
                 </p>
                 <form onsubmit="event.preventDefault(); solicitarCodigoRecuperacion();">
                     <div class="form-group" style="text-align: left;">
                         <label for="recBusquedaInput">Usuario o Correo Electrónico</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-user-tag field-icon"></i>
-                            <input type="text" id="recBusquedaInput" required placeholder="Ej. AngelRojas o correo@ejemplo.com">
+                            <input type="text" id="recBusquedaInput" required
+                                placeholder="Ej. AngelRojas o correo@ejemplo.com">
                         </div>
                     </div>
                     <button type="submit" id="btnEnviarCodigo" class="btn-primary" style="margin-top: 8px;">
@@ -1448,10 +1450,14 @@
             <div id="step-recuperar-2" style="display: none;">
                 <div class="modal-icon"><i class="fa-solid fa-lock-open"></i></div>
                 <h3>Verificación y Cambio (Paso 2)</h3>
-                <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: center;">
+                <div
+                    style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: center;">
                     <div style="font-size: 12px; color: var(--text-muted);">Código OTP de 6 dígitos generado para:</div>
-                    <div id="recCorreoEnmascaradoDisplay" style="font-weight: 800; font-size: 16px; color: var(--primary); letter-spacing: 1px; margin-top: 4px;">m***a@hotmail.com</div>
-                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">⏰ Válido durante 15 minutos</div>
+                    <div id="recCorreoEnmascaradoDisplay"
+                        style="font-weight: 800; font-size: 16px; color: var(--primary); letter-spacing: 1px; margin-top: 4px;">
+                        m***a@hotmail.com</div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">⏰ Válido durante 15 minutos
+                    </div>
                 </div>
 
                 <form onsubmit="event.preventDefault(); confirmarYCambiarClaveOTP();">
@@ -1469,7 +1475,8 @@
                         <label for="recNuevaClaveInput">Nueva Contraseña</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-lock field-icon"></i>
-                            <input type="password" id="recNuevaClaveInput" required placeholder="Mínimo 6 caracteres" minlength="6">
+                            <input type="password" id="recNuevaClaveInput" required placeholder="Mínimo 6 caracteres"
+                                minlength="6">
                             <button type="button" class="btn-toggle-pwd"
                                 onclick="togglePasswordVisibility('recNuevaClaveInput', this)">
                                 <i class="fa-solid fa-eye"></i>
@@ -1480,7 +1487,8 @@
                     <button type="submit" id="btnConfirmarOTP" class="btn-primary" style="margin-top: 14px;">
                         <i class="fa-solid fa-check-double"></i> Confirmar y Restablecer Contraseña
                     </button>
-                    <button type="button" class="btn-secondary" onclick="volverPaso1Recuperar()" style="margin-top: 8px; width: 100%; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px;">
+                    <button type="button" class="btn-secondary" onclick="volverPaso1Recuperar()"
+                        style="margin-top: 8px; width: 100%; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px;">
                         <i class="fa-solid fa-arrow-left"></i> Volver al Paso 1
                     </button>
                 </form>
@@ -1963,7 +1971,7 @@
         // --- AUTENTICACIÓN Y PERFIL ---
         async function iniciarSesion() {
             if (estaBloqueado) {
-                mostrarToast('Espera un momento', 'Demasiados intentos fallidos. Por favor espera.', 'advertencia');
+                mostrarToast('Espera un momento', 'Demasiados intentos fallidos.', 'advertencia');
                 return;
             }
 
@@ -1979,6 +1987,7 @@
                 const response = await fetch('/api/usuarios/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include', // <--- IMPORTANTE
                     body: JSON.stringify({ usuario, clave })
                 });
 
@@ -1986,46 +1995,18 @@
 
                 if (response.ok) {
                     intentosFallidos = 0;
-                    localStorage.setItem(SESSION_KEY, JSON.stringify(data));
-                    
-                    // Sincronizar en caché local para resiliencia offline
-                    let cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
-                    const cIdx = cache.findIndex(u => u.usuario.toLowerCase() === data.usuario.toLowerCase());
-                    if (cIdx >= 0) cache[cIdx] = data; else cache.push(data);
-                    localStorage.setItem('cached_usuarios', JSON.stringify(cache));
-
-                    renderizarPerfil(data);
-                    mostrarToast('¡Bienvenido!', `Sesión iniciada como ${data.usuario}`, 'exito');
+                    usuarioActualEnSesion = data.usuario; // data.usuario es el objeto con datos del usuario
+                    renderizarPerfil(usuarioActualEnSesion);
+                    mostrarToast('¡Bienvenido!', `Sesión iniciada como ${data.usuario.usuario}`, 'exito');
                 } else if (response.status === 403) {
-                    mostrarToast('Acceso Restringido', data.error || 'Tu cuenta se encuentra bloqueada.', 'error');
+                    mostrarToast('Acceso Restringido', data.error || 'Cuenta bloqueada o inactiva.', 'error');
                 } else {
                     registrarIntentoFallido();
                 }
             } catch (e) {
-                // Modo resiliente híbrido: verificación contra almacenamiento local si falla la red
-                const cache = JSON.parse(localStorage.getItem('cached_usuarios') || '[]');
-                const encontrado = cache.find(u =>
-                    (u.usuario && u.usuario.toLowerCase() === usuario.toLowerCase() || (u.correo && u.correo.toLowerCase() === usuario.toLowerCase())) &&
-                    u.clave === clave
-                );
-                if (encontrado) {
-                    if (encontrado.estado === 'Bloqueado') {
-                        mostrarToast('Acceso Restringido', 'Tu cuenta se encuentra bloqueada por el administrador.', 'error');
-                        return;
-                    }
-                    if (encontrado.estado === 'Inactivo') {
-                        mostrarToast('Acceso Restringido', 'Tu cuenta se encuentra inactiva.', 'error');
-                        return;
-                    }
-                    localStorage.setItem(SESSION_KEY, JSON.stringify(encontrado));
-                    renderizarPerfil(encontrado);
-                    mostrarToast('Modo Fuera de Línea', `Sesión iniciada offline como ${encontrado.usuario}`, 'advertencia');
-                } else {
-                    mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
-                }
+                mostrarToast('Error de Red', 'No se pudo conectar con el servidor.', 'error');
             }
         }
-
         function renderizarPerfil(user) {
             usuarioActualEnSesion = user;
             document.getElementById('formLoginWrapper').style.display = 'none';
@@ -2057,29 +2038,31 @@
             `;
         }
 
-        function cerrarSesion() {
-            localStorage.removeItem(SESSION_KEY);
+        async function cerrarSesion() {
+            await fetch('/api/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
             usuarioActualEnSesion = null;
             document.getElementById('formLoginWrapper').style.display = 'block';
             document.getElementById('perfilUsuario').style.display = 'none';
             document.getElementById('formLogin').reset();
             mostrarToast('Sesión Cerrada', 'Has salido del sistema correctamente.', 'exito');
         }
-
-        function verificarSesionGuardada() {
-            const sesion = localStorage.getItem(SESSION_KEY);
-            if (sesion) {
-                try {
-                    const parsed = JSON.parse(sesion);
-                    if (parsed && parsed.usuario) {
-                        renderizarPerfil(parsed);
-                    }
-                } catch (e) {
-                    localStorage.removeItem(SESSION_KEY);
+        async function verificarSesionGuardada() {
+            try {
+                const res = await fetch('/api/usuarios/perfil', {
+                    credentials: 'include'
+                });
+                if (res.ok) {
+                    const user = await res.json();
+                    usuarioActualEnSesion = user;
+                    renderizarPerfil(user);
                 }
+            } catch (e) {
+                // No hay sesión activa, no hacer nada
             }
         }
-
         // --- EDICIÓN DE PERFIL ---
         function abrirModalEditarPerfil() {
             if (!usuarioActualEnSesion) return;
