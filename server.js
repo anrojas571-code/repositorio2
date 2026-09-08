@@ -1411,6 +1411,36 @@ app.put(['/api/usuarios/admin-editar', '/api/usuarios/:usuario'], async (req, re
     }
 });
 
+// Cambiar estado masivo (Activar / Bloquear)
+app.post('/api/usuarios/bulk-status', (req, res) => {
+    const { usuarios, estado } = req.body;
+    if (!usuarios || !Array.isArray(usuarios)) {
+        return res.status(400).json({ error: 'Lista de usuarios inválida' });
+    }
+
+    // Actualiza en tu base de datos (PostgreSQL / JSON / array)
+    // Ejemplo si usas un array local:
+    usuarios.forEach(userNombre => {
+        const u = usuariosBD.find(x => x.usuario === userNombre);
+        if (u) u.estado = estado;
+    });
+
+    res.json({ success: true, message: 'Estados actualizados' });
+});
+
+// Eliminar usuarios masivamente
+app.post('/api/usuarios/bulk-delete', (req, res) => {
+    const { usuarios } = req.body;
+    if (!usuarios || !Array.isArray(usuarios)) {
+        return res.status(400).json({ error: 'Lista de usuarios inválida' });
+    }
+
+    // Filtra y remueve los usuarios seleccionados
+    usuariosBD = usuariosBD.filter(u => !usuarios.includes(u.usuario));
+
+    res.json({ success: true, message: 'Usuarios eliminados' });
+});
+
 // API: Acciones masivas sobre cuentas (Gestión en lote)
 app.post('/api/usuarios/bulk', async (req, res) => {
     const { accion, usuariosSeleccionados } = req.body;

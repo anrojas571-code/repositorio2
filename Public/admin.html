@@ -2491,55 +2491,66 @@
             }
         }
 
-        async function ejecutarAccionLote(accion) {
+        async function ejecutarAccionLote(tipoAccion) {
             if (usuariosSeleccionados.size === 0) {
-                showToast('Selecciona al menos un usuario para ejecutar una acción en lote', 'advertencia');
+                showToast('No has seleccionado ningún usuario', 'warning');
                 return;
             }
 
-            const lista = Array.from(usuariosSeleccionados);
-            let titulo = '';
-            let mensaje = '';
+            const cantidad = usuariosSeleccionados.size;
+            const listaUsuarios = Array.from(usuariosSeleccionados);
 
-            if (accion === 'activar') {
-                titulo = `¿Activar ${lista.length} usuario(s)?`;
-                mensaje = `Se cambiará el estado a 'Activo' para los usuarios seleccionados.`;
-            } else if (accion === 'bloquear') {
-                titulo = `¿Bloquear ${lista.length} usuario(s)?`;
-                mensaje = `Los usuarios seleccionados no podrán acceder al sistema hasta ser desbloqueados.`;
-            } else if (accion === 'eliminar') {
-                titulo = `¿Eliminar ${lista.length} usuario(s)?`;
-                mensaje = `Esta acción eliminará de forma permanente las cuentas seleccionadas.`;
-            } else {
-                return;
+            let mensajeConfirm = '';
+            let nuevoEstado = '';
+
+            if (tipoAccion === 'activar') {
+                mensajeConfirm = `¿Deseas activar las ${cantidad} cuentas seleccionadas?`;
+                nuevoEstado = 'Activo';
+            } else if (tipoAccion === 'bloquear') {
+                mensajeConfirm = `¿Deseas bloquear las ${cantidad} cuentas seleccionadas?`;
+                nuevoEstado = 'Bloqueado';
+            } else if (tipoAccion === 'eliminar') {
+                mensajeConfirm = `¿Estás seguro de ELIMINAR permanentemente las ${cantidad} cuentas seleccionadas?`;
             }
 
-            mostrarModalConfirmacion(titulo, mensaje, async () => {
+            mostrarModalConfirmacion('Acción en Lote', mensajeConfirm, async () => {
                 try {
-                    const res = await fetch('/api/usuarios/bulk', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            usuarios: lista,
-                            accion: accion
-                        })
-                    });
+                    if (tipoAccion === 'eliminar') {
+                        // Petición para borrar masivamente
+                        const response = await fetch('/api/usuarios/bulk-delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ usuarios: listaUsuarios })
+                        });
 
-                    const data = await res.json();
-                    if (res.ok) {
-                        showToast(data.mensaje || `Acción '${accion}' procesada con éxito`, 'success');
-                        usuariosSeleccionados.clear();
-                        await cargarDatos();
+                        if (!response.ok) throw new Error();
+                        showToast(`${cantidad} usuario(s) eliminado(s) con éxito`, 'success');
+
                     } else {
-                        showToast(data.error || 'Error al ejecutar acción en lote', 'error');
+                        // Petición para cambiar estado masivamente (Activar / Bloquear)
+                        const response = await fetch('/api/usuarios/bulk-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ usuarios: listaUsuarios, estado: nuevoEstado })
+                        });
+
+                        if (!response.ok) throw new Error();
+                        showToast(`Estado cambiado a "${nuevoEstado}" para ${cantidad} usuario(s)`, 'success');
                     }
+
+                    // Limpiar selección y recargar tabla
+                    usuariosSeleccionados.clear();
+                    const chkAll = document.getElementById('selectAllUsersChk');
+                    if (chkAll) chkAll.checked = false;
+
+                    actualizarToolbarLote();
+                    await cargarDatos();
+
                 } catch (err) {
-                    console.error('Error en lote:', err);
-                    showToast('Error de comunicación con el servidor', 'error');
+                    showToast('Ocurrió un error al procesar la acción en lote', 'error');
                 }
             });
         }
-
         // --- SISTEMA DE CONFIRMACIONES MODALES (Z-INDEX SUPERIOR) ---
         function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
             document.getElementById('confirmTitulo').textContent = titulo;
