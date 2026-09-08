@@ -524,13 +524,13 @@
         }
 
         .progress-segmented {
-            height: 10px;
-            background: rgba(0, 0, 0, 0.06);
-            border-radius: 999px;
-            overflow: hidden;
             display: flex;
+            height: 8px;
             width: 100%;
-            margin-top: 6px;
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 8px;
         }
 
         .content-panel {
@@ -2734,6 +2734,43 @@
         function cerrarModalHistorialEdiciones() {
             document.getElementById('modalHistorialEdiciones').classList.remove('active');
             usuarioAuditoriaActual = null;
+        }
+
+        function actualizarDistribucionEstados(listaUsuarios) {
+            if (!listaUsuarios || listaUsuarios.length === 0) {
+                document.getElementById('distribucionLegend').textContent = '0% Activos | 0% Inactivos | 0% Bloqueados';
+                document.getElementById('progresoActivos').style.width = '0%';
+                document.getElementById('progresoInactivos').style.width = '0%';
+                document.getElementById('progresoBloqueados').style.width = '0%';
+                return;
+            }
+
+            const total = listaUsuarios.length;
+
+            // Contar usuarios según su estado
+            const cantActivos = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'activo').length;
+            const cantInactivos = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'inactivo').length;
+            const cantBloqueados = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'bloqueado').length;
+
+            // Calcular porcentajes
+            const pctActivos = Math.round((cantActivos / total) * 100);
+            const pctInactivos = Math.round((cantInactivos / total) * 100);
+            const pctBloqueados = Math.round((cantBloqueados / total) * 100);
+
+            // 1. Actualizar texto de leyenda
+            const leyendaEl = document.getElementById('distribucionLegend');
+            if (leyendaEl) {
+                leyendaEl.textContent = `${pctActivos}% Activos | ${pctInactivos}% Inactivos | ${pctBloqueados}% Bloqueados`;
+            }
+
+            // 2. Actualizar las barras con tus IDs exactos
+            const barActivos = document.getElementById('progresoActivos');
+            const barInactivos = document.getElementById('progresoInactivos');
+            const barBloqueados = document.getElementById('progresoBloqueados');
+
+            if (barActivos) barActivos.style.width = `${pctActivos}%`;
+            if (barInactivos) barInactivos.style.width = `${pctInactivos}%`;
+            if (barBloqueados) barBloqueados.style.width = `${pctBloqueados}%`;
         }
 
         // --- EDICIÓN DE USUARIOS Y GESTIÓN DE ESTADOS (ADMIN) ---
