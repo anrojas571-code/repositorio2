@@ -77,7 +77,6 @@
             margin: 0;
             padding: 0;
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
         body {
@@ -2625,121 +2624,89 @@
             document.getElementById('modalHistorialEdiciones').classList.add('active');
         }
 
-        function filtrarCarpetas(tipo, btnElem) {
-            filtroAuditoriaActivo = tipo;
-            document.querySelectorAll('#folderFiltersContainer .filter-chip').forEach(c => c.classList.remove('active'));
-            if (btnElem) btnElem.classList.add('active');
+        function filtrarCarpetas(categoria, elementoBtn) {
+            filtroAuditoriaActivo = categoria;
+
+            // Actualizar estilo visual de los botones
+            const botones = document.querySelectorAll('#folderFiltersContainer .filter-chip');
+            botones.forEach(btn => btn.classList.remove('active'));
+            if (elementoBtn) elementoBtn.classList.add('active');
+
+            // Volver a renderizar sólo el contenedor del modal
             renderizarCarpetasAuditoria();
         }
 
         function renderizarCarpetasAuditoria() {
             if (!usuarioAuditoriaActual) return;
-
             const contenedor = document.getElementById('listaHistorialEdiciones');
-            const totalSpan = document.getElementById('contadorCarpetasTotal');
             let historial = usuarioAuditoriaActual.historialEdiciones || [];
 
-            if (!Array.isArray(historial)) {
-                try { historial = JSON.parse(historial); } catch (e) { historial = []; }
-            }
-
+            // Filtrar según el chip seleccionado si aplica
             if (filtroAuditoriaActivo !== 'todas') {
-                historial = historial.filter(h => h.tipo === filtroAuditoriaActivo);
+                historial = historial.filter(log => (log.tipo || 'perfil').toLowerCase() === filtroAuditoriaActivo.toLowerCase());
             }
-
-            totalSpan.innerText = `${historial.length} carpeta(s) registrada(s)`;
 
             if (historial.length === 0) {
-                contenedor.innerHTML = `
-                    <div class="empty-folder-state">
-                        <i class="fa-solid fa-folder-open"></i>
-                        <p>Esta categoría está vacía</p>
-                        <span>El usuario <strong>${usuarioAuditoriaActual.usuario}</strong> no registra modificaciones en esta sección.</span>
-                    </div>
-                `;
+                contenedor.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>No existen registros de modificaciones en esta categoría.</p></div>';
+                const contadorEl = document.getElementById('contadorCarpetasTotal');
+                if (contadorEl) contadorEl.textContent = '0 carpeta(s) registrada(s)';
                 return;
             }
 
             let html = '';
             historial.forEach((log, index) => {
-                const tipo = log.tipo || 'perfil';
-                const nombreCarpeta = log.carpeta || '📁 Registro de Modificación';
-                const cambios = Array.isArray(log.cambios) ? log.cambios : [];
-                const editor = log.editor || 'Usuario';
-                const fecha = log.fecha || 'Sin fecha';
-                const resumen = log.resumen || `${cambios.length} campo(s) modificado(s)`;
+                const tipo = (log.tipo || 'perfil').toLowerCase();
+                const listaCambios = log.cambios || log.detalles || [];
 
-                let folderIconClass = 'fa-folder-closed';
-                if (tipo === 'clave') folderIconClass = 'fa-key';
-                if (tipo === 'admin') folderIconClass = 'fa-user-shield';
-                if (tipo === 'recuperacion') folderIconClass = 'fa-shield-halved';
-
-                html += `
-                    <div class="folder-card" id="folderCard_${index}">
-                        <div class="folder-header ${tipo}" onclick="toggleCarpeta(${index})">
-                            <div class="folder-title-box">
-                                <i class="fa-solid ${folderIconClass} folder-main-icon" id="folderIcon_${index}"></i>
-                                <div>
-                                    <div class="folder-title">${nombreCarpeta}</div>
-                                    <div class="folder-meta">
-                                        <span><i class="fa-regular fa-clock"></i> ${fecha}</span>
-                                        <span>•</span>
-                                        <span><i class="fa-solid fa-user-pen"></i> Por: <strong>${editor}</strong></span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="folder-badges">
-                                <span class="folder-count-badge">${cambios.length} ${cambios.length === 1 ? 'cambio' : 'cambios'}</span>
-                                <i class="fa-solid fa-chevron-down chevron-icon"></i>
-                            </div>
-                        </div>
-
-                        <div class="folder-content">
-                            <div class="folder-summary">
-                                <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> ${resumen}
-                            </div>
-                            <div class="changes-grid">
-                `;
-
-                if (cambios.length > 0) {
-                    cambios.forEach(c => {
-                        let fieldIcon = 'fa-file-lines';
-                        const campoLower = (c.campo || '').toLowerCase();
-                        if (campoLower.includes('correo')) fieldIcon = 'fa-envelope';
-                        else if (campoLower.includes('teléfono') || campoLower.includes('telefono')) fieldIcon = 'fa-phone';
-                        else if (campoLower.includes('dirección') || campoLower.includes('direccion')) fieldIcon = 'fa-location-dot';
-                        else if (campoLower.includes('contraseña') || campoLower.includes('clave')) fieldIcon = 'fa-key';
-                        else if (campoLower.includes('rol')) fieldIcon = 'fa-user-gear';
-                        else if (campoLower.includes('estado')) fieldIcon = 'fa-toggle-on';
-
-                        html += `
-                            <div class="change-row">
-                                <div class="change-field">
-                                    <i class="fa-solid ${fieldIcon}" style="color: var(--primary); width: 14px;"></i>
-                                    <span>${c.campo}</span>
-                                </div>
-                                <div class="change-diff">
-                                    <span class="val-box old">${c.valorAnterior || 'Vacío'}</span>
-                                    <i class="fa-solid fa-arrow-right diff-arrow"></i>
-                                    <span class="val-box new">${c.valorNuevo || 'Vacío'}</span>
-                                </div>
-                            </div>
-                        `;
-                    });
-                } else {
-                    html += `<p style="font-size:12px; color:var(--text-muted);">Sin detalles específicos registrados en este evento.</p>`;
-                }
-
-                html += `
-                            </div>
+                // Generar HTML dinámico para cada campo modificado
+                let cambiosHTML = '';
+                if (listaCambios.length > 0) {
+                    cambiosHTML = '<div class="changes-grid">';
+                    listaCambios.forEach(c => {
+                        cambiosHTML += `
+                    <div class="change-row">
+                        <div class="change-field"><i class="fa-solid fa-pen-to-square"></i> ${c.campo || 'Campo'}:</div>
+                        <div class="change-diff">
+                            <span class="val-box old">${c.valorAnterior || c.antes || 'N/A'}</span>
+                            <i class="fa-solid fa-arrow-right" style="font-size: 10px; color: var(--text-muted);"></i>
+                            <span class="val-box new">${c.valorNuevo || c.despues || 'N/A'}</span>
                         </div>
                     </div>
                 `;
+                    });
+                    cambiosHTML += '</div>';
+                } else {
+                    // En caso de que solo exista una cadena de resumen sin estructura interna
+                    cambiosHTML = `<p style="font-size: 12.5px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> ${log.resumen || 'Sin detalle estructurado.'}</p>`;
+                }
+
+                html += `
+            <div class="folder-card" id="folderCard_${index}">
+                <div class="folder-header ${tipo}" onclick="toggleCarpeta(${index})">
+                    <div class="folder-title-box">
+                        <i class="fa-solid fa-folder-closed folder-main-icon"></i>
+                        <div>
+                            <div class="folder-title">${log.carpeta || 'Modificación por Administrador'}</div>
+                            <div class="folder-meta"><i class="fa-regular fa-clock"></i> ${log.fecha || ''} • <i class="fa-solid fa-user-gear"></i> Por: ${log.editor || 'Administrador'}</div>
+                        </div>
+                    </div>
+                    <span class="folder-count-badge">${listaCambios.length || 1} cambio(s)</span>
+                    <i class="fa-solid fa-chevron-down chevron-icon"></i>
+                </div>
+                <div class="folder-content">
+                    ${cambiosHTML}
+                </div>
+            </div>
+        `;
             });
 
             contenedor.innerHTML = html;
-        }
 
+            const contadorEl = document.getElementById('contadorCarpetasTotal');
+            if (contadorEl) {
+                contadorEl.textContent = `${historial.length} carpeta(s) registrada(s)`;
+            }
+        }
         function toggleCarpeta(index) {
             const card = document.getElementById(`folderCard_${index}`);
             if (!card) return;
