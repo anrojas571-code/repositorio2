@@ -1394,7 +1394,7 @@
         <i id="themeIcon" class="fa-solid fa-moon"></i>
     </button>
 
-    <!-- BOTÓN MENSAJES DE SOPORTE -->
+    <!-- BOTÓN MENSAJES DE SOPORTE (Ubicación relativa al tema) -->
     <button class="support-admin-btn" onclick="abrirModalMensajesSoporte()" title="Ver Mensajes de Soporte">
         <i class="fa-solid fa-headset"></i>
         <span id="badgeSoporte" class="badge-soporte" style="display: none;">0</span>
@@ -1417,7 +1417,7 @@
                     <label>Usuario Administrador</label>
                     <div class="input-wrapper">
                         <i class="fa-solid fa-user field-icon"></i>
-                        <input type="text" id="adminUser" placeholder="admin" required>
+                        <input type="text" id="adminUser" placeholder="Usuario Admin" required>
                     </div>
                 </div>
 
@@ -1459,7 +1459,7 @@
                 </div>
             </div>
 
-            <!-- DASHBOARD DE MÉTRICAS -->
+            <!-- DASHBOARD DE MÉTRICAS Y ANALÍTICA EN TIEMPO REAL -->
             <div class="stats-grid">
                 <div class="stat-card-item total-card">
                     <div class="num" id="totalUsuariosCount" style="color: var(--primary);">0</div>
@@ -1479,22 +1479,26 @@
                 </div>
             </div>
 
-            <!-- BARRA DE PROGRESO DE ESTADOS -->
+            <!-- BARRA DE PROGRESO GRÁFICA DE DISTRIBUCIÓN DE ESTADOS -->
             <div
-                style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 18px; margin: 15px 0 20px 0;">
+                style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px 18px; margin: 15px 0 20px 0; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; font-weight: 700;">
                     <span><i class="fa-solid fa-chart-pie"></i> Distribución de Estados</span>
-                    <span id="distribucionLegend" style="font-size: 11.5px; color: var(--text-muted);">0% Activos | 0%
-                        Inactivos | 0% Bloqueados</span>
+                    <span id="distribucionLegend"
+                        style="font-size: 11.5px; color: var(--text-muted); font-weight: 600;">0% Activos | 0% Inactivos
+                        | 0% Bloqueados</span>
                 </div>
                 <div class="progress-segmented">
                     <div id="progresoActivos"
-                        style="height: 100%; width: 0%; background: #10b981; transition: width 0.4s ease;"></div>
+                        style="height: 100%; width: 0%; background: #10b981; transition: width 0.4s ease;"
+                        title="Activos"></div>
                     <div id="progresoInactivos"
-                        style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.4s ease;"></div>
+                        style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.4s ease;"
+                        title="Inactivos"></div>
                     <div id="progresoBloqueados"
-                        style="height: 100%; width: 0%; background: #ef4444; transition: width 0.4s ease;"></div>
+                        style="height: 100%; width: 0%; background: #ef4444; transition: width 0.4s ease;"
+                        title="Bloqueados"></div>
                 </div>
             </div>
 
@@ -1504,20 +1508,27 @@
                         <i class="fa-solid fa-users"></i> Directorio y Gestión Masiva
                     </span>
                     <div class="btn-group">
-                        <button onclick="cargarDatos()" class="btn btn-refresh"><i class="fa-solid fa-rotate-right"></i>
-                            Actualizar</button>
-                        <button onclick="exportarExcel()" class="btn btn-export-excel"><i
-                                class="fa-solid fa-file-excel"></i> Excel</button>
-                        <button onclick="exportarJSON()" class="btn btn-export-json"><i
-                                class="fa-solid fa-file-code"></i> JSON</button>
-                        <button onclick="abrirModalDescargas()" class="btn btn-history"><i
-                                class="fa-solid fa-clock-rotate-left"></i> Historial</button>
-                        <button onclick="pedirConfirmacionVaciarBD()" class="btn btn-danger"><i
-                                class="fa-solid fa-trash-can"></i> Vaciar BD</button>
+                        <button onclick="cargarDatos()" class="btn btn-refresh" title="Actualizar lista">
+                            <i class="fa-solid fa-rotate-right"></i> Actualizar
+                        </button>
+                        <button onclick="exportarExcel()" class="btn btn-export-excel" title="Exportar a Excel (.xlsx)">
+                            <i class="fa-solid fa-file-excel"></i> Excel
+                        </button>
+                        <button onclick="exportarJSON()" class="btn btn-export-json" title="Exportar JSON">
+                            <i class="fa-solid fa-file-code"></i> JSON
+                        </button>
+                        <button onclick="abrirModalDescargas()" class="btn btn-history"
+                            title="Ver Historial de Descargas">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Historial
+                        </button>
+                        <button onclick="pedirConfirmacionVaciarBD()" class="btn btn-danger"
+                            title="Borrar toda la base de datos">
+                            <i class="fa-solid fa-trash-can"></i> Vaciar BD
+                        </button>
                     </div>
                 </div>
 
-                <!-- BÚSQUEDA Y FILTRADO -->
+                <!-- BARRA DE BÚSQUEDA Y FILTRADO COMBINADO EN TIEMPO REAL -->
                 <div class="filter-search-bar">
                     <div class="search-box">
                         <i class="fa-solid fa-magnifying-glass"></i>
@@ -1537,29 +1548,35 @@
                     </select>
                 </div>
 
-                <!-- BARRA DE ACCIONES MASIVAS -->
+                <!-- BARRA DE ACCIONES EN LOTE (BULK ACTIONS) -->
                 <div id="bulkActionsToolbar"
                     style="display: flex; justify-content: space-between; align-items: center; background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 10px 16px; margin-bottom: 14px;">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <label
-                            style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; font-size: 13px;">
+                            style="display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; font-size: 13px; color: var(--text-main);">
                             <input type="checkbox" id="checkSelectAll" onchange="toggleSelectAllUsuarios(this.checked)"
-                                style="width: 18px; height: 18px;">
+                                style="width: 18px; height: 18px; cursor: pointer;">
                             <span>Seleccionar Todos</span>
                         </label>
-                        <span id="bulkSelectedCount" style="font-size: 12px; color: var(--text-muted);">(0
+                        <span id="bulkSelectedCount"
+                            style="font-size: 12px; color: var(--text-muted); font-weight: 600;">(0
                             seleccionados)</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
                         <button onclick="ejecutarAccionLote('activar')" class="btn"
-                            style="background: #10b981; color: white; padding: 6px 12px; font-size: 12px;"><i
-                                class="fa-solid fa-user-check"></i> Activar</button>
+                            style="background: #10b981; color: white; padding: 6px 12px; font-size: 12px;"
+                            title="Activar seleccionados">
+                            <i class="fa-solid fa-user-check"></i> Activar
+                        </button>
                         <button onclick="ejecutarAccionLote('bloquear')" class="btn"
-                            style="background: #f59e0b; color: white; padding: 6px 12px; font-size: 12px;"><i
-                                class="fa-solid fa-user-lock"></i> Bloquear</button>
+                            style="background: #f59e0b; color: white; padding: 6px 12px; font-size: 12px;"
+                            title="Bloquear seleccionados">
+                            <i class="fa-solid fa-user-lock"></i> Bloquear
+                        </button>
                         <button onclick="ejecutarAccionLote('eliminar')" class="btn btn-danger"
-                            style="padding: 6px 12px; font-size: 12px;"><i class="fa-solid fa-trash"></i>
-                            Eliminar</button>
+                            style="padding: 6px 12px; font-size: 12px;" title="Eliminar seleccionados">
+                            <i class="fa-solid fa-trash"></i> Eliminar
+                        </button>
                     </div>
                 </div>
 
@@ -1570,7 +1587,7 @@
 
     </div>
 
-    <!-- MODAL EDICIÓN -->
+    <!-- MODAL EDICIÓN DE USUARIO Y GESTIÓN DE ESTADOS -->
     <div id="modalEdicion" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -1582,7 +1599,7 @@
                     <input type="hidden" id="editOriginalUsuario">
 
                     <div class="form-group">
-                        <label>Nombre de Usuario</label>
+                        <label>Nombre de Usuario (No modificable)</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-user field-icon"></i>
                             <input type="text" id="editUsuarioDisplay" disabled
@@ -1649,14 +1666,15 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" onclick="cerrarModalEdicion()" class="btn btn-refresh">Cancelar</button>
-                    <button type="submit" class="btn btn-export-excel"><i class="fa-solid fa-floppy-disk"></i> Guardar
-                        Cambios</button>
+                    <button type="submit" class="btn btn-export-excel">
+                        <i class="fa-solid fa-floppy-disk"></i> Guardar Cambios
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL AUDITORÍA DE CARPETAS -->
+    <!-- MODAL DETALLE DE AUDITORÍA ORGANIZADA EN CARPETAS -->
     <div id="modalHistorialEdiciones" class="modal-overlay">
         <div class="modal-card" style="max-width: 650px;">
             <div class="modal-header">
@@ -1664,12 +1682,14 @@
                     <h2><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Auditoría de
                         Modificaciones</h2>
                     <p id="auditoriaUsuarioSub" style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                        Historial en carpetas.</p>
+                        Historial organizado en carpetas de cambios de perfil, contraseña y estado.
+                    </p>
                 </div>
                 <button onclick="cerrarModalHistorialEdiciones()" class="modal-close"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
 
+            <!-- CONTROLES Y FILTROS DE CARPETAS -->
             <div class="folder-controls">
                 <div class="folder-filters" id="folderFiltersContainer">
                     <button class="filter-chip active" onclick="filtrarCarpetas('todas', this)">Todas</button>
@@ -1694,7 +1714,7 @@
         </div>
     </div>
 
-    <!-- MODAL DESCARGAS -->
+    <!-- MODAL HISTORIAL DE DESCARGAS -->
     <div id="modalDescargas" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-header">
@@ -1703,34 +1723,40 @@
             </div>
             <div id="listaDescargas" class="modal-body"></div>
             <div class="modal-footer">
-                <button onclick="pedirConfirmacionVaciarDescargas()" class="btn btn-danger"><i
-                        class="fa-solid fa-trash-can"></i> Vaciar Historial</button>
+                <button onclick="pedirConfirmacionVaciarDescargas()" class="btn btn-danger">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Historial
+                </button>
                 <button onclick="cerrarModalDescargas()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL CONFIRMACIÓN -->
+    <!-- MODAL DE CONFIRMACIÓN ELEGANTE (REEMPLAZO DE CONFIRM NATIVO) -->
     <div id="modalConfirmacion" class="modal-overlay">
         <div class="modal-card" style="max-width: 440px; text-align: center;">
             <div style="font-size: 42px; color: var(--danger); margin-bottom: 12px;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
             <h2 id="confirmTitulo"
-                style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">¿Estás seguro?
+                style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+                ¿Estás seguro?
             </h2>
-            <p id="confirmMensaje" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Esta acción
-                no se puede deshacer.</p>
+            <p id="confirmMensaje"
+                style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">
+                Esta acción no se puede deshacer.
+            </p>
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button type="button" class="btn btn-refresh" style="flex: 1;"
-                    onclick="cerrarModalConfirmacion()">Cancelar</button>
-                <button type="button" id="btnConfirmarAccion" class="btn btn-danger" style="flex: 1;"><i
-                        class="fa-solid fa-trash"></i> Confirmar</button>
+                <button type="button" class="btn btn-refresh" style="flex: 1;" onclick="cerrarModalConfirmacion()">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarAccion" class="btn btn-danger" style="flex: 1;">
+                    <i class="fa-solid fa-trash"></i> Confirmar
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL SOPORTE / CHAT -->
+    <!-- MODAL DE CENTRO DE MENSAJERÍA DE SOPORTE Y CHAT DIRECTO (ADMIN) -->
     <div id="modalBuzonSoporte" class="modal-overlay">
         <div class="modal-card" style="max-width: 800px; height: 80vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="flex-shrink: 0;">
@@ -1745,6 +1771,7 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 240px 1fr; gap: 15px; flex: 1; overflow: hidden;">
+                <!-- Lista lateral de usuarios con tickets de soporte -->
                 <div style="border-right: 1px solid var(--border-color); overflow-y: auto; padding-right: 10px;">
                     <div
                         style="font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px;">
@@ -1752,6 +1779,7 @@
                     <div id="listaConversacionesSoporte" style="display: flex; flex-direction: column; gap: 6px;"></div>
                 </div>
 
+                <!-- Área del chat con el usuario seleccionado -->
                 <div style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
                     <div id="chatHeaderAdmin"
                         style="padding: 8px 12px; background: var(--item-bg); border-radius: 8px; font-weight: 700; font-size: 13px; border: 1px solid var(--border-color); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
@@ -1760,6 +1788,7 @@
                             style="display: none; font-size: 10px;"></span>
                     </div>
 
+                    <!-- Caja de mensajes recibidos/enviados -->
                     <div id="cajaMensajesChat"
                         style="flex: 1; overflow-y: auto; background: var(--input-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                         <div class="empty-state" style="margin: auto;">
@@ -1768,6 +1797,7 @@
                         </div>
                     </div>
 
+                    <!-- Formulario de respuesta del admin -->
                     <form id="formRespuestaAdmin" class="chat-input-bar"
                         onsubmit="event.preventDefault(); enviarRespuestaAdmin();">
                         <input type="text" id="inputRespuestaAdmin" class="chat-input-field"
@@ -1781,31 +1811,35 @@
             </div>
 
             <div class="modal-footer" style="flex-shrink: 0; margin-top: 12px;">
-                <button onclick="pedirConfirmacionVaciarSoporte()" class="btn btn-danger"><i
-                        class="fa-solid fa-trash-can"></i> Vaciar Todos los Mensajes</button>
+                <button onclick="pedirConfirmacionVaciarSoporte()" class="btn btn-danger">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Todos los Mensajes
+                </button>
                 <button onclick="cerrarModalMensajesSoporte()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL AUDITORÍA GLOBAL -->
+    <!-- MODAL BITÁCORA DE AUDITORÍA GLOBAL DEL SISTEMA -->
     <div id="modalAuditoriaGlobal" class="modal-overlay">
         <div class="modal-card" style="max-width: 860px; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header" style="flex-shrink: 0;">
                 <div>
                     <h2><i class="fa-solid fa-clipboard-list" style="color: var(--primary);"></i> Bitácora de Auditoría
                         del Sistema</h2>
-                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Registro global de eventos e
-                        interacciones.</p>
+                    <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                        Registro de eventos críticos: accesos, registros, recuperaciones OTP y operaciones
+                        administrativas.
+                    </p>
                 </div>
                 <button onclick="cerrarModalAuditoriaGlobal()" class="modal-close"><i
                         class="fa-solid fa-xmark"></i></button>
             </div>
 
+            <!-- Barra de búsqueda y filtros de auditoría -->
             <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-shrink: 0; flex-wrap: wrap;">
                 <div class="search-box" style="flex: 1; min-width: 220px;">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="busquedaAuditoriaInput" placeholder="Buscar en auditoría..."
+                    <input type="text" id="busquedaAuditoriaInput" placeholder="Buscar por usuario, IP o descripción..."
                         oninput="filtrarAuditoriaGlobal()">
                 </div>
                 <select id="filtroTipoAuditoria" class="filter-select" onchange="filtrarAuditoriaGlobal()"
@@ -1820,15 +1854,19 @@
                     <option value="ELIMINAR">Eliminaciones</option>
                     <option value="SOPORTE">Soporte Técnico</option>
                 </select>
-                <button onclick="cargarAuditoriaGlobal()" class="btn btn-refresh" title="Actualizar auditoría"><i
-                        class="fa-solid fa-rotate-right"></i></button>
+                <button onclick="cargarAuditoriaGlobal()" class="btn btn-refresh" title="Actualizar auditoría">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
             </div>
 
-            <div id="listaAuditoriaGlobal" class="modal-body" style="flex: 1; overflow-y: auto;"></div>
+            <!-- Lista de eventos de auditoría -->
+            <div id="listaAuditoriaGlobal" class="modal-body" style="flex: 1; overflow-y: auto; padding-right: 6px;">
+            </div>
 
-            <div class="modal-footer" style="flex-shrink: 0; margin-top: 12px;">
-                <button onclick="pedirConfirmacionVaciarAuditoria()" class="btn btn-danger" style="font-size: 12px;"><i
-                        class="fa-solid fa-trash-can"></i> Vaciar Bitácora</button>
+            <div class="modal-footer" style="flex-shrink: 0; margin-top: 12px; justify-content: space-between;">
+                <button onclick="pedirConfirmacionVaciarAuditoria()" class="btn btn-danger" style="font-size: 12px;">
+                    <i class="fa-solid fa-trash-can"></i> Vaciar Bitácora
+                </button>
                 <button onclick="cerrarModalAuditoriaGlobal()" class="btn btn-refresh">Cerrar</button>
             </div>
         </div>
@@ -1845,9 +1883,6 @@
         let accionConfirmacionPendiente = null;
         let usuariosSeleccionados = new Set();
         let auditoriaCargada = [];
-        let todosMensajesSoporte = [];
-        let usuarioSoporteSeleccionado = null;
-        let soportePollingInterval = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             cargarTemaGuardado();
@@ -1860,48 +1895,15 @@
             }
         });
 
-        function showToast(mensaje, tipo = 'info') {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-
-            const toast = document.createElement('div');
-            toast.className = `toast ${tipo}`;
-
-            let iconClass = 'fa-circle-info';
-            let titulo = 'Información';
-
-            if (tipo === 'exito' || tipo === 'success') {
-                iconClass = 'fa-circle-check';
-                titulo = 'Éxito';
-            } else if (tipo === 'error') {
-                iconClass = 'fa-circle-xmark';
-                titulo = 'Error';
-            } else if (tipo === 'advertencia' || tipo === 'warning') {
-                iconClass = 'fa-triangle-exclamation';
-                titulo = 'Advertencia';
-            }
-
-            toast.innerHTML = `
-                <i class="fa-solid ${iconClass} toast-icon"></i>
-                <div class="toast-content">
-                    <h5>${titulo}</h5>
-                    <p>${mensaje}</p>
-                </div>
-                <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
-            `;
-
-            container.appendChild(toast);
-            setTimeout(() => {
-                if (toast && toast.parentElement) toast.remove();
-            }, 4000);
-        }
-
+        // --- MODO OSCURO / CLARO ---
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('app_theme', newTheme);
-            document.getElementById('themeIcon').className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+
+            const icon = document.getElementById('themeIcon');
+            icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
         function cargarTemaGuardado() {
@@ -1910,213 +1912,10 @@
             document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
-        function togglePasswordVisibility(fieldId, btn) {
-            const field = document.getElementById(fieldId);
-            if (!field) return;
-            if (field.type === 'password') {
-                field.type = 'text';
-                btn.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-            } else {
-                field.type = 'password';
-                btn.innerHTML = '<i class="fa-solid fa-eye"></i>';
-            }
-        }
-
-        function iniciarSesionAdmin() {
-            const user = document.getElementById('adminUser').value.trim();
-            const pass = document.getElementById('adminPass').value.trim();
-            const errDiv = document.getElementById('loginError');
-
-            if (user === 'admin' && pass === 'admin123') {
-                sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
-                errDiv.style.display = 'none';
-                mostrarPanelAdmin();
-                showToast('Sesión de Administrador iniciada', 'success');
-            } else {
-                errDiv.style.display = 'block';
-                errDiv.textContent = 'Credenciales incorrectas (Prueba: admin / admin123)';
-                showToast('Credenciales incorrectas', 'error');
-            }
-        }
-
-        function cerrarSesionAdmin() {
-            sessionStorage.removeItem(ADMIN_SESSION_KEY);
-            document.getElementById('vistaPanelAdmin').style.display = 'none';
-            document.getElementById('vistaLoginAdmin').style.display = 'block';
-            showToast('Sesión cerrada correctamente', 'info');
-        }
-
-        function mostrarPanelAdmin() {
-            document.getElementById('vistaLoginAdmin').style.display = 'none';
-            document.getElementById('vistaPanelAdmin').style.display = 'block';
-            cargarDatos();
-            actualizarBadgeSoporte();
-        }
-
-        async function cargarDatos() {
-            try {
-                const response = await fetch('/api/usuarios');
-                if (response.ok) {
-                    usuariosCargados = await response.json();
-                } else {
-                    usuariosCargados = getMockUsuarios();
-                }
-            } catch (err) {
-                console.warn('Backend no disponible, usando datos locales de muestra.');
-                usuariosCargados = getMockUsuarios();
-            }
-            renderizarListaUsuarios(usuariosCargados);
-            actualizarMetricas(usuariosCargados);
-            actualizarDistribucionEstados(usuariosCargados);
-        }
-
-        function getMockUsuarios() {
-            return [
-                { usuario: 'admin', correo: 'admin@sistema.com', telefono: '+584120001122', direccion: 'Oficina Central', clave: 'admin123', rol: 'Admin', estado: 'Activo' },
-                { usuario: 'juan_perez', correo: 'juan@gmail.com', telefono: '+584141234567', direccion: 'Valencia, Venezuela', clave: 'pass123', rol: 'Cliente', estado: 'Activo' },
-                { usuario: 'maria_gomez', correo: 'maria@hotmail.com', telefono: '+584249876543', direccion: 'Caracas, Venezuela', clave: 'clave456', rol: 'Cliente', estado: 'Inactivo' },
-                { usuario: 'carlos_lopez', correo: 'carlos@yahoo.com', telefono: '+584125554433', direccion: 'Maracaibo, Venezuela', clave: 'secreta789', rol: 'Cliente', estado: 'Bloqueado' }
-            ];
-        }
-
-        function renderizarListaUsuarios(lista) {
-            const contenedor = document.getElementById('contenedorLista');
-            if (!lista || lista.length === 0) {
-                contenedor.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-solid fa-users-slash"></i>
-                        <p>No se encontraron usuarios que coincidan con la búsqueda.</p>
-                    </div>`;
-                return;
-            }
-
-            let html = '';
-            lista.forEach(u => {
-                const isChecked = usuariosSeleccionados.has(u.usuario) ? 'checked' : '';
-                const badgeRol = u.rol === 'Admin' ? '<span class="badge-role-admin">🛡️ Admin</span>' : '<span class="badge-role-client">👤 Cliente</span>';
-
-                let badgeEstado = '<span class="badge-status-active">🟢 Activo</span>';
-                if ((u.estado || '').toLowerCase() === 'inactivo') badgeEstado = '<span class="badge-status-inactive">🟡 Inactivo</span>';
-                if ((u.estado || '').toLowerCase() === 'bloqueado') badgeEstado = '<span class="badge-status-blocked">🔴 Bloqueado</span>';
-
-                html += `
-                    <div class="user-item">
-                        <div class="user-detail">
-                            <input type="checkbox" onchange="toggleSeleccionUsuario('${u.usuario}', this.checked)" ${isChecked} style="width: 18px; height: 18px; cursor: pointer;">
-                            <div class="avatar">${(u.usuario || 'U').charAt(0).toUpperCase()}</div>
-                            <div class="user-data">
-                                <h3>${u.usuario} ${badgeRol} ${badgeEstado}</h3>
-                                <p><i class="fa-solid fa-envelope"></i> ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> ${u.telefono || 'Sin telf'}</p>
-                            </div>
-                        </div>
-                        <div class="badges-group">
-                            <button class="badge-mods" onclick="abrirModalHistorialEdiciones('${u.usuario}')">
-                                <i class="fa-solid fa-folder"></i> Cambios
-                            </button>
-                            <button class="btn-action-user edit" onclick="abrirModalEdicion('${u.usuario}')" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button class="btn-action-user delete" onclick="pedirConfirmacionEliminar('${u.usuario}')" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-            contenedor.innerHTML = html;
-        }
-
-        function filtrarUsuarios() {
-            const query = (document.getElementById('adminSearchInput').value || '').toLowerCase();
-            const statusFilter = document.getElementById('adminFilterStatus').value;
-            const roleFilter = document.getElementById('adminFilterRole').value;
-
-            const filtrados = usuariosCargados.filter(u => {
-                const matchQuery = u.usuario.toLowerCase().includes(query) || (u.correo || '').toLowerCase().includes(query) || (u.telefono || '').includes(query);
-                const matchStatus = statusFilter === 'todos' || (u.estado || 'Activo').toLowerCase() === statusFilter.toLowerCase();
-                const matchRole = roleFilter === 'todos' || (u.rol || 'Cliente').toLowerCase() === roleFilter.toLowerCase();
-                return matchQuery && matchStatus && matchRole;
-            });
-
-            renderizarListaUsuarios(filtrados);
-        }
-
-        function actualizarMetricas(lista) {
-            document.getElementById('totalUsuariosCount').textContent = lista.length;
-            document.getElementById('activosCount').textContent = lista.filter(u => (u.estado || 'Activo').toLowerCase() === 'activo').length;
-            document.getElementById('inactivosCount').textContent = lista.filter(u => (u.estado || '').toLowerCase() === 'inactivo').length;
-            document.getElementById('bloqueadosCount').textContent = lista.filter(u => (u.estado || '').toLowerCase() === 'bloqueado').length;
-        }
-
-        function actualizarDistribucionEstados(lista) {
-            if (!lista || lista.length === 0) {
-                document.getElementById('distribucionLegend').textContent = '0% Activos | 0% Inactivos | 0% Bloqueados';
-                document.getElementById('progresoActivos').style.width = '0%';
-                document.getElementById('progresoInactivos').style.width = '0%';
-                document.getElementById('progresoBloqueados').style.width = '0%';
-                return;
-            }
-
-            const total = lista.length;
-            const cantActivos = lista.filter(u => (u.estado || 'Activo').toLowerCase() === 'activo').length;
-            const cantInactivos = lista.filter(u => (u.estado || '').toLowerCase() === 'inactivo').length;
-            const cantBloqueados = lista.filter(u => (u.estado || '').toLowerCase() === 'bloqueado').length;
-
-            const pctActivos = Math.round((cantActivos / total) * 100) || 0;
-            const pctInactivos = Math.round((cantInactivos / total) * 100) || 0;
-            const pctBloqueados = Math.round((cantBloqueados / total) * 100) || 0;
-
-            document.getElementById('distribucionLegend').textContent = `${pctActivos}% Activos | ${pctInactivos}% Inactivos | ${pctBloqueados}% Bloqueados`;
-            document.getElementById('progresoActivos').style.width = `${pctActivos}%`;
-            document.getElementById('progresoInactivos').style.width = `${pctInactivos}%`;
-            document.getElementById('progresoBloqueados').style.width = `${pctBloqueados}%`;
-        }
-
-        function toggleSeleccionUsuario(usuario, checked) {
-            if (checked) usuariosSeleccionados.add(usuario);
-            else usuariosSeleccionados.delete(usuario);
-            actualizarContadorLote();
-        }
-
-        function toggleSelectAllUsuarios(checked) {
-            if (checked) {
-                usuariosCargados.forEach(u => usuariosSeleccionados.add(u.usuario));
-            } else {
-                usuariosSeleccionados.clear();
-            }
-            filtrarUsuarios();
-            actualizarContadorLote();
-        }
-
-        function actualizarContadorLote() {
-            document.getElementById('bulkSelectedCount').textContent = `(${usuariosSeleccionados.size} seleccionados)`;
-        }
-
-        function ejecutarAccionLote(accion) {
-            if (usuariosSeleccionados.size === 0) {
-                showToast('Selecciona al menos un usuario para esta acción', 'advertencia');
-                return;
-            }
-
-            mostrarModalConfirmacion(
-                `¿Ejecutar acción "${accion.toUpperCase()}" en lote?`,
-                `Esta acción afectará a ${usuariosSeleccionados.size} usuario(s) seleccionado(s).`,
-                async () => {
-                    const seleccionados = Array.from(usuariosSeleccionados);
-                    if (accion === 'eliminar') {
-                        usuariosCargados = usuariosCargados.filter(u => !seleccionados.includes(u.usuario));
-                    } else if (accion === 'activar') {
-                        usuariosCargados.forEach(u => { if (seleccionados.includes(u.usuario)) u.estado = 'Activo'; });
-                    } else if (accion === 'bloquear') {
-                        usuariosCargados.forEach(u => { if (seleccionados.includes(u.usuario)) u.estado = 'Bloqueado'; });
-                    }
-
-                    usuariosSeleccionados.clear();
-                    document.getElementById('checkSelectAll').checked = false;
-                    actualizarContadorLote();
-                    renderizarListaUsuarios(usuariosCargados);
-                    actualizarMetricas(usuariosCargados);
-                    actualizarDistribucionEstados(usuariosCargados);
-                    showToast(`Acción ${accion} completada con éxito`, 'success');
-                }
-            );
-        }
+        // --- GESTIÓN DE MENSAJES DE SOPORTE ---
+        let usuarioSoporteSeleccionado = null;
+        let todosMensajesSoporte = [];
+        let soportePollingInterval = null;
 
         function abrirModalMensajesSoporte() {
             document.getElementById('modalBuzonSoporte').classList.add('active');
@@ -2141,87 +1940,196 @@
             }
         }
 
+        // --- CARGAR MENSAJES DE SOPORTE CON BOTÓN DE ELIMINAR INDIVIDUAL ---
         async function cargarMensajesSoporte(silent = false) {
             const contenedorLista = document.getElementById('listaConversacionesSoporte');
             try {
                 const res = await fetch('/api/soporte');
-                if (res.ok) {
-                    todosMensajesSoporte = await res.json();
-                } else {
-                    todosMensajesSoporte = todosMensajesSoporte.length ? todosMensajesSoporte : getMockSoporte();
+                todosMensajesSoporte = await res.json();
+
+                actualizarBadgeSoporte();
+
+                if (!Array.isArray(todosMensajesSoporte) || todosMensajesSoporte.length === 0) {
+                    contenedorLista.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 10px; text-align: center;">Sin mensajes</div>';
+                    if (!silent || !usuarioSoporteSeleccionado) {
+                        document.getElementById('cajaMensajesChat').innerHTML = `
+                            <div class="empty-state" style="margin: auto;">
+                                <i class="fa-solid fa-envelope-open"></i>
+                                <p>No hay mensajes de soporte recibidos.</p>
+                            </div>`;
+                        document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                        document.getElementById('chatUsuarioEstado').style.display = 'none';
+                        document.getElementById('inputRespuestaAdmin').disabled = true;
+                        document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
+                    }
+                    return;
+                }
+
+                // Extraer lista única de usuarios
+                const usuariosUnicos = [...new Set(todosMensajesSoporte.map(m => m.usuario || m.usuario_origen || m.remitente))].filter(Boolean);
+
+                let htmlLista = '';
+                usuariosUnicos.forEach(usr => {
+                    const mensajesUsuario = todosMensajesSoporte.filter(m => (m.usuario || m.usuario_origen || m.remitente) === usr);
+                    const ultimoMsg = mensajesUsuario[mensajesUsuario.length - 1] || {};
+                    const activo = usuarioSoporteSeleccionado === usr ? 'background: var(--primary-light); border-color: var(--primary);' : '';
+                    const esMsgAdmin = ultimoMsg.emisor === 'admin' || ultimoMsg.rol === 'Admin' || ultimoMsg.deAdmin === true;
+
+                    htmlLista += `
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 6px;">
+                            <div onclick="seleccionarUsuarioChat('${usr}')" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; ${activo}">
+                                <div style="font-size: 12px; font-weight: 800; color: var(--text-main);"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
+                                <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
+                                    ${esMsgAdmin ? '<b>Tú:</b> ' : ''}${ultimoMsg.mensaje || ''}
+                                </div>
+                            </div>
+                            <button type="button" onclick="event.stopPropagation(); pedirConfirmacionEliminarChatUsuario('${usr}')" class="btn-action-user delete" title="Borrar conversación de ${usr}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                contenedorLista.innerHTML = htmlLista;
+
+                if (usuarioSoporteSeleccionado && usuariosUnicos.includes(usuarioSoporteSeleccionado)) {
+                    seleccionarUsuarioChat(usuarioSoporteSeleccionado, silent);
+                } else if (usuarioSoporteSeleccionado && !usuariosUnicos.includes(usuarioSoporteSeleccionado)) {
+                    usuarioSoporteSeleccionado = null;
+                    document.getElementById('cajaMensajesChat').innerHTML = `
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-comments"></i>
+                            <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                        </div>`;
+                    document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                    document.getElementById('chatUsuarioEstado').style.display = 'none';
+                    document.getElementById('inputRespuestaAdmin').disabled = true;
+                    document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
                 }
             } catch (err) {
-                if (!todosMensajesSoporte.length) todosMensajesSoporte = getMockSoporte();
+                console.error('Error en cargarMensajesSoporte:', err);
+                if (!silent) {
+                    contenedorLista.innerHTML = '<p style="text-align:center; color:red; font-size: 11px;">Error al cargar mensajes</p>';
+                }
             }
+        }
 
-            actualizarBadgeSoporte();
+        // --- PEDIR CONFIRMACIÓN PARA BORRAR CHAT DE UN USUARIO ---
+        function pedirConfirmacionEliminarChatUsuario(usuario) {
+            mostrarModalConfirmacion(
+                `¿Borrar conversación de "${usuario}"?`,
+                `Se eliminarán todos los mensajes del historial de soporte con el usuario "${usuario}".`,
+                async () => {
+                    await eliminarChatUsuario(usuario);
+                }
+            );
+        }
 
-            const usuariosUnicos = [...new Set(todosMensajesSoporte.map(m => m.usuario || m.remitente))].filter(Boolean);
+        // --- EJECUTAR PETICIÓN DELETE AL SERVIDOR ---
+        async function eliminarChatUsuario(usuario) {
+            try {
+                const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuario)}`, {
+                    method: 'DELETE'
+                });
 
-            if (usuariosUnicos.length === 0) {
-                contenedorLista.innerHTML = '<div style="font-size: 12px; color: var(--text-muted); padding: 10px; text-align: center;">Sin mensajes</div>';
+                if (res.ok) {
+                    showToast(`Conversación con "${usuario}" eliminada`, 'success');
+                    if (usuarioSoporteSeleccionado === usuario) {
+                        usuarioSoporteSeleccionado = null;
+                        document.getElementById('cajaMensajesChat').innerHTML = `
+                            <div class="empty-state" style="margin: auto;">
+                                <i class="fa-solid fa-comments"></i>
+                                <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                            </div>`;
+                        document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                        document.getElementById('chatUsuarioEstado').style.display = 'none';
+                        document.getElementById('inputRespuestaAdmin').disabled = true;
+                        document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
+                    }
+                    await cargarMensajesSoporte();
+                } else {
+                    showToast('No se pudo borrar la conversación', 'error');
+                }
+            } catch (err) {
+                console.error('Error al eliminar chat:', err);
+                showToast('Error de conexión al eliminar el chat', 'error');
+            }
+        }
+
+        // --- ACTUALIZAR CONTADOR DE MENSAJES DE SOPORTE ---
+        async function actualizarBadgeSoporte() {
+            try {
+                const res = await fetch('/api/soporte');
+                const mensajes = await res.json();
+                const badge = document.getElementById('badgeSoporte');
+                if (badge) {
+                    if (Array.isArray(mensajes) && mensajes.length > 0) {
+                        badge.textContent = mensajes.length;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (e) {
+                console.log("No se pudo obtener la cantidad de mensajes de soporte");
+            }
+        }
+
+        // --- SELECCIONAR Y VISUALIZAR CHAT ---
+        function seleccionarUsuarioChat(usuario, silent = false) {
+            usuarioSoporteSeleccionado = usuario;
+
+            const headerNombre = document.getElementById('chatUsuarioNombre');
+            const headerEstado = document.getElementById('chatUsuarioEstado');
+            const cajaChat = document.getElementById('cajaMensajesChat');
+            const inputRespuesta = document.getElementById('inputRespuestaAdmin');
+            const btnRespuesta = document.getElementById('btnEnviarRespuestaAdmin');
+
+            const mensajesUser = todosMensajesSoporte.filter(m => (m.usuario || m.usuario_origen || m.remitente) === usuario);
+            const motivo = mensajesUser[0]?.motivo || 'Atención de Soporte';
+
+            headerNombre.innerHTML = `<i class="fa-solid fa-user"></i> Conversación con: <strong>${usuario}</strong>`;
+            headerEstado.style.display = 'inline-block';
+            headerEstado.textContent = motivo;
+
+            inputRespuesta.disabled = false;
+            btnRespuesta.disabled = false;
+            if (!silent) inputRespuesta.focus();
+
+            if (mensajesUser.length === 0) {
+                cajaChat.innerHTML = '<div class="empty-state" style="margin: auto;"><p>No hay mensajes en este chat.</p></div>';
                 return;
             }
 
-            let htmlLista = '';
-            usuariosUnicos.forEach(usr => {
-                const mensajesUsuario = todosMensajesSoporte.filter(m => (m.usuario || m.remitente) === usr);
-                const ultimoMsg = mensajesUsuario[mensajesUsuario.length - 1] || {};
-                const activo = usuarioSoporteSeleccionado === usr ? 'background: var(--primary-light); border-color: var(--primary);' : '';
+            let htmlChat = '';
+            mensajesUser.forEach(m => {
+                const esAdmin = m.emisor === 'admin' || m.rol === 'Admin' || m.deAdmin === true;
+                const alignment = esAdmin
+                    ? 'align-self: flex-end; background: var(--primary); color: white;'
+                    : 'align-self: flex-start; background: var(--item-bg); color: var(--text-main); border: 1px solid var(--border-color);';
 
-                htmlLista += `
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; margin-bottom: 6px;">
-                        <div onclick="seleccionarUsuarioChat('${usr}')" style="flex: 1; padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); cursor: pointer; ${activo}">
-                            <div style="font-size: 12px; font-weight: 800;"><i class="fa-solid fa-user-circle"></i> ${usr}</div>
-                            <div style="font-size: 10.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">
-                                ${ultimoMsg.mensaje || ''}
-                            </div>
+                const nombreMostrado = esAdmin ? '<i class="fa-solid fa-user-shield"></i> Soporte (Administrador)' : `<i class="fa-solid fa-user"></i> ${usuario}`;
+
+                htmlChat += `
+                    <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; margin-bottom: 6px; ${alignment}">
+                        <div style="font-size: 10px; opacity: 0.85; margin-bottom: 2px; font-weight: 700;">
+                            ${nombreMostrado}
                         </div>
-                        <button type="button" onclick="event.stopPropagation(); pedirConfirmacionEliminarChatUsuario('${usr}')" class="btn-action-user delete"><i class="fa-solid fa-trash"></i></button>
+                        <div style="word-break: break-word;">${m.mensaje}</div>
+                        <div style="font-size: 9px; opacity: 0.75; text-align: right; margin-top: 4px;">${m.fecha || ''}</div>
                     </div>
                 `;
             });
 
-            contenedorLista.innerHTML = htmlLista;
-
-            if (usuarioSoporteSeleccionado && usuariosUnicos.includes(usuarioSoporteSeleccionado)) {
-                seleccionarUsuarioChat(usuarioSoporteSeleccionado, silent);
+            const wasAtBottom = cajaChat.scrollHeight - cajaChat.clientHeight <= cajaChat.scrollTop + 50;
+            cajaChat.innerHTML = htmlChat;
+            if (!silent || wasAtBottom) {
+                cajaChat.scrollTop = cajaChat.scrollHeight;
             }
         }
 
-        function getMockSoporte() {
-            return [
-                { usuario: 'juan_perez', mensaje: 'Hola, tengo una consulta sobre mi cuenta.', emisor: 'cliente', fecha: '10:15 AM' },
-                { usuario: 'juan_perez', mensaje: 'Hola Juan, dinos en qué podemos ayudarte.', emisor: 'admin', fecha: '10:18 AM' }
-            ];
-        }
-
-        function seleccionarUsuarioChat(usuario, silent = false) {
-            usuarioSoporteSeleccionado = usuario;
-            document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Conversación con: <strong>${usuario}</strong>`;
-            document.getElementById('inputRespuestaAdmin').disabled = false;
-            document.getElementById('btnEnviarRespuestaAdmin').disabled = false;
-
-            const mensajesUser = todosMensajesSoporte.filter(m => (m.usuario || m.remitente) === usuario);
-            const cajaChat = document.getElementById('cajaMensajesChat');
-
-            let htmlChat = '';
-            mensajesUser.forEach(m => {
-                const esAdmin = m.emisor === 'admin';
-                const style = esAdmin ? 'align-self: flex-end; background: var(--primary); color: white;' : 'align-self: flex-start; background: var(--item-bg); border: 1px solid var(--border-color);';
-                htmlChat += `
-                    <div style="max-width: 80%; padding: 8px 12px; border-radius: 12px; font-size: 12.5px; margin-bottom: 6px; ${style}">
-                        <div style="font-size: 10px; opacity: 0.8; margin-bottom: 2px; font-weight: 700;">${esAdmin ? 'Soporte' : usuario}</div>
-                        <div>${m.mensaje}</div>
-                    </div>
-                `;
-            });
-
-            cajaChat.innerHTML = htmlChat;
-            if (!silent) cajaChat.scrollTop = cajaChat.scrollHeight;
-        }
-
-        function enviarRespuestaAdmin() {
+        // --- ENVIAR RESPUESTA DEL ADMINISTRADOR ---
+        async function enviarRespuestaAdmin() {
             const input = document.getElementById('inputRespuestaAdmin');
             const mensaje = input.value.trim();
 
@@ -2231,56 +2139,672 @@
             }
 
             if (!usuarioSoporteSeleccionado) {
-                showToast('Selecciona un usuario de la lista', 'advertencia');
+                showToast('Selecciona un usuario de la lista lateral', 'advertencia');
                 return;
             }
 
-            todosMensajesSoporte.push({
-                usuario: usuarioSoporteSeleccionado,
-                mensaje: mensaje,
-                emisor: 'admin',
-                fecha: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            });
+            try {
+                const res = await fetch('/api/soporte/responder', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuarioSoporteSeleccionado,
+                        mensaje: mensaje,
+                        emisor: 'admin'
+                    })
+                });
 
-            input.value = '';
-            seleccionarUsuarioChat(usuarioSoporteSeleccionado);
-            showToast('Respuesta enviada', 'success');
-        }
-
-        function pedirConfirmacionEliminarChatUsuario(usuario) {
-            mostrarModalConfirmacion(
-                `¿Borrar chat de "${usuario}"?`,
-                `Se eliminará el historial de soporte del usuario "${usuario}".`,
-                () => {
-                    todosMensajesSoporte = todosMensajesSoporte.filter(m => (m.usuario || m.remitente) !== usuario);
-                    usuarioSoporteSeleccionado = null;
-                    cargarMensajesSoporte();
-                    showToast('Chat eliminado', 'success');
+                if (res.ok) {
+                    input.value = '';
+                    showToast('Respuesta enviada con éxito', 'success');
+                    await cargarMensajesSoporte();
+                    if (usuarioSoporteSeleccionado) {
+                        seleccionarUsuarioChat(usuarioSoporteSeleccionado);
+                    }
+                } else {
+                    const errData = await res.json().catch(() => ({}));
+                    showToast(errData.error || 'Error al enviar respuesta al usuario', 'error');
                 }
-            );
-        }
-
-        function pedirConfirmacionVaciarSoporte() {
-            mostrarModalConfirmacion(
-                '¿Vaciar todos los mensajes?',
-                'Se borrarán permanentemente todas las conversaciones de soporte.',
-                () => {
-                    todosMensajesSoporte = [];
-                    usuarioSoporteSeleccionado = null;
-                    cargarMensajesSoporte();
-                    showToast('Buzón de soporte vaciado', 'success');
-                }
-            );
-        }
-
-        function actualizarBadgeSoporte() {
-            const badge = document.getElementById('badgeSoporte');
-            if (badge) {
-                badge.textContent = todosMensajesSoporte.length;
-                badge.style.display = todosMensajesSoporte.length > 0 ? 'flex' : 'none';
+            } catch (err) {
+                console.error('Error enviando respuesta:', err);
+                showToast('Error de conexión con el servidor', 'error');
             }
         }
 
+        // --- SISTEMA DE TOAST NOTIFICATIONS ACORDE AL SISTEMA ---
+        function showToast(mensaje, tipo = 'info', tituloPersonalizado = null) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${tipo}`;
+
+            const iconoMap = {
+                exito: 'fa-circle-check',
+                success: 'fa-circle-check',
+                error: 'fa-circle-xmark',
+                advertencia: 'fa-triangle-exclamation',
+                warning: 'fa-triangle-exclamation',
+                info: 'fa-circle-info'
+            };
+
+            const tituloDefaultMap = {
+                exito: 'Éxito',
+                success: 'Éxito',
+                error: 'Error',
+                advertencia: 'Advertencia',
+                warning: 'Advertencia',
+                info: 'Información'
+            };
+
+            const titulo = tituloPersonalizado || tituloDefaultMap[tipo] || 'Notificación';
+
+            toast.innerHTML = `
+                <i class="fa-solid ${iconoMap[tipo] || 'fa-circle-info'} toast-icon"></i>
+                <div class="toast-content">
+                    <h5>${titulo}</h5>
+                    <p>${mensaje}</p>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentElement) toast.remove();
+            }, 4000);
+        }
+
+        function togglePasswordVisibility(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        // --- AUTENTICACIÓN ADMIN ---
+        async function iniciarSesionAdmin() {
+            const usuario = document.getElementById('adminUser').value.trim();
+            const clave = document.getElementById('adminPass').value.trim();
+            const errorElem = document.getElementById('loginError');
+
+            errorElem.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, clave })
+                });
+
+                if (response.ok) {
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                    mostrarPanelAdmin();
+                    showToast('Sesión iniciada correctamente en el panel', 'success', 'Bienvenido');
+                } else {
+                    errorElem.style.display = 'block';
+                    showToast('Credenciales de Administrador no válidas', 'error', 'Acceso Denegado');
+                }
+            } catch (err) {
+                showToast('Error al conectar con el servidor', 'error');
+            }
+        }
+
+        function mostrarPanelAdmin() {
+            document.getElementById('vistaLoginAdmin').style.display = 'none';
+            document.getElementById('vistaPanelAdmin').style.display = 'block';
+            cargarDatos();
+        }
+
+        function cerrarSesionAdmin() {
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            document.getElementById('vistaPanelAdmin').style.display = 'none';
+            document.getElementById('vistaLoginAdmin').style.display = 'block';
+            document.getElementById('adminUser').value = '';
+            document.getElementById('adminPass').value = '';
+            showToast('Has cerrado la sesión del panel', 'info', 'Sesión Finalizada');
+        }
+
+        // --- CARGAR Y RENDERIZAR USUARIOS ---
+        async function cargarDatos() {
+            try {
+                const response = await fetch('/api/usuarios');
+                if (!response.ok) throw new Error('Error al consultar usuarios');
+                usuariosCargados = await response.json();
+                try {
+                    localStorage.setItem('admin_cached_usuarios', JSON.stringify(usuariosCargados));
+                } catch (e) { }
+            } catch (err) {
+                console.warn('Fallo cargando usuarios del servidor, consultando caché offline...', err);
+                const cached = localStorage.getItem('admin_cached_usuarios');
+                if (cached) {
+                    try {
+                        usuariosCargados = JSON.parse(cached);
+                        showToast('Modo sin conexión: mostrando usuarios desde caché local', 'advertencia');
+                    } catch (e) {
+                        usuariosCargados = [];
+                        showToast('Error al cargar la lista de usuarios del servidor', 'error');
+                    }
+                } else {
+                    usuariosCargados = [];
+                    showToast('Error al cargar la lista de usuarios del servidor', 'error');
+                }
+            }
+            actualizarMetricasYProgreso();
+            filtrarUsuarios();
+        }
+
+        // --- CÁLCULO DE MÉTRICAS EN TIEMPO REAL Y BARRA DE PROGRESO ---
+        function actualizarMetricasYProgreso() {
+            const total = usuariosCargados.length;
+            const activos = usuariosCargados.filter(u => (!u.estado || u.estado.toLowerCase() === 'activo')).length;
+            const inactivos = usuariosCargados.filter(u => (u.estado && u.estado.toLowerCase() === 'inactivo')).length;
+            const bloqueados = usuariosCargados.filter(u => (u.estado && u.estado.toLowerCase() === 'bloqueado')).length;
+
+            const elemTotal = document.getElementById('statTotalUsuarios');
+            const elemActivos = document.getElementById('statUsuariosActivos');
+            const elemInactivos = document.getElementById('statUsuariosInactivos');
+            const elemBloqueados = document.getElementById('statUsuariosBloqueados');
+
+            if (elemTotal) elemTotal.textContent = total;
+            if (elemActivos) elemActivos.textContent = activos;
+            if (elemInactivos) elemInactivos.textContent = inactivos;
+            if (elemBloqueados) elemBloqueados.textContent = bloqueados;
+
+            const barActivos = document.getElementById('progresoActivos');
+            const barInactivos = document.getElementById('progresoInactivos');
+            const barBloqueados = document.getElementById('progresoBloqueados');
+
+            if (barActivos && barInactivos && barBloqueados) {
+                if (total === 0) {
+                    barActivos.style.width = '0%';
+                    barInactivos.style.width = '0%';
+                    barBloqueados.style.width = '0%';
+                } else {
+                    const pAct = ((activos / total) * 100).toFixed(1);
+                    const pIna = ((inactivos / total) * 100).toFixed(1);
+                    const pBlo = ((bloqueados / total) * 100).toFixed(1);
+
+                    barActivos.style.width = `${pAct}%`;
+                    barInactivos.style.width = `${pIna}%`;
+                    barBloqueados.style.width = `${pBlo}%`;
+
+                    barActivos.title = `Activos: ${activos} (${pAct}%)`;
+                    barInactivos.title = `Inactivos: ${inactivos} (${pIna}%)`;
+                    barBloqueados.title = `Bloqueados: ${bloqueados} (${pBlo}%)`;
+                }
+            }
+        }
+
+        // --- FILTRADO DE USUARIOS Y GESTIÓN DE SELECCIÓN ---
+        function filtrarUsuarios() {
+            const busqueda = (document.getElementById('adminSearchInput')?.value || '').toLowerCase().trim();
+            const filtroRol = document.getElementById('adminFilterRole')?.value || 'todos';
+            const filtroEstado = document.getElementById('adminFilterStatus')?.value || 'todos';
+            const contadorElem = document.getElementById('totalUsuariosCount');
+            const contenedor = document.getElementById('contenedorLista');
+
+            let usuariosFiltrados = usuariosCargados.filter(u => {
+                const matchTexto = !busqueda ||
+                    (u.usuario && u.usuario.toLowerCase().includes(busqueda)) ||
+                    (u.correo && u.correo.toLowerCase().includes(busqueda)) ||
+                    (u.telefono && u.telefono.toLowerCase().includes(busqueda)) ||
+                    (u.direccion && u.direccion.toLowerCase().includes(busqueda));
+
+                const matchRol = filtroRol === 'todos' || (u.rol && u.rol.toLowerCase() === filtroRol.toLowerCase());
+                const matchEstado = filtroEstado === 'todos' || (u.estado && u.estado.toLowerCase() === filtroEstado.toLowerCase());
+
+                return matchTexto && matchRol && matchEstado;
+            });
+
+            if (contadorElem) contadorElem.textContent = usuariosCargados.length;
+
+            if (usuariosFiltrados.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-users-slash"></i>
+                        <p>${usuariosCargados.length === 0 ? 'No hay usuarios registrados en la base de datos.' : 'No se encontraron usuarios con los filtros aplicados.'}</p>
+                    </div>
+                `;
+                actualizarToolbarLote();
+                return;
+            }
+
+            let html = '';
+            usuariosFiltrados.forEach((u, index) => {
+                const inicial = u.usuario ? u.usuario.charAt(0).toUpperCase() : '?';
+                const ediciones = u.contadorModificaciones || (u.historialEdiciones ? u.historialEdiciones.length : 0);
+                const rol = u.rol || 'Cliente';
+                const estado = u.estado || 'Activo';
+
+                const roleBadgeClass = rol === 'Admin' ? 'badge-role-admin' : 'badge-role-client';
+
+                let statusBadgeClass = 'badge-status-active';
+                if (estado === 'Inactivo') statusBadgeClass = 'badge-status-inactive';
+                if (estado === 'Bloqueado') statusBadgeClass = 'badge-status-blocked';
+
+                const isChecked = usuariosSeleccionados.has(u.usuario) ? 'checked' : '';
+
+                html += `
+                    <div class="user-item">
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;">
+                            <input type="checkbox" class="user-select-chk" style="width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0;" value="${u.usuario}" ${isChecked} onchange="toggleSeleccionUsuario('${u.usuario}', this.checked)">
+                            <div class="user-detail" style="flex: 1; min-width: 0;">
+                                <div class="avatar">${inicial}</div>
+                                <div class="user-data">
+                                    <h3>
+                                        #${index + 1} - ${u.usuario}
+                                        <span class="${roleBadgeClass}">${rol}</span>
+                                        <span class="${statusBadgeClass}">${estado}</span>
+                                    </h3>
+                                    <p><i class="fa-solid fa-envelope"></i> ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> ${u.telefono || 'Sin teléfono'}</p>
+                                    <p><i class="fa-solid fa-key"></i> Clave: <strong>${u.clave}</strong> ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="badges-group">
+                            <span class="badge-mods" onclick="verHistorialModificaciones('${u.usuario}')" title="Haz clic para ver carpetas de auditoría">
+                                <i class="fa-solid fa-folder-open"></i> ${ediciones} ${ediciones === 1 ? 'modificación' : 'modificaciones'}
+                            </span>
+                            <span class="badge-date">${u.fechaRegistro || 'Sin fecha'}</span>
+                            <button onclick="abrirModalEdicion('${u.usuario}')" class="btn-action-user edit" title="Editar usuario y estado">
+                                <i class="fa-solid fa-user-pen"></i>
+                            </button>
+                            <button onclick="pedirConfirmacionEliminar('${u.usuario}')" class="btn-action-user delete" title="Eliminar usuario">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            contenedor.innerHTML = html;
+            actualizarToolbarLote();
+        }
+
+        // --- GESTIÓN DE ACCIONES MASIVAS EN LOTE ---
+        function toggleSeleccionUsuario(usuario, isChecked) {
+            if (isChecked) {
+                usuariosSeleccionados.add(usuario);
+            } else {
+                usuariosSeleccionados.delete(usuario);
+            }
+            actualizarToolbarLote();
+        }
+
+        function toggleSelectAllUsuarios(isChecked) {
+            const busqueda = (document.getElementById('adminSearchInput')?.value || '').toLowerCase().trim();
+            const filtroRol = document.getElementById('adminFilterRole')?.value || 'todos';
+            const filtroEstado = document.getElementById('adminFilterStatus')?.value || 'todos';
+
+            const visibles = usuariosCargados.filter(u => {
+                const matchTexto = !busqueda ||
+                    (u.usuario && u.usuario.toLowerCase().includes(busqueda)) ||
+                    (u.correo && u.correo.toLowerCase().includes(busqueda)) ||
+                    (u.telefono && u.telefono.toLowerCase().includes(busqueda)) ||
+                    (u.direccion && u.direccion.toLowerCase().includes(busqueda));
+                const matchRol = filtroRol === 'todos' || (u.rol && u.rol.toLowerCase() === filtroRol.toLowerCase());
+                const matchEstado = filtroEstado === 'todos' || (u.estado && u.estado.toLowerCase() === filtroEstado.toLowerCase());
+                return matchTexto && matchRol && matchEstado;
+            });
+
+            if (isChecked) {
+                visibles.forEach(u => usuariosSeleccionados.add(u.usuario));
+            } else {
+                visibles.forEach(u => usuariosSeleccionados.delete(u.usuario));
+            }
+
+            document.querySelectorAll('.user-select-chk').forEach(chk => {
+                chk.checked = isChecked;
+            });
+
+            actualizarToolbarLote();
+        }
+
+        function actualizarToolbarLote() {
+            const countBadge = document.getElementById('selectedCountBadge');
+            const selectAllChk = document.getElementById('selectAllUsersChk');
+            const btnActivar = document.getElementById('btnBulkActivar');
+            const btnBloquear = document.getElementById('btnBulkBloquear');
+            const btnEliminar = document.getElementById('btnBulkEliminar');
+
+            const totalSel = usuariosSeleccionados.size;
+            if (countBadge) {
+                countBadge.textContent = `${totalSel} seleccionado${totalSel === 1 ? '' : 's'}`;
+                countBadge.style.display = totalSel > 0 ? 'inline-block' : 'none';
+            }
+
+            const disabled = totalSel === 0;
+            if (btnActivar) btnActivar.disabled = disabled;
+            if (btnBloquear) btnBloquear.disabled = disabled;
+            if (btnEliminar) btnEliminar.disabled = disabled;
+
+            const chks = Array.from(document.querySelectorAll('.user-select-chk'));
+            if (selectAllChk && chks.length > 0) {
+                selectAllChk.checked = chks.every(c => c.checked);
+            } else if (selectAllChk) {
+                selectAllChk.checked = false;
+            }
+        }
+
+        async function ejecutarAccionLote(tipoAccion) {
+            if (usuariosSeleccionados.size === 0) {
+                showToast('No has seleccionado ningún usuario', 'warning');
+                return;
+            }
+
+            const cantidad = usuariosSeleccionados.size;
+            const listaUsuarios = Array.from(usuariosSeleccionados);
+
+            let mensajeConfirm = '';
+            let nuevoEstado = '';
+
+            if (tipoAccion === 'activar') {
+                mensajeConfirm = `¿Deseas activar las ${cantidad} cuentas seleccionadas?`;
+                nuevoEstado = 'Activo';
+            } else if (tipoAccion === 'bloquear') {
+                mensajeConfirm = `¿Deseas bloquear las ${cantidad} cuentas seleccionadas?`;
+                nuevoEstado = 'Bloqueado';
+            } else if (tipoAccion === 'eliminar') {
+                mensajeConfirm = `¿Estás seguro de ELIMINAR permanentemente las ${cantidad} cuentas seleccionadas?`;
+            }
+
+            mostrarModalConfirmacion('Acción en Lote', mensajeConfirm, async () => {
+                try {
+                    if (tipoAccion === 'eliminar') {
+                        // Petición para borrar masivamente
+                        const response = await fetch('/api/usuarios/bulk-delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ usuarios: listaUsuarios })
+                        });
+
+                        if (!response.ok) throw new Error();
+                        showToast(`${cantidad} usuario(s) eliminado(s) con éxito`, 'success');
+
+                    } else {
+                        // Petición para cambiar estado masivamente (Activar / Bloquear)
+                        const response = await fetch('/api/usuarios/bulk-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ usuarios: listaUsuarios, estado: nuevoEstado })
+                        });
+
+                        if (!response.ok) throw new Error();
+                        showToast(`Estado cambiado a "${nuevoEstado}" para ${cantidad} usuario(s)`, 'success');
+                    }
+
+                    // Limpiar selección y recargar tabla
+                    usuariosSeleccionados.clear();
+                    const chkAll = document.getElementById('selectAllUsersChk');
+                    if (chkAll) chkAll.checked = false;
+
+                    actualizarToolbarLote();
+                    await cargarDatos();
+
+                } catch (err) {
+                    showToast('Ocurrió un error al procesar la acción en lote', 'error');
+                }
+            });
+        }
+        // --- SISTEMA DE CONFIRMACIONES MODALES (Z-INDEX SUPERIOR) ---
+        function mostrarModalConfirmacion(titulo, mensaje, onConfirm) {
+            document.getElementById('confirmTitulo').textContent = titulo;
+            document.getElementById('confirmMensaje').textContent = mensaje;
+
+            const modalConfirm = document.getElementById('modalConfirmacion');
+            modalConfirm.classList.add('active');
+
+            const btnConfirmar = document.getElementById('btnConfirmarAccion');
+
+            // Asignar el nuevo manejador de clic limpiando el anterior
+            btnConfirmar.onclick = async () => {
+                cerrarModalConfirmacion();
+                if (typeof onConfirm === 'function') {
+                    await onConfirm();
+                }
+            };
+        }
+
+        function cerrarModalConfirmacion() {
+            document.getElementById('modalConfirmacion').classList.remove('active');
+            accionConfirmacionPendiente = null;
+        }
+
+        // --- CONFIRMACIÓN PARA VACIAR TODOS LOS MENSAJES DE SOPORTE ---
+        function pedirConfirmacionVaciarSoporte() {
+            mostrarModalConfirmacion(
+                '¿Vaciar Todos los Mensajes?',
+                'Se borrarán de forma irreversible todas las conversaciones de soporte de la base de datos.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/soporte', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Todos los mensajes de soporte han sido eliminados', 'success');
+
+                            // Resetear variables y vista de chat local
+                            usuarioSoporteSeleccionado = null;
+                            todosMensajesSoporte = [];
+
+                            document.getElementById('listaConversacionesSoporte').innerHTML =
+                                '<div style="font-size: 12px; color: var(--text-muted); padding: 10px; text-align: center;">Sin mensajes</div>';
+
+                            document.getElementById('cajaMensajesChat').innerHTML = `
+                        <div class="empty-state" style="margin: auto;">
+                            <i class="fa-solid fa-comments"></i>
+                            <p>Selecciona un usuario de la lista lateral para ver la conversación.</p>
+                        </div>`;
+
+                            document.getElementById('chatUsuarioNombre').innerHTML = `<i class="fa-solid fa-user"></i> Selecciona un usuario`;
+                            document.getElementById('inputRespuestaAdmin').disabled = true;
+                            document.getElementById('btnEnviarRespuestaAdmin').disabled = true;
+
+                            // Actualizar el contador global en el botón flotante
+                            actualizarBadgeSoporte();
+                        } else {
+                            showToast('Error al eliminar mensajes en el servidor', 'error');
+                        }
+                    } catch (err) {
+                        console.error('Error al vaciar soporte:', err);
+                        showToast('Error de conexión con el servidor', 'error');
+                    }
+                }
+            );
+        }
+
+        // --- SISTEMA DE AUDITORÍA EN FORMATO DE CARPETAS ---
+        function verHistorialModificaciones(nombreUsuario) {
+            const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
+            if (!usuario) return;
+
+            usuarioAuditoriaActual = usuario;
+            document.getElementById('auditoriaUsuarioSub').innerHTML = `
+                Mostrando carpetas de cambios para el usuario: <strong>${usuario.usuario}</strong>
+            `;
+
+            filtroAuditoriaActivo = 'todas';
+            document.querySelectorAll('#folderFiltersContainer .filter-chip').forEach(c => c.classList.remove('active'));
+            const chipTodas = document.querySelector('#folderFiltersContainer .filter-chip');
+            if (chipTodas) chipTodas.classList.add('active');
+
+            renderizarCarpetasAuditoria();
+            document.getElementById('modalHistorialEdiciones').classList.add('active');
+        }
+
+        function filtrarCarpetas(categoria, elementoBtn) {
+            filtroAuditoriaActivo = categoria;
+
+            // Actualizar estilo visual de los botones
+            const botones = document.querySelectorAll('#folderFiltersContainer .filter-chip');
+            botones.forEach(btn => btn.classList.remove('active'));
+            if (elementoBtn) elementoBtn.classList.add('active');
+
+            // Volver a renderizar sólo el contenedor del modal
+            renderizarCarpetasAuditoria();
+        }
+
+        function renderizarCarpetasAuditoria() {
+            if (!usuarioAuditoriaActual) return;
+            const contenedor = document.getElementById('listaHistorialEdiciones');
+            let historial = usuarioAuditoriaActual.historialEdiciones || [];
+
+            // Filtrar según el chip seleccionado si aplica
+            if (filtroAuditoriaActivo !== 'todas') {
+                historial = historial.filter(log => (log.tipo || 'perfil').toLowerCase() === filtroAuditoriaActivo.toLowerCase());
+            }
+
+            if (historial.length === 0) {
+                contenedor.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>No existen registros de modificaciones en esta categoría.</p></div>';
+                const contadorEl = document.getElementById('contadorCarpetasTotal');
+                if (contadorEl) contadorEl.textContent = '0 carpeta(s) registrada(s)';
+                return;
+            }
+
+            let html = '';
+            historial.forEach((log, index) => {
+                const tipo = (log.tipo || 'perfil').toLowerCase();
+                const listaCambios = log.cambios || log.detalles || [];
+
+                // Generar HTML dinámico para cada campo modificado
+                let cambiosHTML = '';
+                if (listaCambios.length > 0) {
+                    cambiosHTML = '<div class="changes-grid">';
+                    listaCambios.forEach(c => {
+                        cambiosHTML += `
+                    <div class="change-row">
+                        <div class="change-field"><i class="fa-solid fa-pen-to-square"></i> ${c.campo || 'Campo'}:</div>
+                        <div class="change-diff">
+                            <span class="val-box old">${c.valorAnterior || c.antes || 'N/A'}</span>
+                            <i class="fa-solid fa-arrow-right" style="font-size: 10px; color: var(--text-muted);"></i>
+                            <span class="val-box new">${c.valorNuevo || c.despues || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+                    });
+                    cambiosHTML += '</div>';
+                } else {
+                    // En caso de que solo exista una cadena de resumen sin estructura interna
+                    cambiosHTML = `<p style="font-size: 12.5px; color: var(--text-muted);"><i class="fa-solid fa-circle-info"></i> ${log.resumen || 'Sin detalle estructurado.'}</p>`;
+                }
+
+                html += `
+            <div class="folder-card" id="folderCard_${index}">
+                <div class="folder-header ${tipo}" onclick="toggleCarpeta(${index})">
+                    <div class="folder-title-box">
+                        <i class="fa-solid fa-folder-closed folder-main-icon"></i>
+                        <div>
+                            <div class="folder-title">${log.carpeta || 'Modificación por Administrador'}</div>
+                            <div class="folder-meta"><i class="fa-regular fa-clock"></i> ${log.fecha || ''} • <i class="fa-solid fa-user-gear"></i> Por: ${log.editor || 'Administrador'}</div>
+                        </div>
+                    </div>
+                    <span class="folder-count-badge">${listaCambios.length || 1} cambio(s)</span>
+                    <i class="fa-solid fa-chevron-down chevron-icon"></i>
+                </div>
+                <div class="folder-content">
+                    ${cambiosHTML}
+                </div>
+            </div>
+        `;
+            });
+
+            contenedor.innerHTML = html;
+
+            const contadorEl = document.getElementById('contadorCarpetasTotal');
+            if (contadorEl) {
+                contadorEl.textContent = `${historial.length} carpeta(s) registrada(s)`;
+            }
+        }
+        function toggleCarpeta(index) {
+            const card = document.getElementById(`folderCard_${index}`);
+            if (!card) return;
+            card.classList.toggle('open');
+        }
+
+        function expandirTodasCarpetas(abrir = true) {
+            document.querySelectorAll('.folder-card').forEach(card => {
+                if (abrir) card.classList.add('open');
+                else card.classList.remove('open');
+            });
+        }
+
+        function cerrarModalHistorialEdiciones() {
+            document.getElementById('modalHistorialEdiciones').classList.remove('active');
+            usuarioAuditoriaActual = null;
+        }
+
+        function actualizarDistribucionEstados(listaUsuarios) {
+            if (!listaUsuarios || listaUsuarios.length === 0) {
+                document.getElementById('distribucionLegend').textContent = '0% Activos | 0% Inactivos | 0% Bloqueados';
+                document.getElementById('progresoActivos').style.width = '0%';
+                document.getElementById('progresoInactivos').style.width = '0%';
+                document.getElementById('progresoBloqueados').style.width = '0%';
+                return;
+            }
+
+            const total = listaUsuarios.length;
+
+            // Contar usuarios según su estado
+            const cantActivos = listaUsuarios.filter(u => (u.estado || 'Activo').toLowerCase() === 'activo').length;
+            const cantInactivos = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'inactivo').length;
+            const cantBloqueados = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'bloqueado').length;
+
+            // Calcular porcentajes
+            const pctActivos = Math.round((cantActivos / total) * 100);
+            const pctInactivos = Math.round((cantInactivos / total) * 100);
+            const pctBloqueados = Math.round((cantBloqueados / total) * 100);
+
+            const legend = document.getElementById('distribucionLegend');
+            if (legend) {
+                legend.textContent = `${pctActivos}% Activos | ${pctInactivos}% Inactivos | ${pctBloqueados}% Bloqueados`;
+            }
+
+            const barActivos = document.getElementById('progresoActivos');
+            const barInactivos = document.getElementById('progresoInactivos');
+            const barBloqueados = document.getElementById('progresoBloqueados');
+
+            if (barActivos) barActivos.style.width = `${pctActivos}%`;
+            if (barInactivos) barInactivos.style.width = `${pctInactivos}%`;
+            if (barBloqueados) barBloqueados.style.width = `${pctBloqueados}%`;
+        }
+
+        // --- EXPORTACIÓN DE DATOS (EXCEL Y JSON) ---
+        function exportarExcel() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                showToast('No hay datos para exportar', 'advertencia');
+                return;
+            }
+            try {
+                const worksheet = XLSX.utils.json_to_sheet(usuariosCargados);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
+                XLSX.writeFile(workbook, `Reporte_Usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                showToast('Archivo Excel generado exitosamente', 'success');
+            } catch (err) {
+                console.error('Error al exportar a Excel:', err);
+                showToast('Error al generar la hoja de cálculo', 'error');
+            }
+        }
+
+        function exportarJSON() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                showToast('No hay datos para exportar', 'advertencia');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(usuariosCargados, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Usuarios_Backup_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Copia de seguridad JSON descargada', 'success');
+        }
+
+        // --- GESTIÓN DE MODAL EDICIÓN ---
         function abrirModalEdicion(nombreUsuario) {
             const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
             if (!usuario) return;
@@ -2303,49 +2827,89 @@
 
         async function guardarCambiosUsuario() {
             const usuario = document.getElementById('editOriginalUsuario').value;
-            const target = usuariosCargados.find(u => u.usuario === usuario);
-            if (!target) return;
+            const payload = {
+                usuario: usuario,
+                correo: document.getElementById('editCorreo').value.trim(),
+                telefono: document.getElementById('editTelefono').value.trim(),
+                direccion: document.getElementById('editDireccion').value.trim(),
+                clave: document.getElementById('editClave').value.trim(),
+                rol: document.getElementById('editRol').value,
+                estado: document.getElementById('editEstado').value
+            };
 
-            target.correo = document.getElementById('editCorreo').value.trim();
-            target.telefono = document.getElementById('editTelefono').value.trim();
-            target.direccion = document.getElementById('editDireccion').value.trim();
-            target.clave = document.getElementById('editClave').value.trim();
-            target.rol = document.getElementById('editRol').value;
-            target.estado = document.getElementById('editEstado').value;
+            try {
+                const response = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-            cerrarModalEdicion();
-            filtrarUsuarios();
-            actualizarMetricas(usuariosCargados);
-            actualizarDistribucionEstados(usuariosCargados);
-            showToast('Usuario actualizado exitosamente', 'success');
+                if (response.ok) {
+                    showToast('Usuario actualizado con éxito', 'success');
+                    cerrarModalEdicion();
+                    await cargarDatos();
+                } else {
+                    showToast('Error al actualizar el usuario', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Error de conexión con el servidor', 'error');
+            }
         }
 
+        // --- ELIMINACIÓN INDIVIDUAL ---
         function pedirConfirmacionEliminar(usuario) {
             mostrarModalConfirmacion(
                 '¿Eliminar usuario?',
-                `¿Estás seguro de que deseas eliminar la cuenta de "${usuario}"?`,
-                () => {
-                    usuariosCargados = usuariosCargados.filter(u => u.usuario !== usuario);
-                    filtrarUsuarios();
-                    actualizarMetricas(usuariosCargados);
-                    actualizarDistribucionEstados(usuariosCargados);
-                    showToast(`Usuario "${usuario}" eliminado`, 'success');
+                `¿Estás seguro de que deseas eliminar permanentemente la cuenta de "${usuario}"?`,
+                async () => {
+                    try {
+                        const response = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
+                            method: 'DELETE'
+                        });
+                        if (response.ok) {
+                            showToast(`Usuario "${usuario}" eliminado`, 'success');
+                            await cargarDatos();
+                        } else {
+                            showToast('No se pudo eliminar el usuario', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error al conectar con el servidor', 'error');
+                    }
+                }
+            );
+        }
+        function pedirConfirmacionVaciarBD() {
+            mostrarModalConfirmacion(
+                '¿Vaciar Base de Datos?',
+                '⚠️ ADVERTENCIA CRÍTICA: Se borrarán TODOS los usuarios del sistema de forma irreversible.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/usuarios', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Base de datos vaciada con éxito', 'success', 'Base de Datos');
+                            cargarDatos();
+                        } else {
+                            showToast('No se pudo vaciar la base de datos', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Error de conexión', 'error');
+                    }
                 }
             );
         }
 
-        function pedirConfirmacionVaciarBD() {
-            mostrarModalConfirmacion(
-                '¿Vaciar Base de Datos?',
-                'Esta acción eliminará todos los usuarios registrados.',
-                () => {
-                    usuariosCargados = [];
-                    filtrarUsuarios();
-                    actualizarMetricas([]);
-                    actualizarDistribucionEstados([]);
-                    showToast('Base de datos vaciada', 'warning');
-                }
-            );
+        // --- EXPORTAR Y REGISTRAR DESCARGA ---
+        async function registrarLogDescarga(formato) {
+            try {
+                await fetch('/api/descargas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ formato })
+                });
+            } catch (err) {
+                console.error("No se pudo registrar la descarga:", err);
+            }
         }
 
         function exportarExcel() {
@@ -2353,15 +2917,31 @@
                 showToast('No hay datos para exportar', 'advertencia');
                 return;
             }
-            try {
-                const worksheet = XLSX.utils.json_to_sheet(usuariosCargados);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
-                XLSX.writeFile(workbook, `Reporte_Usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
-                showToast('Archivo Excel descargado', 'success');
-            } catch (err) {
-                showToast('Error al generar Excel', 'error');
-            }
+
+            const datosExcel = usuariosCargados.map(u => ({
+                "Usuario": u.usuario || '',
+                "Rol": u.rol || 'Cliente',
+                "Estado": u.estado || 'Activo',
+                "Contraseña": u.clave || '',
+                "Correo": u.correo || '',
+                "Teléfono": u.telefono || '',
+                "Dirección": u.direccion || '',
+                "Fecha Registro": u.fechaRegistro || '',
+                "Modificaciones": u.contadorModificaciones || (u.historialEdiciones ? u.historialEdiciones.length : 0)
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+            worksheet['!cols'] = [
+                { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 16 },
+                { wch: 25 }, { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 15 }
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
+            XLSX.writeFile(workbook, "Reporte_de_usuarios.xlsx");
+
+            registrarLogDescarga('Excel');
+            showToast('Reporte de Excel exportado con éxito', 'success', 'Exportación');
         }
 
         function exportarJSON() {
@@ -2369,84 +2949,109 @@
                 showToast('No hay datos para exportar', 'advertencia');
                 return;
             }
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(usuariosCargados, null, 2));
-            const anchor = document.createElement('a');
-            anchor.setAttribute("href", dataStr);
-            anchor.setAttribute("download", `Usuarios_Backup_${new Date().toISOString().slice(0, 10)}.json`);
-            document.body.appendChild(anchor);
-            anchor.click();
-            anchor.remove();
-            showToast('Respaldo JSON descargado', 'success');
+
+            const jsonString = JSON.stringify(usuariosCargados, null, 2);
+            descargarArchivo(jsonString, 'usuarios_sistema.json', 'application/json');
+            registrarLogDescarga('JSON');
+            showToast('Archivo JSON exportado con éxito', 'success', 'Exportación');
         }
 
+        function descargarArchivo(contenido, nombreArchivo, mimeType) {
+            const blob = new Blob([contenido], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- HISTORIAL DE DESCARGAS (MODAL) ---
         function abrirModalDescargas() {
             document.getElementById('modalDescargas').classList.add('active');
-            document.getElementById('listaDescargas').innerHTML = `
-                <div class="download-item">
-                    <div class="download-info">
-                        <span class="badge-excel">EXCEL</span>
-                        <div class="download-time">Reporte generado hoy</div>
-                    </div>
-                </div>`;
+            cargarHistorialDescargas();
         }
 
         function cerrarModalDescargas() {
             document.getElementById('modalDescargas').classList.remove('active');
         }
 
+        async function cargarHistorialDescargas() {
+            const contenedor = document.getElementById('listaDescargas');
+            try {
+                const res = await fetch('/api/descargas');
+                const descargas = await res.json();
+
+                if (!descargas || descargas.length === 0) {
+                    contenedor.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <p>No se han realizado descargas de reportes.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                descargas.forEach(d => {
+                    let badgeClass = 'badge-json';
+                    if (d.formato === 'CSV') badgeClass = 'badge-csv';
+                    if (d.formato === 'Excel') badgeClass = 'badge-excel';
+
+                    html += `
+                        <div class="download-item">
+                            <div class="download-info">
+                                <span class="${badgeClass}">${d.formato}</span>
+                                <div class="download-time">
+                                    <i class="fa-regular fa-calendar"></i> ${d.fecha} - <i class="fa-regular fa-clock"></i> ${d.hora}
+                                </div>
+                            </div>
+                            <button onclick="eliminarDescarga('${d.id}')" class="btn-action-user delete" title="Eliminar registro">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML = html;
+            } catch (err) {
+                contenedor.innerHTML = '<p style="text-align:center; color:red;">Error al cargar el historial.</p>';
+            }
+        }
+
+        async function eliminarDescarga(id) {
+            try {
+                const res = await fetch(`/api/descargas/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Registro de descarga eliminado', 'success');
+                    cargarHistorialDescargas();
+                }
+            } catch (err) {
+                showToast('Error al eliminar registro', 'error');
+            }
+        }
+
         function pedirConfirmacionVaciarDescargas() {
-            mostrarModalConfirmacion('¿Vaciar historial?', 'Se limipará la lista de descargas.', () => {
-                document.getElementById('listaDescargas').innerHTML = '<div class="empty-state"><p>Historial limpio</p></div>';
-                showToast('Historial vaciado', 'info');
-            });
+            mostrarModalConfirmacion(
+                '¿Vaciar Historial de Descargas?',
+                'Se eliminarán todos los registros de descargas realizadas.',
+                async () => {
+                    try {
+                        const res = await fetch('/api/descargas', { method: 'DELETE' });
+                        if (res.ok) {
+                            showToast('Historial de descargas vaciado', 'success');
+                            cargarHistorialDescargas();
+                        }
+                    } catch (err) {
+                        showToast('Error al vaciar historial', 'error');
+                    }
+                }
+            );
         }
 
-        function abrirModalHistorialEdiciones(usuario) {
-            document.getElementById('modalHistorialEdiciones').classList.add('active');
-            document.getElementById('auditoriaUsuarioSub').textContent = `Historial de cambios para "${usuario}"`;
-
-            const lista = document.getElementById('listaHistorialEdiciones');
-            lista.innerHTML = `
-                <div class="folder-card open">
-                    <div class="folder-header perfil">
-                        <div class="folder-title-box">
-                            <i class="fa-solid fa-folder folder-main-icon"></i>
-                            <div>
-                                <div class="folder-title">📁 Cambios de Perfil</div>
-                                <div class="folder-meta">Actualizaciones de contacto y dirección</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="folder-content">
-                        <div class="change-row">
-                            <div class="change-field"><i class="fa-solid fa-envelope"></i> Correo Electrónico</div>
-                            <div class="change-diff">
-                                <span class="val-box old">anterior@correo.com</span>
-                                <i class="fa-solid fa-arrow-right diff-arrow"></i>
-                                <span class="val-box new">nuevo@correo.com</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function cerrarModalHistorialEdiciones() {
-            document.getElementById('modalHistorialEdiciones').classList.remove('active');
-        }
-
-        function filtrarCarpetas(cat, btn) {
-            document.querySelectorAll('#folderFiltersContainer .filter-chip').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
-        }
-
-        function expandirTodasCarpetas(expandir) {
-            document.querySelectorAll('.folder-card').forEach(f => {
-                if (expandir) f.classList.add('open');
-                else f.classList.remove('open');
-            });
-        }
-
+        // --- GESTIÓN DE AUDITORÍA GLOBAL DEL SISTEMA (MODAL) ---
         function abrirModalAuditoriaGlobal() {
             document.getElementById('modalAuditoriaGlobal').classList.add('active');
             cargarAuditoriaGlobal();
@@ -2456,20 +3061,137 @@
             document.getElementById('modalAuditoriaGlobal').classList.remove('active');
         }
 
-        function cargarAuditoriaGlobal() {
-            const lista = document.getElementById('listaAuditoriaGlobal');
-            lista.innerHTML = `
-                <div style="padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 12px;">
-                    <strong>[LOGIN]</strong> Inicio de sesión admin - <span style="color: var(--text-muted);">${new Date().toLocaleString()}</span>
-                </div>
-                <div style="padding: 10px; border-bottom: 1px solid var(--border-color); font-size: 12px;">
-                    <strong>[PERFIL]</strong> Modificación de catálogo - <span style="color: var(--text-muted);">${new Date().toLocaleString()}</span>
-                </div>
-            `;
+        async function cargarAuditoriaGlobal() {
+            const contenedor = document.getElementById('listaAuditoriaGlobal');
+            if (contenedor) {
+                contenedor.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 8px;"></i><p>Cargando bitácora de auditoría...</p></div>';
+            }
+
+            try {
+                const res = await fetch('/api/auditoria');
+                if (!res.ok) throw new Error('Respuesta inválida');
+                auditoriaCargada = await res.json();
+                try {
+                    localStorage.setItem('admin_cached_auditoria', JSON.stringify(auditoriaCargada));
+                } catch (e) { }
+            } catch (err) {
+                console.warn('Error al cargar auditoría del servidor, revisando caché:', err);
+                const cached = localStorage.getItem('admin_cached_auditoria');
+                if (cached) {
+                    try {
+                        auditoriaCargada = JSON.parse(cached);
+                        showToast('Modo sin conexión: mostrando auditoría desde caché local', 'advertencia');
+                    } catch (e) {
+                        auditoriaCargada = [];
+                    }
+                } else {
+                    auditoriaCargada = [];
+                    showToast('Error al conectar con la bitácora de auditoría', 'error');
+                }
+            }
+            filtrarAuditoriaGlobal();
         }
 
         function filtrarAuditoriaGlobal() {
-            cargarAuditoriaGlobal();
+            const query = (document.getElementById('busquedaAuditoriaInput')?.value || '').toLowerCase().trim();
+            const filtroTipo = document.getElementById('filtroTipoAuditoria')?.value || 'todos';
+            const contenedor = document.getElementById('listaAuditoriaGlobal');
+
+            if (!contenedor) return;
+
+            const listaFiltrada = (auditoriaCargada || []).filter(ev => {
+                const tipoMatch = filtroTipo === 'todos' || (ev.tipo && ev.tipo.toUpperCase().includes(filtroTipo.toUpperCase()));
+
+                let detalleStr = '';
+                if (ev.detalle) {
+                    detalleStr = typeof ev.detalle === 'object' ? JSON.stringify(ev.detalle) : String(ev.detalle);
+                }
+
+                const queryMatch = !query ||
+                    (ev.usuario && ev.usuario.toLowerCase().includes(query)) ||
+                    (ev.tipo && ev.tipo.toLowerCase().includes(query)) ||
+                    (ev.ip && ev.ip.toLowerCase().includes(query)) ||
+                    detalleStr.toLowerCase().includes(query);
+
+                return tipoMatch && queryMatch;
+            });
+
+            if (listaFiltrada.length === 0) {
+                contenedor.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                        <p>${auditoriaCargada.length === 0 ? 'No hay eventos registrados en la bitácora de auditoría.' : 'No se encontraron eventos con los filtros aplicados.'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+            listaFiltrada.forEach(ev => {
+                const tipo = (ev.tipo || 'INFO').toUpperCase();
+                let badgeClass = 'badge-role-client';
+                let iconClass = 'fa-info-circle';
+
+                if (tipo.includes('LOGIN')) {
+                    badgeClass = (tipo.includes('FALLIDO') || tipo.includes('BLOQUEADO')) ? 'badge-status-blocked' : 'badge-status-active';
+                    iconClass = 'fa-right-to-bracket';
+                } else if (tipo.includes('REGISTRO')) {
+                    badgeClass = 'badge-status-active';
+                    iconClass = 'fa-user-plus';
+                } else if (tipo.includes('OTP')) {
+                    badgeClass = 'badge-mods';
+                    iconClass = 'fa-shield-halved';
+                } else if (tipo.includes('CLAVE')) {
+                    badgeClass = 'badge-status-inactive';
+                    iconClass = 'fa-key';
+                } else if (tipo.includes('PERFIL') || tipo.includes('EDIT')) {
+                    badgeClass = 'badge-role-admin';
+                    iconClass = 'fa-user-pen';
+                } else if (tipo.includes('MASIVA') || tipo.includes('BULK')) {
+                    badgeClass = 'badge-status-blocked';
+                    iconClass = 'fa-layer-group';
+                } else if (tipo.includes('ELIMINAR')) {
+                    badgeClass = 'badge-status-blocked';
+                    iconClass = 'fa-trash';
+                } else if (tipo.includes('SOPORTE')) {
+                    badgeClass = 'badge-csv';
+                    iconClass = 'fa-headset';
+                }
+
+                let detalleFormateado = '';
+                if (ev.detalle) {
+                    if (typeof ev.detalle === 'object') {
+                        detalleFormateado = Object.entries(ev.detalle)
+                            .map(([k, v]) => `<strong>${k}:</strong> ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+                            .join(' | ');
+                    } else {
+                        detalleFormateado = String(ev.detalle);
+                    }
+                }
+
+                html += `
+                    <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                                <span class="${badgeClass}" style="font-size: 11px; padding: 3px 8px;">
+                                    <i class="fa-solid ${iconClass}"></i> ${tipo}
+                                </span>
+                                <strong style="font-size: 13px; color: var(--text-main);"><i class="fa-solid fa-user"></i> ${ev.usuario || 'Sistema / Anónimo'}</strong>
+                                <span style="font-size: 11px; color: var(--text-muted);"><i class="fa-solid fa-network-wired"></i> ${ev.ip || '127.0.0.1'}</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-muted); word-break: break-word; line-height: 1.4;">
+                                ${detalleFormateado || 'Sin detalles adicionales'}
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; color: var(--text-muted); white-space: nowrap; text-align: right; flex-shrink: 0;">
+                            <i class="fa-regular fa-clock"></i> ${ev.fecha || 'Sin fecha'}
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            contenedor.innerHTML = html;
         }
 
         function pedirConfirmacionVaciarAuditoria() {
