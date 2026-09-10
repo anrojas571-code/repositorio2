@@ -2748,7 +2748,7 @@
             const total = listaUsuarios.length;
 
             // Contar usuarios según su estado
-            const cantActivos = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'activo').length;
+            const cantActivos = listaUsuarios.filter(u => (u.estado || 'Activo').toLowerCase() === 'activo').length;
             const cantInactivos = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'inactivo').length;
             const cantBloqueados = listaUsuarios.filter(u => (u.estado || '').toLowerCase() === 'bloqueado').length;
 
@@ -2757,13 +2757,11 @@
             const pctInactivos = Math.round((cantInactivos / total) * 100);
             const pctBloqueados = Math.round((cantBloqueados / total) * 100);
 
-            // 1. Actualizar texto de leyenda
-            const leyendaEl = document.getElementById('distribucionLegend');
-            if (leyendaEl) {
-                leyendaEl.textContent = `${pctActivos}% Activos | ${pctInactivos}% Inactivos | ${pctBloqueados}% Bloqueados`;
+            const legend = document.getElementById('distribucionLegend');
+            if (legend) {
+                legend.textContent = `${pctActivos}% Activos | ${pctInactivos}% Inactivos | ${pctBloqueados}% Bloqueados`;
             }
 
-            // 2. Actualizar las barras con tus IDs exactos
             const barActivos = document.getElementById('progresoActivos');
             const barInactivos = document.getElementById('progresoInactivos');
             const barBloqueados = document.getElementById('progresoBloqueados');
@@ -2773,7 +2771,40 @@
             if (barBloqueados) barBloqueados.style.width = `${pctBloqueados}%`;
         }
 
-        // --- EDICIÓN DE USUARIOS Y GESTIÓN DE ESTADOS (ADMIN) ---
+        // --- EXPORTACIÓN DE DATOS (EXCEL Y JSON) ---
+        function exportarExcel() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                showToast('No hay datos para exportar', 'advertencia');
+                return;
+            }
+            try {
+                const worksheet = XLSX.utils.json_to_sheet(usuariosCargados);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
+                XLSX.writeFile(workbook, `Reporte_Usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                showToast('Archivo Excel generado exitosamente', 'success');
+            } catch (err) {
+                console.error('Error al exportar a Excel:', err);
+                showToast('Error al generar la hoja de cálculo', 'error');
+            }
+        }
+
+        function exportarJSON() {
+            if (!usuariosCargados || usuariosCargados.length === 0) {
+                showToast('No hay datos para exportar', 'advertencia');
+                return;
+            }
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(usuariosCargados, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Usuarios_Backup_${new Date().toISOString().slice(0, 10)}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Copia de seguridad JSON descargada', 'success');
+        }
+
+        // --- GESTIÓN DE MODAL EDICIÓN ---
         function abrirModalEdicion(nombreUsuario) {
             const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
             if (!usuario) return;
@@ -2795,9 +2826,9 @@
         }
 
         async function guardarCambiosUsuario() {
-            const originalUsuario = document.getElementById('editOriginalUsuario').value;
-            const usuarioActualizado = {
-                usuario: originalUsuario,
+            const usuario = document.getElementById('editOriginalUsuario').value;
+            const payload = {
+                usuario: usuario,
                 correo: document.getElementById('editCorreo').value.trim(),
                 telefono: document.getElementById('editTelefono').value.trim(),
                 direccion: document.getElementById('editDireccion').value.trim(),
@@ -2807,49 +2838,47 @@
             };
 
             try {
-                const response = await fetch('/api/usuarios/admin-editar', {
+                const response = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(usuarioActualizado)
+                    body: JSON.stringify(payload)
                 });
 
-                const data = await response.json();
-
                 if (response.ok) {
+                    showToast('Usuario actualizado con éxito', 'success');
                     cerrarModalEdicion();
                     await cargarDatos();
-                    showToast('¡Cambios guardados con éxito!', 'success', 'Usuario Actualizado');
                 } else {
-                    showToast(data.error || 'Error al guardar los cambios.', 'error');
+                    showToast('Error al actualizar el usuario', 'error');
                 }
-            } catch (error) {
-                console.error('Error guardando cambios:', error);
-                showToast('Hubo un error de conexión al guardar los cambios.', 'error');
+            } catch (err) {
+                console.error(err);
+                showToast('Error de conexión con el servidor', 'error');
             }
         }
 
-
-
-        function pedirConfirmacionEliminar(nombre) {
+        // --- ELIMINACIÓN INDIVIDUAL ---
+        function pedirConfirmacionEliminar(usuario) {
             mostrarModalConfirmacion(
-                `¿Eliminar a "${nombre}"?`,
-                `Esta acción eliminará de forma permanente al usuario "${nombre}" de la base de datos.`,
+                '¿Eliminar usuario?',
+                `¿Estás seguro de que deseas eliminar permanentemente la cuenta de "${usuario}"?`,
                 async () => {
                     try {
-                        const res = await fetch(`/api/usuarios/${encodeURIComponent(nombre)}`, { method: 'DELETE' });
-                        if (res.ok) {
-                            showToast(`Usuario "${nombre}" eliminado permanentemente`, 'success', 'Eliminado');
-                            cargarDatos();
+                        const response = await fetch(`/api/usuarios/${encodeURIComponent(usuario)}`, {
+                            method: 'DELETE'
+                        });
+                        if (response.ok) {
+                            showToast(`Usuario "${usuario}" eliminado`, 'success');
+                            await cargarDatos();
                         } else {
-                            showToast('Error al eliminar usuario', 'error');
+                            showToast('No se pudo eliminar el usuario', 'error');
                         }
                     } catch (err) {
-                        showToast('Error de conexión al eliminar', 'error');
+                        showToast('Error al conectar con el servidor', 'error');
                     }
                 }
             );
         }
-
         function pedirConfirmacionVaciarBD() {
             mostrarModalConfirmacion(
                 '¿Vaciar Base de Datos?',
