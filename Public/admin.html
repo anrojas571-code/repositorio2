@@ -1857,6 +1857,12 @@
                 <button onclick="cargarAuditoriaGlobal()" class="btn btn-refresh" title="Actualizar auditoría">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
+                <button onclick="exportarAuditoriaExcel()" class="btn btn-export-excel" title="Exportar auditoría a Excel (.xlsx)">
+                    <i class="fa-solid fa-file-excel"></i> Excel
+                </button>
+                <button onclick="exportarAuditoriaJSON()" class="btn btn-export-json" title="Exportar auditoría a JSON">
+                    <i class="fa-solid fa-file-code"></i> JSON
+                </button>
             </div>
 
             <!-- Lista de eventos de auditoría -->
@@ -2515,28 +2521,22 @@
 
             mostrarModalConfirmacion('Acción en Lote', mensajeConfirm, async () => {
                 try {
-                    if (tipoAccion === 'eliminar') {
-                        // Petición para borrar masivamente
-                        const response = await fetch('/api/usuarios/bulk-delete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ usuarios: listaUsuarios })
-                        });
+                    const response = await fetch('/api/usuarios/bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            accion: tipoAccion,
+                            usuariosSeleccionados: listaUsuarios
+                        })
+                    });
 
-                        if (!response.ok) throw new Error();
-                        showToast(`${cantidad} usuario(s) eliminado(s) con éxito`, 'success');
+                    const data = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(data.error || 'Error al procesar la acción');
 
-                    } else {
-                        // Petición para cambiar estado masivamente (Activar / Bloquear)
-                        const response = await fetch('/api/usuarios/bulk-status', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ usuarios: listaUsuarios, estado: nuevoEstado })
-                        });
-
-                        if (!response.ok) throw new Error();
-                        showToast(`Estado cambiado a "${nuevoEstado}" para ${cantidad} usuario(s)`, 'success');
-                    }
+                    const msgExito = tipoAccion === 'eliminar'
+                        ? `${cantidad} usuario(s) eliminado(s) con éxito`
+                        : `Estado cambiado a "${nuevoEstado}" para ${cantidad} usuario(s)`;
+                    showToast(msgExito, 'success');
 
                     // Limpiar selección y recargar tabla
                     usuariosSeleccionados.clear();
@@ -2547,7 +2547,7 @@
                     await cargarDatos();
 
                 } catch (err) {
-                    showToast('Ocurrió un error al procesar la acción en lote', 'error');
+                    showToast(err.message || 'Ocurrió un error al procesar la acción en lote', 'error');
                 }
             });
         }
@@ -2771,39 +2771,6 @@
             if (barBloqueados) barBloqueados.style.width = `${pctBloqueados}%`;
         }
 
-        // --- EXPORTACIÓN DE DATOS (EXCEL Y JSON) ---
-        function exportarExcel() {
-            if (!usuariosCargados || usuariosCargados.length === 0) {
-                showToast('No hay datos para exportar', 'advertencia');
-                return;
-            }
-            try {
-                const worksheet = XLSX.utils.json_to_sheet(usuariosCargados);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
-                XLSX.writeFile(workbook, `Reporte_Usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
-                showToast('Archivo Excel generado exitosamente', 'success');
-            } catch (err) {
-                console.error('Error al exportar a Excel:', err);
-                showToast('Error al generar la hoja de cálculo', 'error');
-            }
-        }
-
-        function exportarJSON() {
-            if (!usuariosCargados || usuariosCargados.length === 0) {
-                showToast('No hay datos para exportar', 'advertencia');
-                return;
-            }
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(usuariosCargados, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `Usuarios_Backup_${new Date().toISOString().slice(0, 10)}.json`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
-            showToast('Copia de seguridad JSON descargada', 'success');
-        }
-
         // --- GESTIÓN DE MODAL EDICIÓN ---
         function abrirModalEdicion(nombreUsuario) {
             const usuario = usuariosCargados.find(u => u.usuario === nombreUsuario);
@@ -2912,12 +2879,33 @@
             }
         }
 
-        function exportarExcel() {
+        async function exportarExcel() {
             if (!usuariosCargados || usuariosCargados.length === 0) {
                 showToast('No hay datos para exportar', 'advertencia');
                 return;
             }
 
+            // Intento prioritario: Descarga directa del reporte integral desde el servidor
+            try {
+                const res = await fetch('/api/exportar/excel');
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Reporte_Sistema_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showToast('Reporte integral de Excel descargado del servidor', 'success', 'Exportación');
+                    return;
+                }
+            } catch (err) {
+                console.warn('Servidor no disponible para exportación, usando generador local:', err);
+            }
+
+            // Fallback autónomo en el cliente (arquitectura resiliente)
             const datosExcel = usuariosCargados.map(u => ({
                 "Usuario": u.usuario || '',
                 "Rol": u.rol || 'Cliente',
@@ -2938,7 +2926,7 @@
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Usuarios");
-            XLSX.writeFile(workbook, "Reporte_de_usuarios.xlsx");
+            XLSX.writeFile(workbook, `Reporte_de_usuarios_${new Date().toISOString().slice(0, 10)}.xlsx`);
 
             registrarLogDescarga('Excel');
             showToast('Reporte de Excel exportado con éxito', 'success', 'Exportación');
@@ -3190,8 +3178,84 @@
                 `;
             });
             html += '</div>';
-
             contenedor.innerHTML = html;
+        }
+
+        // --- EXPORTACIÓN DE AUDITORÍA (EXCEL Y JSON) ---
+        function exportarAuditoriaExcel() {
+            const query = (document.getElementById('busquedaAuditoriaInput')?.value || '').toLowerCase().trim();
+            const filtroTipo = document.getElementById('filtroTipoAuditoria')?.value || 'todos';
+
+            const listaAExportar = (auditoriaCargada || []).filter(ev => {
+                const tipoMatch = filtroTipo === 'todos' || (ev.tipo && ev.tipo.toUpperCase().includes(filtroTipo.toUpperCase()));
+                let detalleStr = '';
+                if (ev.detalle) {
+                    detalleStr = typeof ev.detalle === 'object' ? JSON.stringify(ev.detalle) : String(ev.detalle);
+                }
+                const queryMatch = !query ||
+                    (ev.usuario && ev.usuario.toLowerCase().includes(query)) ||
+                    (ev.tipo && ev.tipo.toLowerCase().includes(query)) ||
+                    (ev.ip && ev.ip.toLowerCase().includes(query)) ||
+                    detalleStr.toLowerCase().includes(query);
+                return tipoMatch && queryMatch;
+            });
+
+            if (listaAExportar.length === 0) {
+                showToast('No hay registros de auditoría para exportar', 'advertencia');
+                return;
+            }
+
+            const datosExcel = listaAExportar.map(ev => ({
+                "ID": ev.id || '',
+                "Fecha": ev.fecha || '',
+                "Hora": ev.hora || '',
+                "Tipo": ev.tipo || 'GENERAL',
+                "Usuario": ev.usuario || 'Sistema',
+                "Detalle": typeof ev.detalle === 'object' ? JSON.stringify(ev.detalle) : (ev.detalle || ''),
+                "IP": ev.ip || '127.0.0.1'
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(datosExcel);
+            worksheet['!cols'] = [
+                { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 20 },
+                { wch: 18 }, { wch: 45 }, { wch: 16 }
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Auditoria");
+            XLSX.writeFile(workbook, `Reporte_Auditoria_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+            registrarLogDescarga('Excel');
+            showToast('Bitácora de auditoría exportada a Excel', 'success', 'Auditoría');
+        }
+
+        function exportarAuditoriaJSON() {
+            const query = (document.getElementById('busquedaAuditoriaInput')?.value || '').toLowerCase().trim();
+            const filtroTipo = document.getElementById('filtroTipoAuditoria')?.value || 'todos';
+
+            const listaAExportar = (auditoriaCargada || []).filter(ev => {
+                const tipoMatch = filtroTipo === 'todos' || (ev.tipo && ev.tipo.toUpperCase().includes(filtroTipo.toUpperCase()));
+                let detalleStr = '';
+                if (ev.detalle) {
+                    detalleStr = typeof ev.detalle === 'object' ? JSON.stringify(ev.detalle) : String(ev.detalle);
+                }
+                const queryMatch = !query ||
+                    (ev.usuario && ev.usuario.toLowerCase().includes(query)) ||
+                    (ev.tipo && ev.tipo.toLowerCase().includes(query)) ||
+                    (ev.ip && ev.ip.toLowerCase().includes(query)) ||
+                    detalleStr.toLowerCase().includes(query);
+                return tipoMatch && queryMatch;
+            });
+
+            if (listaAExportar.length === 0) {
+                showToast('No hay registros de auditoría para exportar', 'advertencia');
+                return;
+            }
+
+            const jsonStr = JSON.stringify(listaAExportar, null, 2);
+            descargarArchivo(jsonStr, `auditoria_sistema_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+            registrarLogDescarga('JSON');
+            showToast('Bitácora de auditoría exportada a JSON', 'success', 'Auditoría');
         }
 
         function pedirConfirmacionVaciarAuditoria() {

@@ -11,8 +11,8 @@
       "rol": "Cliente",
       "estado": "Activo",
       "historialEdiciones": [],
-      "codigoRecuperacion": "357104",
-      "codigoExpiracion": 1786974300613
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
     },
     {
       "usuario": "user_1786974185000",
@@ -125,6 +125,59 @@
       "historialEdiciones": [],
       "codigoRecuperacion": null,
       "codigoExpiracion": null
+    },
+    {
+      "usuario": "test_robot_1789136140595",
+      "clave": "PasswordRenovado2026*",
+      "correo": "mod_test_robot_1789136140595@empresa.com",
+      "telefono": "04149998877",
+      "direccion": "Nueva Dirección 456",
+      "fechaRegistro": "11/9/2026",
+      "contadorModificaciones": 2,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": [
+        {
+          "tipo": "recuperacion",
+          "carpeta": "📁 Recuperación con OTP",
+          "editor": "Sistema (OTP de 2 Pasos)",
+          "fecha": "11/9/26, 10:15:40",
+          "resumen": "Contraseña restablecida exitosamente mediante flujo OTP de 2 pasos",
+          "cambios": [
+            {
+              "campo": "Contraseña",
+              "valorAnterior": "••••••••",
+              "valorNuevo": "•••••••• (Restablecida)"
+            }
+          ]
+        },
+        {
+          "tipo": "perfil",
+          "carpeta": "📁 Actualización de Perfil",
+          "editor": "Usuario",
+          "fecha": "11/9/26, 10:15:40",
+          "resumen": "3 campo(s) de perfil modificado(s)",
+          "cambios": [
+            {
+              "campo": "Correo Electrónico",
+              "valorAnterior": "test_robot_1789136140595@empresa.com",
+              "valorNuevo": "mod_test_robot_1789136140595@empresa.com"
+            },
+            {
+              "campo": "Teléfono",
+              "valorAnterior": "04121234567",
+              "valorNuevo": "04149998877"
+            },
+            {
+              "campo": "Dirección",
+              "valorAnterior": "Avenida Principal 123",
+              "valorNuevo": "Nueva Dirección 456"
+            }
+          ]
+        }
+      ],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
     }
   ],
   "administradores": [
@@ -149,6 +202,210 @@
       "formato": "Excel",
       "fecha": "25/8/2026",
       "hora": "12:02:01"
+    },
+    {
+      "id": 1789136140696,
+      "formato": "Excel",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40"
+    },
+    {
+      "id": 1789136175601,
+      "formato": "Excel",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15"
+    }
+  ],
+  "soporte": [
+    {
+      "id": "1789136175646",
+      "usuario": "test_robot_1789136175496",
+      "emisor": "usuario",
+      "motivo": "Consulta Test",
+      "mensaje": "Hola equipo de soporte",
+      "fecha": "11/9/2026, 10:16:15"
+    }
+  ],
+  "auditoria": [
+    {
+      "id": "1789136175671-598",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "ELIMINAR_USUARIO",
+      "usuario": "Administrador",
+      "detalle": "Usuario test_robot_1789136175496 eliminado del sistema",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175602-716",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "EXPORTAR_EXCEL",
+      "usuario": "Administrador",
+      "detalle": "Exportación de base de datos a archivo Excel (.xlsx)",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175595-236",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): test_robot_1789136175496",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175587-787",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'bloquear' ejecutada sobre 1 usuario(s): test_robot_1789136175496",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175576-293",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "CLAVE_RESTABLECIDA",
+      "usuario": "test_robot_1789136175496",
+      "detalle": "Contraseña actualizada inmediatamente tras verificación de OTP",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175566-318",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "OTP_SOLICITADO",
+      "usuario": "test_robot_1789136175496",
+      "detalle": "Código OTP de 6 dígitos generado para m***6@empresa.com",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175560-841",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "PERFIL_ACTUALIZADO",
+      "usuario": "test_robot_1789136175496",
+      "detalle": "Perfil actualizado: Correo Electrónico, Teléfono, Dirección",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175553-397",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "test_robot_1789136175496",
+      "detalle": "Inicio de sesión exitoso",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175548-615",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "test_robot_1789136175496",
+      "detalle": "Inicio de sesión exitoso",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136175540-71",
+      "fecha": "11/9/2026",
+      "hora": "10:16:15",
+      "tipo": "REGISTRO_USUARIO",
+      "usuario": "test_robot_1789136175496",
+      "detalle": "Nuevo usuario registrado con correo test_robot_1789136175496@empresa.com",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140697-570",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "EXPORTAR_EXCEL",
+      "usuario": "Administrador",
+      "detalle": "Exportación de base de datos a archivo Excel (.xlsx)",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140689-860",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): test_robot_1789136140595",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140684-739",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'bloquear' ejecutada sobre 1 usuario(s): test_robot_1789136140595",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140674-4",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "CLAVE_RESTABLECIDA",
+      "usuario": "test_robot_1789136140595",
+      "detalle": "Contraseña actualizada inmediatamente tras verificación de OTP",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140665-114",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "OTP_SOLICITADO",
+      "usuario": "test_robot_1789136140595",
+      "detalle": "Código OTP de 6 dígitos generado para m***5@empresa.com",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140658-617",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "PERFIL_ACTUALIZADO",
+      "usuario": "test_robot_1789136140595",
+      "detalle": "Perfil actualizado: Correo Electrónico, Teléfono, Dirección",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140651-183",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "test_robot_1789136140595",
+      "detalle": "Inicio de sesión exitoso",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140646-656",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "test_robot_1789136140595",
+      "detalle": "Inicio de sesión exitoso",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789136140638-839",
+      "fecha": "11/9/2026",
+      "hora": "10:15:40",
+      "tipo": "REGISTRO_USUARIO",
+      "usuario": "test_robot_1789136140595",
+      "detalle": "Nuevo usuario registrado con correo test_robot_1789136140595@empresa.com",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1787700000000",
+      "fecha": "04/09/2026",
+      "hora": "09:30:00",
+      "tipo": "INICIALIZACION",
+      "usuario": "Sistema",
+      "detalle": "Inicialización de la base de datos database.json con persistencia unificada",
+      "ip": "127.0.0.1"
     }
   ]
 }

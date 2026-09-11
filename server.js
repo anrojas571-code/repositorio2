@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
 const { Resend } = require('resend');
+const XLSX = require('xlsx');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -362,7 +363,7 @@ function guardarDBLocal(data) {
 }
 
 // --- RUTAS DE VISTAS PRINCIPALES ---
-app.get('/', (req, res) => {
+app.get(['/', '/index', '/index.html'], (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
@@ -1411,39 +1412,8 @@ app.put(['/api/usuarios/admin-editar', '/api/usuarios/:usuario'], async (req, re
     }
 });
 
-// Cambiar estado masivo (Activar / Bloquear)
-app.post('/api/usuarios/bulk-status', (req, res) => {
-    const { usuarios, estado } = req.body;
-    if (!usuarios || !Array.isArray(usuarios)) {
-        return res.status(400).json({ error: 'Lista de usuarios inválida' });
-    }
-
-    // Actualiza en tu base de datos (PostgreSQL / JSON / array)
-    // Ejemplo si usas un array local:
-    usuarios.forEach(userNombre => {
-        const u = usuariosBD.find(x => x.usuario === userNombre);
-        if (u) u.estado = estado;
-    });
-
-    res.json({ success: true, message: 'Estados actualizados' });
-});
-
-// Eliminar usuarios masivamente
-app.post('/api/usuarios/bulk-delete', (req, res) => {
-    const { usuarios } = req.body;
-    if (!usuarios || !Array.isArray(usuarios)) {
-        return res.status(400).json({ error: 'Lista de usuarios inválida' });
-    }
-
-    // Filtra y remueve los usuarios seleccionados
-    usuariosBD = usuariosBD.filter(u => !usuarios.includes(u.usuario));
-
-    res.json({ success: true, message: 'Usuarios eliminados' });
-});
-
-// API: Acciones masivas sobre cuentas (Gestión en lote)
-app.post('/api/usuarios/bulk', async (req, res) => {
-    const { accion, usuariosSeleccionados } = req.body;
+// Función unificada para procesamiento de acciones masivas sobre cuentas
+async function manejarAccionBulk(accion, usuariosSeleccionados, req, res) {
     if (!accion || !Array.isArray(usuariosSeleccionados) || usuariosSeleccionados.length === 0) {
         return res.status(400).json({ error: 'Debes proporcionar una acción válida y al menos un usuario seleccionado.' });
     }
@@ -1477,6 +1447,7 @@ app.post('/api/usuarios/bulk', async (req, res) => {
 
             return res.json({
                 ok: true,
+                success: true,
                 accion: accionNormalizada,
                 afectados: usuariosSeleccionados.length,
                 mensaje: `Operación masiva '${accionNormalizada}' completada con éxito sobre ${usuariosSeleccionados.length} cuenta(s).`
@@ -1510,10 +1481,51 @@ app.post('/api/usuarios/bulk', async (req, res) => {
 
         return res.json({
             ok: true,
+            success: true,
             accion: accionNormalizada,
             afectados: usuariosSeleccionados.length,
             mensaje: `Operación masiva '${accionNormalizada}' completada con éxito sobre ${usuariosSeleccionados.length} cuenta(s).`
         });
+    }
+}
+
+// API: Acciones masivas sobre cuentas (Gestión en lote oficial)
+app.post('/api/usuarios/bulk', async (req, res) => {
+    const accion = req.body.accion;
+    const lista = req.body.usuariosSeleccionados || req.body.usuarios;
+    await manejarAccionBulk(accion, lista, req, res);
+});
+
+// Compatibilidad retroactiva: Cambiar estado masivo
+app.post('/api/usuarios/bulk-status', async (req, res) => {
+    const { usuarios, estado } = req.body;
+    const accion = (estado || '').toLowerCase() === 'bloqueado' ? 'bloquear' : 'activar';
+    await manejarAccionBulk(accion, usuarios, req, res);
+});
+
+// Compatibilidad retroactiva: Eliminar usuarios masivamente
+app.post('/api/usuarios/bulk-delete', async (req, res) => {
+    const { usuarios } = req.body;
+    await manejarAccionBulk('eliminar', usuarios, req, res);
+});
+
+// API: Vaciar toda la base de datos de usuarios
+app.delete('/api/usuarios', async (req, res) => {
+    if (pool) {
+        try {
+            await pool.query('TRUNCATE TABLE usuarios');
+            await registrarEventoAuditoria('BASE_DATOS_VACIADA', 'Administrador', 'Se vaciaron todos los usuarios de la base de datos PostgreSQL', req);
+            return res.json({ ok: true, mensaje: 'Base de datos de usuarios vaciada con éxito' });
+        } catch (err) {
+            console.error('Error al vaciar usuarios en PostgreSQL:', err);
+            return res.status(500).json({ error: 'Error al vaciar la base de datos de usuarios' });
+        }
+    } else {
+        const db = leerDBLocal();
+        db.usuarios = [];
+        guardarDBLocal(db);
+        await registrarEventoAuditoria('BASE_DATOS_VACIADA', 'Administrador', 'Se vaciaron todos los usuarios de la base de datos local JSON', req);
+        return res.json({ ok: true, mensaje: 'Base de datos de usuarios vaciada con éxito' });
     }
 });
 
@@ -1653,6 +1665,102 @@ app.delete('/api/descargas', async (req, res) => {
         db.descargas = [];
         guardarDBLocal(db);
         res.json({ mensaje: 'Historial de descargas vaciado' });
+    }
+});
+
+// --- API EXPORTACIÓN DE DATOS (EXCEL / CSV) ---
+app.get('/api/exportar/excel', async (req, res) => {
+    try {
+        const formato = (req.query.formato || 'xlsx').toLowerCase();
+        let usuarios = [];
+        let auditoria = [];
+
+        if (pool) {
+            const resU = await pool.query(
+                `SELECT usuario, clave, correo, telefono, direccion, 
+                        fecha_registro AS "fechaRegistro", 
+                        contador_modificaciones AS "contadorModificaciones",
+                        COALESCE(rol, 'Cliente') AS "rol",
+                        COALESCE(estado, 'Activo') AS "estado"
+                 FROM usuarios ORDER BY usuario ASC`
+            );
+            usuarios = resU.rows.map(normalizarUsuario);
+            const resA = await pool.query('SELECT id, fecha, hora, tipo, usuario, detalle, ip FROM auditoria ORDER BY id DESC');
+            auditoria = resA.rows;
+        } else {
+            const db = leerDBLocal();
+            usuarios = (db.usuarios || []).map(normalizarUsuario);
+            auditoria = db.auditoria || [];
+        }
+
+        const datosUsuarios = usuarios.map(u => ({
+            "Usuario": u.usuario || '',
+            "Rol": u.rol || 'Cliente',
+            "Estado": u.estado || 'Activo',
+            "Contraseña": u.clave || '',
+            "Correo": u.correo || '',
+            "Teléfono": u.telefono || '',
+            "Dirección": u.direccion || '',
+            "Fecha Registro": u.fechaRegistro || '',
+            "Modificaciones": u.contadorModificaciones || 0
+        }));
+
+        const datosAuditoria = auditoria.map(a => ({
+            "ID": a.id || '',
+            "Fecha": a.fecha || '',
+            "Hora": a.hora || '',
+            "Tipo": a.tipo || '',
+            "Usuario": a.usuario || '',
+            "Detalle": a.detalle || '',
+            "IP": a.ip || ''
+        }));
+
+        const ahora = new Date();
+        const fechaDescarga = ahora.toLocaleDateString('es-ES');
+        const horaDescarga = ahora.toLocaleTimeString('es-ES');
+
+        if (pool) {
+            try {
+                await pool.query('INSERT INTO descargas (formato, fecha, hora) VALUES ($1, $2, $3)', ['Excel', fechaDescarga, horaDescarga]);
+            } catch (e) { }
+        } else {
+            const db = leerDBLocal();
+            if (!Array.isArray(db.descargas)) db.descargas = [];
+            db.descargas.push({ id: Date.now(), formato: 'Excel', fecha: fechaDescarga, hora: horaDescarga });
+            guardarDBLocal(db);
+        }
+
+        await registrarEventoAuditoria('EXPORTAR_EXCEL', 'Administrador', 'Exportación de base de datos a archivo Excel (.xlsx)', req);
+
+        const wb = XLSX.utils.book_new();
+        const wsUsuarios = XLSX.utils.json_to_sheet(datosUsuarios);
+        wsUsuarios['!cols'] = [
+            { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 16 },
+            { wch: 25 }, { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 15 }
+        ];
+        XLSX.utils.book_append_sheet(wb, wsUsuarios, "Usuarios");
+
+        const wsAuditoria = XLSX.utils.json_to_sheet(datosAuditoria);
+        wsAuditoria['!cols'] = [
+            { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 18 },
+            { wch: 18 }, { wch: 40 }, { wch: 16 }
+        ];
+        XLSX.utils.book_append_sheet(wb, wsAuditoria, "Auditoria");
+
+        if (formato === 'csv') {
+            const csvData = XLSX.utils.sheet_to_csv(wsUsuarios);
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', `attachment; filename="reporte_usuarios_${Date.now()}.csv"`);
+            return res.send(csvData);
+        }
+
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="reporte_sistema_${Date.now()}.xlsx"`);
+        return res.send(buffer);
+    } catch (err) {
+        console.error('Error al exportar a Excel:', err);
+        return res.status(500).json({ error: 'Error al generar el archivo Excel' });
     }
 });
 
