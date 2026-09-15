@@ -1,5 +1,18 @@
 {
-  "usuarios": [],
+  "usuarios": [
+    {
+      "usuario": "Angel Rojas",
+      "clave": "123456*",
+      "correo": "anrojas571@gmail.com",
+      "telefono": "04123823890",
+      "direccion": "Los Guayos",
+      "fechaRegistro": "15/9/2026",
+      "contadorModificaciones": 0,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": []
+    }
+  ],
   "administradores": [
     {
       "usuario": "Admin",
@@ -48,18 +61,9 @@
   ],
   "auditoria": [
     {
-      "id": "1789477698831-152",
+      "id": "1789493725600-618",
       "fecha": "15/9/2026",
-      "hora": "9:08:18",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'eliminar' ejecutada sobre 10 usuario(s): user_1786974180256, user_1786974185000, user_1786976993489, user_1786978928184, user_1786979454301, user_1786980581629, user_1786981312607, user_1786991936634, user_1786993317167, test_robot_1789136140595",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789477507786-982",
-      "fecha": "15/9/2026",
-      "hora": "9:05:07",
+      "hora": "13:35:25",
       "tipo": "AUDITORIA_VACIADA",
       "usuario": "Administrador",
       "detalle": "La bitácora de auditoría ha sido vaciada",
