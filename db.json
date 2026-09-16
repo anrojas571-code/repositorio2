@@ -9,8 +9,66 @@
       "fechaRegistro": "15/9/2026",
       "contadorModificaciones": 0,
       "rol": "Cliente",
+      "estado": "Bloqueado",
+      "historialEdiciones": [],
+      "codigoRecuperacion": "224735",
+      "codigoExpiracion": 1789499994134
+    },
+    {
+      "usuario": "Anggll",
+      "clave": "123456789*",
+      "correo": "garybod23@gmail.com",
+      "telefono": "04145310274",
+      "direccion": "",
+      "fechaRegistro": "15/9/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
+      "estado": "Inactivo",
+      "historialEdiciones": [
+        {
+          "tipo": "admin",
+          "carpeta": "📁 Modificación por Administrador",
+          "editor": "Administrador",
+          "fecha": "15/9/26, 15:33:28",
+          "resumen": "1 cambio(s) realizado(s) por el Administrador",
+          "cambios": [
+            {
+              "campo": "Estado de Cuenta",
+              "valorAnterior": "Activo",
+              "valorNuevo": "Inactivo"
+            }
+          ]
+        }
+      ],
+      "codigoRecuperacion": "905085",
+      "codigoExpiracion": 1789501479290
+    },
+    {
+      "usuario": "Gary",
+      "clave": "987654321.",
+      "correo": "monolito2026@gmail.com",
+      "telefono": "04125555555",
+      "direccion": "",
+      "fechaRegistro": "15/9/2026",
+      "contadorModificaciones": 1,
+      "rol": "Cliente",
       "estado": "Activo",
-      "historialEdiciones": []
+      "historialEdiciones": [
+        {
+          "tipo": "admin",
+          "carpeta": "📁 Modificación por Administrador",
+          "editor": "Administrador",
+          "fecha": "15/9/26, 15:33:06",
+          "resumen": "1 cambio(s) realizado(s) por el Administrador",
+          "cambios": [
+            {
+              "campo": "Teléfono",
+              "valorAnterior": "Vacío",
+              "valorNuevo": "04125555555"
+            }
+          ]
+        }
+      ]
     }
   ],
   "administradores": [
@@ -47,23 +105,107 @@
       "formato": "Excel",
       "fecha": "11/9/2026",
       "hora": "10:16:15"
-    }
-  ],
-  "soporte": [
+    },
     {
-      "id": "1789136175646",
-      "usuario": "test_robot_1789136175496",
-      "emisor": "usuario",
-      "motivo": "Consulta Test",
-      "mensaje": "Hola equipo de soporte",
-      "fecha": "11/9/2026, 10:16:15"
+      "id": 1789500109924,
+      "formato": "Excel",
+      "fecha": "15/9/2026",
+      "hora": "15:21:49"
+    },
+    {
+      "id": 1789500153790,
+      "formato": "JSON",
+      "fecha": "15/9/2026",
+      "hora": "15:22:33"
     }
   ],
+  "soporte": [],
   "auditoria": [
     {
-      "id": "1789493725600-618",
+      "id": "1789578945089-475",
+      "fecha": "16/9/2026",
+      "hora": "13:15:45",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789578927710-679",
+      "fecha": "16/9/2026",
+      "hora": "13:15:27",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789578927112-431",
+      "fecha": "16/9/2026",
+      "hora": "13:15:27",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789578918954-496",
+      "fecha": "16/9/2026",
+      "hora": "13:15:18",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789578894383-896",
+      "fecha": "16/9/2026",
+      "hora": "13:14:54",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789578874922-893",
+      "fecha": "16/9/2026",
+      "hora": "13:14:34",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789500799041-822",
       "fecha": "15/9/2026",
-      "hora": "13:35:25",
+      "hora": "15:33:19",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'bloquear' ejecutada sobre 1 usuario(s): Angel Rojas",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789500766179-552",
+      "fecha": "15/9/2026",
+      "hora": "15:32:46",
+      "tipo": "REGISTRO_USUARIO",
+      "usuario": "Gary",
+      "detalle": "Nuevo usuario registrado con correo monolito2026@gmail.com",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789500579292-335",
+      "fecha": "15/9/2026",
+      "hora": "15:29:39",
+      "tipo": "OTP_SOLICITADO",
+      "usuario": "Anggll",
+      "detalle": "Código OTP de 6 dígitos generado para g***3@gmail.com",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789500229694-566",
+      "fecha": "15/9/2026",
+      "hora": "15:23:49",
       "tipo": "AUDITORIA_VACIADA",
       "usuario": "Administrador",
       "detalle": "La bitácora de auditoría ha sido vaciada",

@@ -710,7 +710,7 @@ app.post('/api/usuarios/login', async (req, res) => {
                 const user = normalizarUsuario(result.rows[0]);
                 if (user.estado === 'Bloqueado') {
                     await registrarEventoAuditoria('LOGIN_BLOQUEADO', user.usuario, 'Intento de acceso con cuenta bloqueada', req);
-                    return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada por el administrador.' });
+                    return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada.' });
                 }
                 if (user.estado === 'Inactivo') {
                     await registrarEventoAuditoria('LOGIN_INACTIVO', user.usuario, 'Intento de acceso con cuenta inactiva', req);
@@ -735,7 +735,7 @@ app.post('/api/usuarios/login', async (req, res) => {
             const user = normalizarUsuario(encontrado);
             if (user.estado === 'Bloqueado') {
                 await registrarEventoAuditoria('LOGIN_BLOQUEADO', user.usuario, 'Intento de acceso con cuenta bloqueada', req);
-                return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada por el administrador.' });
+                return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada.' });
             }
             if (user.estado === 'Inactivo') {
                 await registrarEventoAuditoria('LOGIN_INACTIVO', user.usuario, 'Intento de acceso con cuenta inactiva', req);
