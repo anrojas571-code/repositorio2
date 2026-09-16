@@ -200,8 +200,13 @@
                             title="Activar seleccionados">
                             <i class="fa-solid fa-user-check"></i> Activar
                         </button>
+                        <button onclick="ejecutarAccionLote('Inactivo')" class="btn"
+                            style="background: #eab308ff; color: white; padding: 6px 12px; font-size: 12px;"
+                            title="Inactivo seleccionados">
+                            <i class="fa-solid fa-user-lock"></i> Inactivo
+                        </button>
                         <button onclick="ejecutarAccionLote('bloquear')" class="btn"
-                            style="background: #f59e0b; color: white; padding: 6px 12px; font-size: 12px;"
+                            style="background: #e20a03; color: white; padding: 6px 12px; font-size: 12px;"
                             title="Bloquear seleccionados">
                             <i class="fa-solid fa-user-lock"></i> Bloquear
                         </button>
@@ -489,7 +494,8 @@
                 <button onclick="cargarAuditoriaGlobal()" class="btn btn-refresh" title="Actualizar auditoría">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>
-                <button onclick="exportarAuditoriaExcel()" class="btn btn-export-excel" title="Exportar auditoría a Excel (.xlsx)">
+                <button onclick="exportarAuditoriaExcel()" class="btn btn-export-excel"
+                    title="Exportar auditoría a Excel (.xlsx)">
                     <i class="fa-solid fa-file-excel"></i> Excel
                 </button>
                 <button onclick="exportarAuditoriaJSON()" class="btn btn-export-json" title="Exportar auditoría a JSON">

@@ -122,6 +122,69 @@
   "soporte": [],
   "auditoria": [
     {
+      "id": "1789580180939-815",
+      "fecha": "16/9/2026",
+      "hora": "13:36:20",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789579152367-564",
+      "fecha": "16/9/2026",
+      "hora": "13:19:12",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789579119071-113",
+      "fecha": "16/9/2026",
+      "hora": "13:18:39",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789579118743-223",
+      "fecha": "16/9/2026",
+      "hora": "13:18:38",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789579117998-532",
+      "fecha": "16/9/2026",
+      "hora": "13:18:37",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789579117654-196",
+      "fecha": "16/9/2026",
+      "hora": "13:18:37",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789579115863-511",
+      "fecha": "16/9/2026",
+      "hora": "13:18:35",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
       "id": "1789578945089-475",
       "fecha": "16/9/2026",
       "hora": "13:15:45",
