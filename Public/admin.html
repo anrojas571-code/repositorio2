@@ -93,19 +93,19 @@
 
             <!-- DASHBOARD DE MÉTRICAS Y ANALÍTICA EN TIEMPO REAL -->
             <div class="stats-grid">
-                <div class="stat-card-item total-card">
+                <div class="stat-card-item total-card" onclick="filtrarPorEstadoCard('todos')" style="cursor: pointer;" title="Clic para ver todas las cuentas">
                     <div class="num" id="totalUsuariosCount" style="color: var(--primary);">0</div>
                     <div class="lbl">Total Cuentas</div>
                 </div>
-                <div class="stat-card-item active-card">
+                <div class="stat-card-item active-card" onclick="filtrarPorEstadoCard('Activo')" style="cursor: pointer;" title="Clic para filtrar cuentas activas">
                     <div class="num" id="activosCount" style="color: #10b981;">0</div>
                     <div class="lbl">🟢 Activos</div>
                 </div>
-                <div class="stat-card-item inactive-card">
+                <div class="stat-card-item inactive-card" onclick="filtrarPorEstadoCard('Inactivo')" style="cursor: pointer;" title="Clic para filtrar cuentas inactivas">
                     <div class="num" id="inactivosCount" style="color: #f59e0b;">0</div>
                     <div class="lbl">🟡 Inactivos</div>
                 </div>
-                <div class="stat-card-item blocked-card">
+                <div class="stat-card-item blocked-card" onclick="filtrarPorEstadoCard('Bloqueado')" style="cursor: pointer;" title="Clic para filtrar cuentas bloqueadas">
                     <div class="num" id="bloqueadosCount" style="color: #ef4444;">0</div>
                     <div class="lbl">🔴 Bloqueados</div>
                 </div>
@@ -195,23 +195,24 @@
                             seleccionados)</span>
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="ejecutarAccionLote('activar')" class="btn"
-                            style="background: #10b981; color: white; padding: 6px 12px; font-size: 12px;"
-                            title="Activar seleccionados">
+                        <button id="btnBulkActivar" onclick="ejecutarAccionLote('activar')" class="btn btn-bulk-activar"
+                            style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;"
+                            title="Activar seleccionados" disabled>
                             <i class="fa-solid fa-user-check"></i> Activar
                         </button>
-                        <button onclick="ejecutarAccionLote('Inactivo')" class="btn"
-                            style="background: #eab308ff; color: white; padding: 6px 12px; font-size: 12px;"
-                            title="Inactivo seleccionados">
-                            <i class="fa-solid fa-user-lock"></i> Inactivo
+                        <button id="btnBulkInactivo" onclick="ejecutarAccionLote('inactivo')" class="btn btn-bulk-inactivo"
+                            style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;"
+                            title="Marcar seleccionados como inactivos" disabled>
+                            <i class="fa-solid fa-user-clock"></i> Inactivo
                         </button>
-                        <button onclick="ejecutarAccionLote('bloquear')" class="btn"
-                            style="background: #e20a03; color: white; padding: 6px 12px; font-size: 12px;"
-                            title="Bloquear seleccionados">
+                        <button id="btnBulkBloquear" onclick="ejecutarAccionLote('bloquear')" class="btn btn-bulk-bloquear"
+                            style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;"
+                            title="Bloquear seleccionados" disabled>
                             <i class="fa-solid fa-user-lock"></i> Bloquear
                         </button>
-                        <button onclick="ejecutarAccionLote('eliminar')" class="btn btn-danger"
-                            style="padding: 6px 12px; font-size: 12px;" title="Eliminar seleccionados">
+                        <button id="btnBulkEliminar" onclick="ejecutarAccionLote('eliminar')" class="btn btn-bulk-eliminar"
+                            style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;"
+                            title="Eliminar seleccionados" disabled>
                             <i class="fa-solid fa-trash"></i> Eliminar
                         </button>
                     </div>
@@ -943,22 +944,31 @@
         }
 
         // --- CÁLCULO DE MÉTRICAS EN TIEMPO REAL Y BARRA DE PROGRESO ---
+        function filtrarPorEstadoCard(estado) {
+            const selectEstado = document.getElementById('adminFilterStatus');
+            if (selectEstado) {
+                selectEstado.value = (selectEstado.value === estado) ? 'todos' : estado;
+                filtrarUsuarios();
+            }
+        }
+
         function actualizarMetricasYProgreso() {
             const total = usuariosCargados.length;
             const activos = usuariosCargados.filter(u => (!u.estado || u.estado.toLowerCase() === 'activo')).length;
             const inactivos = usuariosCargados.filter(u => (u.estado && u.estado.toLowerCase() === 'inactivo')).length;
             const bloqueados = usuariosCargados.filter(u => (u.estado && u.estado.toLowerCase() === 'bloqueado')).length;
 
-            const elemTotal = document.getElementById('statTotalUsuarios');
-            const elemActivos = document.getElementById('statUsuariosActivos');
-            const elemInactivos = document.getElementById('statUsuariosInactivos');
-            const elemBloqueados = document.getElementById('statUsuariosBloqueados');
+            const elemTotal = document.getElementById('totalUsuariosCount') || document.getElementById('statTotalUsuarios');
+            const elemActivos = document.getElementById('activosCount') || document.getElementById('statUsuariosActivos');
+            const elemInactivos = document.getElementById('inactivosCount') || document.getElementById('statUsuariosInactivos');
+            const elemBloqueados = document.getElementById('bloqueadosCount') || document.getElementById('statUsuariosBloqueados');
 
             if (elemTotal) elemTotal.textContent = total;
             if (elemActivos) elemActivos.textContent = activos;
             if (elemInactivos) elemInactivos.textContent = inactivos;
             if (elemBloqueados) elemBloqueados.textContent = bloqueados;
 
+            const legend = document.getElementById('distribucionLegend');
             const barActivos = document.getElementById('progresoActivos');
             const barInactivos = document.getElementById('progresoInactivos');
             const barBloqueados = document.getElementById('progresoBloqueados');
@@ -968,6 +978,7 @@
                     barActivos.style.width = '0%';
                     barInactivos.style.width = '0%';
                     barBloqueados.style.width = '0%';
+                    if (legend) legend.textContent = '0% Activos | 0% Inactivos | 0% Bloqueados';
                 } else {
                     const pAct = ((activos / total) * 100).toFixed(1);
                     const pIna = ((inactivos / total) * 100).toFixed(1);
@@ -980,6 +991,8 @@
                     barActivos.title = `Activos: ${activos} (${pAct}%)`;
                     barInactivos.title = `Inactivos: ${inactivos} (${pIna}%)`;
                     barBloqueados.title = `Bloqueados: ${bloqueados} (${pBlo}%)`;
+
+                    if (legend) legend.textContent = `${pAct}% Activos | ${pIna}% Inactivos | ${pBlo}% Bloqueados`;
                 }
             }
         }
@@ -1110,8 +1123,8 @@
         }
 
         function actualizarToolbarLote() {
-            const countBadge = document.getElementById('selectedCountBadge');
-            const selectAllChk = document.getElementById('selectAllUsersChk');
+            const countBadge = document.getElementById('bulkSelectedCount') || document.getElementById('selectedCountBadge');
+            const selectAllChk = document.getElementById('checkSelectAll') || document.getElementById('selectAllUsersChk');
             const btnActivar = document.getElementById('btnBulkActivar');
             const btnInactivo = document.getElementById('btnBulkInactivo');
             const btnBloquear = document.getElementById('btnBulkBloquear');
@@ -1119,15 +1132,13 @@
 
             const totalSel = usuariosSeleccionados.size;
             if (countBadge) {
-                countBadge.textContent = `${totalSel} seleccionado${totalSel === 1 ? '' : 's'}`;
-                countBadge.style.display = totalSel > 0 ? 'inline-block' : 'none';
+                countBadge.textContent = `(${totalSel} seleccionado${totalSel === 1 ? '' : 's'})`;
             }
 
             const disabled = totalSel === 0;
-            if (btnActivar) btnActivar.disabled = disabled;
-            if (btnInactivo) btnInactivo.disabled = disabled;
-            if (btnBloquear) btnBloquear.disabled = disabled;
-            if (btnEliminar) btnEliminar.disabled = disabled;
+            [btnActivar, btnInactivo, btnBloquear, btnEliminar].forEach(btn => {
+                if (btn) btn.disabled = disabled;
+            });
 
             const chks = Array.from(document.querySelectorAll('.user-select-chk'));
             if (selectAllChk && chks.length > 0) {
@@ -1143,22 +1154,23 @@
                 return;
             }
 
+            const accionNormalizada = (tipoAccion || '').toLowerCase().trim();
             const cantidad = usuariosSeleccionados.size;
             const listaUsuarios = Array.from(usuariosSeleccionados);
 
             let mensajeConfirm = '';
             let nuevoEstado = '';
 
-            if (tipoAccion === 'activar') {
+            if (accionNormalizada === 'activar') {
                 mensajeConfirm = `¿Deseas activar las ${cantidad} cuentas seleccionadas?`;
                 nuevoEstado = 'Activo';
-            } else if (tipoAccion === 'bloquear') {
+            } else if (accionNormalizada === 'bloquear') {
                 mensajeConfirm = `¿Deseas bloquear las ${cantidad} cuentas seleccionadas?`;
                 nuevoEstado = 'Bloqueado';
-            } else if (tipoAccion === 'inactivo') {
-                mensajeConfirm = `¿Deseas poner las ${cantidad} cuentas en inactivo?`;
+            } else if (accionNormalizada === 'inactivo') {
+                mensajeConfirm = `¿Deseas poner en inactivo las ${cantidad} cuentas seleccionadas?`;
                 nuevoEstado = 'Inactivo';
-            } else if (tipoAccion === 'eliminar') {
+            } else if (accionNormalizada === 'eliminar') {
                 mensajeConfirm = `¿Estás seguro de ELIMINAR permanentemente las ${cantidad} cuentas seleccionadas?`;
             }
 
@@ -1168,7 +1180,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            accion: tipoAccion,
+                            accion: accionNormalizada,
                             usuariosSeleccionados: listaUsuarios
                         })
                     });
@@ -1176,14 +1188,14 @@
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok) throw new Error(data.error || 'Error al procesar la acción');
 
-                    const msgExito = tipoAccion === 'eliminar'
+                    const msgExito = accionNormalizada === 'eliminar'
                         ? `${cantidad} usuario(s) eliminado(s) con éxito`
                         : `Estado cambiado a "${nuevoEstado}" para ${cantidad} usuario(s)`;
                     showToast(msgExito, 'success');
 
                     // Limpiar selección y recargar tabla
                     usuariosSeleccionados.clear();
-                    const chkAll = document.getElementById('selectAllUsersChk');
+                    const chkAll = document.getElementById('checkSelectAll') || document.getElementById('selectAllUsersChk');
                     if (chkAll) chkAll.checked = false;
 
                     actualizarToolbarLote();

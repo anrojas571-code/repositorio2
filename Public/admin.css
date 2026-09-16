@@ -662,6 +662,59 @@
             color: white;
         }
 
+        .btn-bulk-activar {
+            background: #10b981;
+            color: #ffffff;
+            border: 1px solid #059669;
+        }
+
+        .btn-bulk-activar:hover:not(:disabled) {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-bulk-inactivo {
+            background: #f59e0b;
+            color: #ffffff;
+            border: 1px solid #d97706;
+        }
+
+        .btn-bulk-inactivo:hover:not(:disabled) {
+            background: #d97706;
+            transform: translateY(-1px);
+        }
+
+        .btn-bulk-bloquear {
+            background: #ef4444;
+            color: #ffffff;
+            border: 1px solid #dc2626;
+        }
+
+        .btn-bulk-bloquear:hover:not(:disabled) {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-bulk-eliminar {
+            background: #991b1b;
+            color: #ffffff;
+            border: 1px solid #7f1d1d;
+        }
+
+        .btn-bulk-eliminar:hover:not(:disabled) {
+            background: #7f1d1d;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled,
+        .btn[disabled] {
+            opacity: 0.45 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
         .users-list {
             display: flex;
             flex-direction: column;

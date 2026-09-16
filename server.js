@@ -1431,7 +1431,12 @@ async function manejarAccionBulk(accion, usuariosSeleccionados, req, res) {
                     [usuariosSeleccionados.map(u => u.toLowerCase())]
                 );
             } else {
-                const nuevoEstado = accionNormalizada === 'activar' ? 'Activo' : 'Bloqueado';
+                let nuevoEstado = 'Activo';
+                if (accionNormalizada === 'inactivo') {
+                    nuevoEstado = 'Inactivo';
+                } else if (accionNormalizada === 'bloquear') {
+                    nuevoEstado = 'Bloqueado';
+                }
                 await pool.query(
                     'UPDATE usuarios SET estado = $1 WHERE LOWER(usuario) = ANY($2::text[])',
                     [nuevoEstado, usuariosSeleccionados.map(u => u.toLowerCase())]
@@ -1463,7 +1468,12 @@ async function manejarAccionBulk(accion, usuariosSeleccionados, req, res) {
         if (accionNormalizada === 'eliminar') {
             db.usuarios = (db.usuarios || []).filter(u => !setUsuarios.has(u.usuario.toLowerCase()));
         } else {
-            const nuevoEstado = accionNormalizada === 'activar' ? 'Activo' : 'Bloqueado';
+            let nuevoEstado = 'Activo';
+            if (accionNormalizada === 'inactivo') {
+                nuevoEstado = 'Inactivo';
+            } else if (accionNormalizada === 'bloquear') {
+                nuevoEstado = 'Bloqueado';
+            }
             (db.usuarios || []).forEach(u => {
                 if (setUsuarios.has(u.usuario.toLowerCase())) {
                     u.estado = nuevoEstado;

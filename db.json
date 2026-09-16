@@ -122,6 +122,69 @@
   "soporte": [],
   "auditoria": [
     {
+      "id": "1789584567568-943",
+      "fecha": "16/9/2026",
+      "hora": "14:49:27",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): Gary",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789584512850-491",
+      "fecha": "16/9/2026",
+      "hora": "14:48:32",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Gary",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789582298030-881",
+      "fecha": "16/9/2026",
+      "hora": "14:11:38",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789582287426-658",
+      "fecha": "16/9/2026",
+      "hora": "14:11:27",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789582277238-485",
+      "fecha": "16/9/2026",
+      "hora": "14:11:17",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789582269763-432",
+      "fecha": "16/9/2026",
+      "hora": "14:11:09",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789582152850-899",
+      "fecha": "16/9/2026",
+      "hora": "14:09:12",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): Anggll",
+      "ip": "127.0.0.1"
+    },
+    {
       "id": "1789581197387-130",
       "fecha": "16/9/2026",
       "hora": "13:53:17",
