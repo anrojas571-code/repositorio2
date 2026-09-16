@@ -122,6 +122,24 @@
   "soporte": [],
   "auditoria": [
     {
+      "id": "1789581197387-130",
+      "fecha": "16/9/2026",
+      "hora": "13:53:17",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): Gary",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789581187278-333",
+      "fecha": "16/9/2026",
+      "hora": "13:53:07",
+      "tipo": "ACCION_MASIVA",
+      "usuario": "Administrador",
+      "detalle": "Acción masiva 'bloquear' ejecutada sobre 1 usuario(s): Gary",
+      "ip": "127.0.0.1"
+    },
+    {
       "id": "1789580180939-815",
       "fecha": "16/9/2026",
       "hora": "13:36:20",

@@ -1419,8 +1419,8 @@ async function manejarAccionBulk(accion, usuariosSeleccionados, req, res) {
     }
 
     const accionNormalizada = accion.toLowerCase().trim();
-    if (!['activar', 'bloquear', 'eliminar'].includes(accionNormalizada)) {
-        return res.status(400).json({ error: 'Acción inválida. Opciones permitidas: activar, bloquear, eliminar.' });
+    if (!['activar', 'inactivo', 'bloquear', 'eliminar'].includes(accionNormalizada)) {
+        return res.status(400).json({ error: 'Acción inválida. Opciones permitidas: activar, inactivo, bloquear, eliminar.' });
     }
 
     if (pool) {
@@ -1500,6 +1500,13 @@ app.post('/api/usuarios/bulk', async (req, res) => {
 app.post('/api/usuarios/bulk-status', async (req, res) => {
     const { usuarios, estado } = req.body;
     const accion = (estado || '').toLowerCase() === 'bloqueado' ? 'bloquear' : 'activar';
+    await manejarAccionBulk(accion, usuarios, req, res);
+});
+
+// Compatibilidad retroactiva: Cambiar estado masivo Inactivo
+app.post('/api/usuarios/bulk-statusinactivo', async (req, res) => {
+    const { usuarios, estado } = req.body;
+    const accion = (estado || '').toLowerCase() === 'inactivo' ? 'inactivo' : 'activar';
     await manejarAccionBulk(accion, usuarios, req, res);
 });
 

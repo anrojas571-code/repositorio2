@@ -1113,6 +1113,7 @@
             const countBadge = document.getElementById('selectedCountBadge');
             const selectAllChk = document.getElementById('selectAllUsersChk');
             const btnActivar = document.getElementById('btnBulkActivar');
+            const btnInactivo = document.getElementById('btnBulkInactivo');
             const btnBloquear = document.getElementById('btnBulkBloquear');
             const btnEliminar = document.getElementById('btnBulkEliminar');
 
@@ -1124,6 +1125,7 @@
 
             const disabled = totalSel === 0;
             if (btnActivar) btnActivar.disabled = disabled;
+            if (btnInactivo) btnInactivo.disabled = disabled;
             if (btnBloquear) btnBloquear.disabled = disabled;
             if (btnEliminar) btnEliminar.disabled = disabled;
 
@@ -1153,6 +1155,9 @@
             } else if (tipoAccion === 'bloquear') {
                 mensajeConfirm = `¿Deseas bloquear las ${cantidad} cuentas seleccionadas?`;
                 nuevoEstado = 'Bloqueado';
+            } else if (tipoAccion === 'inactivo') {
+                mensajeConfirm = `¿Deseas poner las ${cantidad} cuentas en inactivo?`;
+                nuevoEstado = 'Inactivo';
             } else if (tipoAccion === 'eliminar') {
                 mensajeConfirm = `¿Estás seguro de ELIMINAR permanentemente las ${cantidad} cuentas seleccionadas?`;
             }
