@@ -9,7 +9,7 @@
       "fechaRegistro": "15/9/2026",
       "contadorModificaciones": 0,
       "rol": "Cliente",
-      "estado": "Bloqueado",
+      "estado": "Inactivo",
       "historialEdiciones": [],
       "codigoRecuperacion": "224735",
       "codigoExpiracion": 1789499994134
@@ -23,7 +23,7 @@
       "fechaRegistro": "15/9/2026",
       "contadorModificaciones": 1,
       "rol": "Cliente",
-      "estado": "Inactivo",
+      "estado": "Bloqueado",
       "historialEdiciones": [
         {
           "tipo": "admin",
@@ -69,6 +69,18 @@
           ]
         }
       ]
+    },
+    {
+      "usuario": "Samuel Rojas",
+      "clave": "000000*",
+      "correo": "SAmuelito50@gmail.com",
+      "telefono": "04123826988",
+      "direccion": "",
+      "fechaRegistro": "18/9/2026",
+      "contadorModificaciones": 0,
+      "rol": "Cliente",
+      "estado": "Activo",
+      "historialEdiciones": []
     }
   ],
   "administradores": [
@@ -122,234 +134,54 @@
   "soporte": [],
   "auditoria": [
     {
-      "id": "1789584567568-943",
-      "fecha": "16/9/2026",
-      "hora": "14:49:27",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): Gary",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789584512850-491",
-      "fecha": "16/9/2026",
-      "hora": "14:48:32",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Gary",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789582298030-881",
-      "fecha": "16/9/2026",
-      "hora": "14:11:38",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789582287426-658",
-      "fecha": "16/9/2026",
-      "hora": "14:11:27",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789582277238-485",
-      "fecha": "16/9/2026",
-      "hora": "14:11:17",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789582269763-432",
-      "fecha": "16/9/2026",
-      "hora": "14:11:09",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'inactivo' ejecutada sobre 1 usuario(s): Anggll",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789582152850-899",
-      "fecha": "16/9/2026",
-      "hora": "14:09:12",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): Anggll",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789581197387-130",
-      "fecha": "16/9/2026",
-      "hora": "13:53:17",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'activar' ejecutada sobre 1 usuario(s): Gary",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789581187278-333",
-      "fecha": "16/9/2026",
-      "hora": "13:53:07",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'bloquear' ejecutada sobre 1 usuario(s): Gary",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789580180939-815",
-      "fecha": "16/9/2026",
-      "hora": "13:36:20",
-      "tipo": "LOGIN_BLOQUEADO",
+      "id": "1789754847912-140",
+      "fecha": "18/9/2026",
+      "hora": "14:07:27",
+      "tipo": "LOGIN_INACTIVO",
       "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
+      "detalle": "Intento de acceso con cuenta inactiva",
       "ip": "127.0.0.1"
     },
     {
-      "id": "1789579152367-564",
-      "fecha": "16/9/2026",
-      "hora": "13:19:12",
-      "tipo": "LOGIN_BLOQUEADO",
+      "id": "1789754839471-289",
+      "fecha": "18/9/2026",
+      "hora": "14:07:19",
+      "tipo": "LOGIN_INACTIVO",
       "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
+      "detalle": "Intento de acceso con cuenta inactiva",
       "ip": "127.0.0.1"
     },
     {
-      "id": "1789579119071-113",
-      "fecha": "16/9/2026",
-      "hora": "13:18:39",
+      "id": "1789754821471-879",
+      "fecha": "18/9/2026",
+      "hora": "14:07:01",
       "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789579118743-223",
-      "fecha": "16/9/2026",
-      "hora": "13:18:38",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789579117998-532",
-      "fecha": "16/9/2026",
-      "hora": "13:18:37",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789579117654-196",
-      "fecha": "16/9/2026",
-      "hora": "13:18:37",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789579115863-511",
-      "fecha": "16/9/2026",
-      "hora": "13:18:35",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789578945089-475",
-      "fecha": "16/9/2026",
-      "hora": "13:15:45",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789578927710-679",
-      "fecha": "16/9/2026",
-      "hora": "13:15:27",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789578927112-431",
-      "fecha": "16/9/2026",
-      "hora": "13:15:27",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789578918954-496",
-      "fecha": "16/9/2026",
-      "hora": "13:15:18",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789578894383-896",
-      "fecha": "16/9/2026",
-      "hora": "13:14:54",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789578874922-893",
-      "fecha": "16/9/2026",
-      "hora": "13:14:34",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789500799041-822",
-      "fecha": "15/9/2026",
-      "hora": "15:33:19",
-      "tipo": "ACCION_MASIVA",
-      "usuario": "Administrador",
-      "detalle": "Acción masiva 'bloquear' ejecutada sobre 1 usuario(s): Angel Rojas",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789500766179-552",
-      "fecha": "15/9/2026",
-      "hora": "15:32:46",
-      "tipo": "REGISTRO_USUARIO",
-      "usuario": "Gary",
-      "detalle": "Nuevo usuario registrado con correo monolito2026@gmail.com",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789500579292-335",
-      "fecha": "15/9/2026",
-      "hora": "15:29:39",
-      "tipo": "OTP_SOLICITADO",
       "usuario": "Anggll",
-      "detalle": "Código OTP de 6 dígitos generado para g***3@gmail.com",
+      "detalle": "Intento de acceso con cuenta bloqueada",
       "ip": "127.0.0.1"
     },
     {
-      "id": "1789500229694-566",
-      "fecha": "15/9/2026",
-      "hora": "15:23:49",
+      "id": "1789754817175-242",
+      "fecha": "18/9/2026",
+      "hora": "14:06:57",
+      "tipo": "LOGIN_FALLIDO",
+      "usuario": "Anggll",
+      "detalle": "Credenciales incorrectas",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789754813952-788",
+      "fecha": "18/9/2026",
+      "hora": "14:06:53",
+      "tipo": "LOGIN_FALLIDO",
+      "usuario": "Anggll",
+      "detalle": "Credenciales incorrectas",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1789754716304-820",
+      "fecha": "18/9/2026",
+      "hora": "14:05:16",
       "tipo": "AUDITORIA_VACIADA",
       "usuario": "Administrador",
       "detalle": "La bitácora de auditoría ha sido vaciada",
