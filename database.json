@@ -11,8 +11,8 @@
       "rol": "Cliente",
       "estado": "Inactivo",
       "historialEdiciones": [],
-      "codigoRecuperacion": "224735",
-      "codigoExpiracion": 1789499994134
+      "codigoRecuperacion": "648068",
+      "codigoExpiracion": 1789756928596
     },
     {
       "usuario": "Anggll",
@@ -134,54 +134,9 @@
   "soporte": [],
   "auditoria": [
     {
-      "id": "1789754847912-140",
+      "id": "1789756162227-399",
       "fecha": "18/9/2026",
-      "hora": "14:07:27",
-      "tipo": "LOGIN_INACTIVO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta inactiva",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789754839471-289",
-      "fecha": "18/9/2026",
-      "hora": "14:07:19",
-      "tipo": "LOGIN_INACTIVO",
-      "usuario": "Angel Rojas",
-      "detalle": "Intento de acceso con cuenta inactiva",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789754821471-879",
-      "fecha": "18/9/2026",
-      "hora": "14:07:01",
-      "tipo": "LOGIN_BLOQUEADO",
-      "usuario": "Anggll",
-      "detalle": "Intento de acceso con cuenta bloqueada",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789754817175-242",
-      "fecha": "18/9/2026",
-      "hora": "14:06:57",
-      "tipo": "LOGIN_FALLIDO",
-      "usuario": "Anggll",
-      "detalle": "Credenciales incorrectas",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789754813952-788",
-      "fecha": "18/9/2026",
-      "hora": "14:06:53",
-      "tipo": "LOGIN_FALLIDO",
-      "usuario": "Anggll",
-      "detalle": "Credenciales incorrectas",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1789754716304-820",
-      "fecha": "18/9/2026",
-      "hora": "14:05:16",
+      "hora": "14:29:22",
       "tipo": "AUDITORIA_VACIADA",
       "usuario": "Administrador",
       "detalle": "La bitácora de auditoría ha sido vaciada",

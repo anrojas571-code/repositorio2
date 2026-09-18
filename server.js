@@ -1590,8 +1590,6 @@ app.delete('/api/auditoria', async (req, res) => {
     if (pool) {
         try {
             await pool.query('TRUNCATE TABLE auditoria');
-            await registrarEventoAuditoria('AUDITORIA_VACIADA', 'Administrador', 'La bitácora de auditoría ha sido vaciada', req);
-            res.json({ ok: true, mensaje: 'Bitácora de auditoría vaciada con éxito' });
         } catch (err) {
             console.error('Error al vaciar auditoría PostgreSQL:', err);
             res.status(500).json({ error: 'Error al vaciar la bitácora de auditoría' });
@@ -1600,8 +1598,7 @@ app.delete('/api/auditoria', async (req, res) => {
         const db = leerDBLocal();
         db.auditoria = [];
         guardarDBLocal(db);
-        await registrarEventoAuditoria('AUDITORIA_VACIADA', 'Administrador', 'La bitácora de auditoría ha sido vaciada', req);
-        res.json({ ok: true, mensaje: 'Bitácora de auditoría vaciada con éxito' });
+
     }
 });
 
