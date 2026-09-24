@@ -2,17 +2,32 @@
   "usuarios": [
     {
       "usuario": "Angel Rojas",
-      "clave": "123456*",
+      "clave": "123456789/",
       "correo": "anrojas571@gmail.com",
       "telefono": "04123823890",
       "direccion": "Los Guayos",
       "fechaRegistro": "15/9/2026",
-      "contadorModificaciones": 0,
+      "contadorModificaciones": 1,
       "rol": "Cliente",
       "estado": "Activo",
-      "historialEdiciones": [],
-      "codigoRecuperacion": "856487",
-      "codigoExpiracion": 1790272989606
+      "historialEdiciones": [
+        {
+          "tipo": "recuperacion",
+          "carpeta": "📁 Recuperación con OTP",
+          "editor": "Sistema (OTP de 2 Pasos)",
+          "fecha": "24/9/26, 14:07:45",
+          "resumen": "Contraseña restablecida exitosamente mediante flujo OTP de 2 pasos",
+          "cambios": [
+            {
+              "campo": "Contraseña",
+              "valorAnterior": "••••••••",
+              "valorNuevo": "•••••••• (Restablecida)"
+            }
+          ]
+        }
+      ],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
     },
     {
       "usuario": "Anggll",
@@ -135,6 +150,69 @@
   ],
   "soporte": [],
   "auditoria": [
+    {
+      "id": "1790273375174-813",
+      "fecha": "24/9/2026",
+      "hora": "14:09:35",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "Angel Rojas",
+      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1790273348771-788",
+      "fecha": "24/9/2026",
+      "hora": "14:09:08",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "Angel Rojas",
+      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1790273319395-418",
+      "fecha": "24/9/2026",
+      "hora": "14:08:39",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "Angel Rojas",
+      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1790273295460-533",
+      "fecha": "24/9/2026",
+      "hora": "14:08:15",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "Angel Rojas",
+      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1790273290046-125",
+      "fecha": "24/9/2026",
+      "hora": "14:08:10",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "Angel Rojas",
+      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1790273265486-416",
+      "fecha": "24/9/2026",
+      "hora": "14:07:45",
+      "tipo": "RECUPERACION_EXITOSA",
+      "usuario": "Angel Rojas",
+      "detalle": "Contraseña restablecida mediante código OTP verificado",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1790273190754-642",
+      "fecha": "24/9/2026",
+      "hora": "14:06:30",
+      "tipo": "OTP_SOLICITADO",
+      "usuario": "Angel Rojas",
+      "detalle": "Código OTP de 6 dígitos generado para a***1@gmail.com",
+      "ip": "127.0.0.1"
+    },
     {
       "id": "1790272089608-396",
       "fecha": "24/9/2026",
