@@ -248,7 +248,8 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     const apiKey = obtenerApiKeyResend();
 
     if (!apiKey) {
-        console.warn(`[EMAIL ADVERTENCIA] No se envió el correo porque falta RESEND_API_KEY en variables de entorno.`);
+        console.warn(`[EMAIL AVISO] No se envió el correo a la bandeja porque falta colocar RESEND_API_KEY en el archivo .env.`);
+        console.warn(`[EMAIL AVISO] Puedes usar el código OTP (${codigo}) directamente en la web para continuar tus pruebas.`);
         return { enviado: false, motivo: 'no_credentials', codigo };
     }
 
@@ -497,7 +498,7 @@ app.post('/api/usuarios/login', async (req, res) => {
 
     const user = (db.usuarios || []).find(
         u => (u.usuario && u.usuario.toLowerCase() === busqueda) ||
-             (u.correo && u.correo.toLowerCase() === busqueda)
+            (u.correo && u.correo.toLowerCase() === busqueda)
     );
 
     if (!user) {
@@ -921,7 +922,7 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
     const db = leerDBLocal();
     const lenAntes = (db.usuarios || []).length;
     db.usuarios = (db.usuarios || []).filter(u => u.usuario.toLowerCase() !== usuario.toLowerCase());
-    
+
     if (db.usuarios.length === lenAntes) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
     }
@@ -1062,17 +1063,17 @@ app.get('*', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`
 ======================================================================
-  🏢  ${SYSTEM_NAME.toUpperCase()}
-  ⚡  Servidor Local Optimizado (Rápido y Sin Dependencia de Render)
+  [#] ${SYSTEM_NAME.toUpperCase()}
+  [*] Servidor Local Optimizado
 ======================================================================
-  🌐 Acceso con Nombre:    http://${HOST_NAME}:${PORT}
-  💻 Acceso Localhost:     http://localhost:${PORT}
-  🛡️  Panel Administrador:  http://${HOST_NAME}:${PORT}/admin
-  📧 Servicio de Correo:   Resend API
-  💾 Almacenamiento:       Local (database.json)
+  [>] Acceso con Nombre:    http://${HOST_NAME}:${PORT}
+  [>] Acceso Localhost:     http://localhost:${PORT}
+  [>] Panel Administrador:  http://${HOST_NAME}:${PORT}/admin
+  [>] Servicio de Correo:   Resend API
+  [>] Almacenamiento:       Local (database.json)
 ======================================================================
-  💡 TIP: Puedes abrir http://${HOST_NAME}:${PORT} en tu navegador
-     ejecutando 'activar-nombre-sistema.bat' una sola vez como admin.
+  [TIP] Puedes abrir http://${HOST_NAME}:${PORT} en tu navegador
+        ejecutando 'activar-nombre-sistema.bat' una sola vez como admin.
 ======================================================================
 `);
 });

@@ -11,8 +11,8 @@
       "rol": "Cliente",
       "estado": "Activo",
       "historialEdiciones": [],
-      "codigoRecuperacion": "648068",
-      "codigoExpiracion": 1789756928596
+      "codigoRecuperacion": "856487",
+      "codigoExpiracion": 1790272989606
     },
     {
       "usuario": "Anggll",
@@ -136,21 +136,12 @@
   "soporte": [],
   "auditoria": [
     {
-      "id": "1790267273644-139",
+      "id": "1790272089608-396",
       "fecha": "24/9/2026",
-      "hora": "12:27:53",
+      "hora": "13:48:09",
       "tipo": "OTP_SOLICITADO",
-      "usuario": "Gary",
-      "detalle": "Código OTP de 6 dígitos generado para m***6@gmail.com",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1790267196474-190",
-      "fecha": "24/9/2026",
-      "hora": "12:26:36",
-      "tipo": "ADMIN_LOGIN_EXITOSO",
-      "usuario": "Admin",
-      "detalle": "Acceso exitoso al panel administrativo",
+      "usuario": "Angel Rojas",
+      "detalle": "Código OTP de 6 dígitos generado para a***1@gmail.com",
       "ip": "127.0.0.1"
     }
   ]
