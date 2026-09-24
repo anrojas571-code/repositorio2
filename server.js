@@ -4,35 +4,149 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
+const zlib = require('zlib');
 const { Resend } = require('resend');
 const XLSX = require('xlsx');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const SYSTEM_NAME = process.env.SYSTEM_NAME || 'Sistema de Gestión de Usuarios';
+const HOST_NAME = process.env.HOST_NAME || 'sistema.local';
+
 const PRIMARY_DB_FILE = path.join(__dirname, 'database.json');
 const LEGACY_DB_FILE = path.join(__dirname, 'db.json');
 
-// --- MIDDLEWARES GLOBALES (DEBEN IR ANTES DE TODAS LAS RUTAS) ---
+// --- MIDDLEWARES GLOBALES ---
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Middleware de compresión GZIP nativa (acelera la carga un 70-80% sin librerías externas)
+app.use((req, res, next) => {
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+    if (!acceptEncoding.includes('gzip')) return next();
+
+    const originalSend = res.send;
+    res.send = function (body) {
+        if (!body) return originalSend.call(this, body);
+
+        // No comprimir si ya es binario procesado o archivo descargable Excel
+        const contentType = res.getHeader('Content-Type') || '';
+        if (typeof contentType === 'string' && contentType.includes('spreadsheetml')) {
+            return originalSend.call(this, body);
+        }
+
+        if (typeof body === 'string' || Buffer.isBuffer(body)) {
+            const buffer = Buffer.isBuffer(body) ? body : Buffer.from(body);
+            if (buffer.length > 512) {
+                try {
+                    const gzipped = zlib.gzipSync(buffer);
+                    res.setHeader('Content-Encoding', 'gzip');
+                    res.removeHeader('Content-Length');
+                    return originalSend.call(this, gzipped);
+                } catch (e) {
+                    return originalSend.call(this, body);
+                }
+            }
+        }
+        return originalSend.call(this, body);
+    };
+    next();
+});
 
 // Ruta dinámica para la carpeta Public
 const PUBLIC_DIR = fs.existsSync(path.join(__dirname, 'Public'))
     ? path.join(__dirname, 'Public')
     : path.join(__dirname, 'public');
 
-// Servir archivos estáticos
+// Servir archivos estáticos locales
 app.use(express.static(PUBLIC_DIR));
 
-// Credenciales del administrador inicial
+// Credenciales del administrador por defecto
 const ADMIN_DEFAULT = [
-    { usuario: 'Admin', clave: 'An12345*' },
-    { usuario: 'Angel', clave: 'Samuel20' }
+    { usuario: 'Admin', clave: 'An12345*', rol: 'admin' },
+    { usuario: 'Angel', clave: 'Samuel20', rol: 'admin' }
 ];
 
-// Función utilitaria para enmascarar correos electrónicos (ej: manuel@hotmail.com -> m***l@hotmail.com)
+// --- CACHÉ EN MEMORIA PARA MÁXIMA VELOCIDAD LOCAL ---
+let dbCache = null;
+
+function leerDBLocal() {
+    if (dbCache) return dbCache;
+
+    let targetFile = PRIMARY_DB_FILE;
+    if (!fs.existsSync(PRIMARY_DB_FILE) && fs.existsSync(LEGACY_DB_FILE)) {
+        targetFile = LEGACY_DB_FILE;
+    }
+
+    if (!fs.existsSync(targetFile)) {
+        const initialData = {
+            usuarios: [],
+            administradores: ADMIN_DEFAULT,
+            descargas: [],
+            soporte: [],
+            auditoria: [{
+                id: Date.now().toString(),
+                fecha: new Date().toLocaleDateString('es-ES'),
+                hora: new Date().toLocaleTimeString('es-ES'),
+                tipo: 'INICIALIZACION',
+                usuario: 'Sistema',
+                detalle: 'Inicialización de la base de datos local en database.json',
+                ip: '127.0.0.1'
+            }]
+        };
+        try {
+            fs.writeFileSync(PRIMARY_DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+            fs.writeFileSync(LEGACY_DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
+        } catch (e) {
+            console.error('Error creando base de datos inicial:', e);
+        }
+        dbCache = initialData;
+        return dbCache;
+    }
+
+    try {
+        const raw = fs.readFileSync(targetFile, 'utf-8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data)) {
+            dbCache = { usuarios: data, administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
+        } else {
+            if (!data.administradores || !Array.isArray(data.administradores) || data.administradores.length === 0) {
+                data.administradores = ADMIN_DEFAULT;
+            }
+            if (!Array.isArray(data.descargas)) data.descargas = [];
+            if (!Array.isArray(data.usuarios)) data.usuarios = [];
+            if (!Array.isArray(data.soporte)) data.soporte = [];
+            if (!Array.isArray(data.auditoria)) data.auditoria = [];
+            dbCache = data;
+        }
+        return dbCache;
+    } catch (e) {
+        console.error('Error al leer base de datos local:', e.message);
+        dbCache = { usuarios: [], administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
+        return dbCache;
+    }
+}
+
+function guardarDBLocal(data) {
+    dbCache = data;
+    const jsonStr = JSON.stringify(data, null, 2);
+    try {
+        fs.writeFileSync(PRIMARY_DB_FILE, jsonStr, 'utf-8');
+    } catch (err) {
+        console.error('Error escribiendo en database.json:', err.message);
+    }
+    try {
+        fs.writeFileSync(LEGACY_DB_FILE, jsonStr, 'utf-8');
+    } catch (err) {
+        // Silencioso para réplica
+    }
+}
+
+// Carga inicial al arrancar
+leerDBLocal();
+
+// Función utilitaria para enmascarar correos electrónicos (ej: usuario@correo.com -> u***o@correo.com)
 function enmascararCorreo(correo) {
     if (!correo || typeof correo !== 'string' || !correo.includes('@')) {
         return '***@correo.com';
@@ -44,7 +158,38 @@ function enmascararCorreo(correo) {
     return `${nombre[0]}***${nombre[nombre.length - 1]}@${dominio}`;
 }
 
-// Función centralizada para registrar eventos en la bitácora de auditoría global
+// Normalizador unificado de objetos usuario
+function normalizarUsuario(u) {
+    if (!u) return null;
+    let historial = u.historialEdiciones || u.historial_ediciones || [];
+    if (typeof historial === 'string') {
+        try {
+            historial = JSON.parse(historial);
+        } catch (e) {
+            historial = [];
+        }
+    }
+    if (!Array.isArray(historial)) {
+        historial = [];
+    }
+
+    return {
+        usuario: u.usuario,
+        clave: u.clave || '',
+        correo: u.correo || '',
+        telefono: u.telefono || '',
+        direccion: u.direccion || '',
+        fechaRegistro: u.fechaRegistro || u.fecha_registro || new Date().toLocaleDateString('es-ES'),
+        contadorModificaciones: parseInt(u.contadorModificaciones || u.contador_modificaciones || 0),
+        rol: u.rol || 'Cliente',
+        estado: u.estado || 'Activo',
+        historialEdiciones: historial,
+        codigoRecuperacion: u.codigoRecuperacion || u.codigo_recuperacion || null,
+        codigoExpiracion: u.codigoExpiracion || u.codigo_expiracion || null
+    };
+}
+
+// Registro centralizado de auditoría en database.json
 async function registrarEventoAuditoria(tipo, usuario, detalle, req = null) {
     const ahora = new Date();
     const fecha = ahora.toLocaleDateString('es-ES');
@@ -64,31 +209,19 @@ async function registrarEventoAuditoria(tipo, usuario, detalle, req = null) {
         ip: ip || '127.0.0.1'
     };
 
-    if (pool) {
-        try {
-            await pool.query(
-                `INSERT INTO auditoria (id, fecha, hora, tipo, usuario, detalle, ip)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [evento.id, evento.fecha, evento.hora, evento.tipo, evento.usuario, evento.detalle, evento.ip]
-            );
-        } catch (err) {
-            console.error('Error al registrar auditoría en PostgreSQL:', err.message);
-        }
-    } else {
-        try {
-            const db = leerDBLocal();
-            if (!Array.isArray(db.auditoria)) db.auditoria = [];
-            db.auditoria.unshift(evento);
-            if (db.auditoria.length > 1000) db.auditoria = db.auditoria.slice(0, 1000);
-            guardarDBLocal(db);
-        } catch (err) {
-            console.error('Error al registrar auditoría local:', err.message);
-        }
+    try {
+        const db = leerDBLocal();
+        if (!Array.isArray(db.auditoria)) db.auditoria = [];
+        db.auditoria.unshift(evento);
+        if (db.auditoria.length > 1000) db.auditoria = db.auditoria.slice(0, 1000);
+        guardarDBLocal(db);
+    } catch (err) {
+        console.error('Error al registrar auditoría local:', err.message);
     }
     return evento;
 }
 
-// Función auxiliar para obtener la API Key de Resend desde process.env
+// Función auxiliar para obtener la API Key de Resend desde el archivo de entorno
 function obtenerApiKeyResend() {
     const rawPass = (
         process.env.RESEND_API_KEY ||
@@ -103,7 +236,7 @@ function obtenerApiKeyResend() {
     return rawPass.replace(/\s+/g, '');
 }
 
-// Función auxiliar para enviar el correo de recuperación mediante la API HTTP de Resend
+// Envío de correo electrónico mediante la API HTTP de Resend
 async function enviarCorreoRecuperacion(correoDestino, codigo) {
     console.log(`\n==================================================`);
     console.log(`[CÓDIGO DE RECUPERACIÓN GENERADO]`);
@@ -120,9 +253,9 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     }
 
     const resend = new Resend(apiKey);
-    let remitenteFinal = process.env.EMAIL_FROM || 'Sistema <soporte@misistema.space>';
+    let remitenteFinal = process.env.EMAIL_FROM || 'Sistema de Usuarios <onboarding@resend.dev>';
 
-    console.log(`[EMAIL DISPARANDO VIA API HTTP] Enviando a ${correoDestino} desde ${remitenteFinal}...`);
+    console.log(`[RESEND] Enviando correo de recuperación a ${correoDestino} desde ${remitenteFinal}...`);
 
     try {
         const data = await resend.emails.send({
@@ -159,209 +292,6 @@ async function enviarCorreoRecuperacion(correoDestino, codigo) {
     }
 }
 
-// Normalizador unificado de objetos usuario
-function normalizarUsuario(u) {
-    if (!u) return null;
-    let historial = u.historialEdiciones || u.historial_ediciones || [];
-    if (typeof historial === 'string') {
-        try {
-            historial = JSON.parse(historial);
-        } catch (e) {
-            historial = [];
-        }
-    }
-    if (!Array.isArray(historial)) {
-        historial = [];
-    }
-
-    return {
-        usuario: u.usuario,
-        clave: u.clave || '',
-        correo: u.correo || '',
-        telefono: u.telefono || '',
-        direccion: u.direccion || '',
-        fechaRegistro: u.fechaRegistro || u.fecha_registro || new Date().toLocaleDateString(),
-        contadorModificaciones: parseInt(u.contadorModificaciones || u.contador_modificaciones || 0),
-        rol: u.rol || 'Cliente',
-        estado: u.estado || 'Activo',
-        historialEdiciones: historial,
-        codigoRecuperacion: u.codigoRecuperacion || u.codigo_recuperacion || null,
-        codigoExpiracion: u.codigoExpiracion || u.codigo_expiracion || null
-    };
-}
-
-// Configuración de PostgreSQL si DATABASE_URL existe
-let pool = null;
-if (process.env.DATABASE_URL) {
-    pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: {
-            rejectUnauthorized: false
-        }
-    });
-    console.log('Conectado a PostgreSQL mediante DATABASE_URL');
-
-    // Inicializar tablas y columnas en PostgreSQL
-    const initDb = async () => {
-        try {
-            // Tabla de usuarios
-            await pool.query(`
-                CREATE TABLE IF NOT EXISTS usuarios (
-                    usuario VARCHAR(255) PRIMARY KEY,
-                    clave TEXT NOT NULL,
-                    correo TEXT,
-                    telefono TEXT,
-                    direccion TEXT,
-                    fecha_registro TEXT,
-                    contador_modificaciones INT DEFAULT 0,
-                    codigo_recuperacion TEXT,
-                    codigo_expiracion BIGINT,
-                    rol VARCHAR(50) DEFAULT 'Cliente',
-                    estado VARCHAR(50) DEFAULT 'Activo',
-                    historial_ediciones TEXT DEFAULT '[]'
-                );
-            `);
-
-            // Asegurar columnas existentes
-            await pool.query(`
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS correo TEXT;
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefono TEXT;
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS direccion TEXT;
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS fecha_registro TEXT;
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS contador_modificaciones INT DEFAULT 0;
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_recuperacion TEXT;
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_expiracion BIGINT;
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS rol VARCHAR(50) DEFAULT 'Cliente';
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS estado VARCHAR(50) DEFAULT 'Activo';
-                ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS historial_ediciones TEXT DEFAULT '[]';
-            `);
-
-            // Tabla de administradores
-            await pool.query(`
-                CREATE TABLE IF NOT EXISTS administradores (
-                    usuario VARCHAR(255) PRIMARY KEY,
-                    clave TEXT NOT NULL,
-                    rol VARCHAR(50) DEFAULT 'admin'
-                );
-            `);
-
-            // Tabla de historial de descargas
-            await pool.query(`
-                CREATE TABLE IF NOT EXISTS descargas (
-                    id SERIAL PRIMARY KEY,
-                    formato VARCHAR(20) NOT NULL,
-                    fecha TEXT NOT NULL,
-                    hora TEXT NOT NULL
-                );
-            `);
-
-            // Tabla de soporte técnico
-            await pool.query(`
-                CREATE TABLE IF NOT EXISTS soporte (
-                    id TEXT PRIMARY KEY,
-                    usuario TEXT NOT NULL,
-                    emisor VARCHAR(20) DEFAULT 'usuario',
-                    motivo TEXT NOT NULL,
-                    mensaje TEXT NOT NULL,
-                    fecha TEXT NOT NULL
-                );
-            `);
-
-            // Asegurar columna emisor si la tabla ya existía
-            await pool.query(`
-                ALTER TABLE soporte ADD COLUMN IF NOT EXISTS emisor VARCHAR(20) DEFAULT 'usuario';
-            `);
-
-            // Tabla de bitácora de auditoría global
-            await pool.query(`
-                CREATE TABLE IF NOT EXISTS auditoria (
-                    id TEXT PRIMARY KEY,
-                    fecha TEXT NOT NULL,
-                    hora TEXT NOT NULL,
-                    tipo TEXT NOT NULL,
-                    usuario TEXT,
-                    detalle TEXT NOT NULL,
-                    ip TEXT
-                );
-            `);
-
-            // Insertar administradores por defecto
-            for (const admin of ADMIN_DEFAULT) {
-                await pool.query(`
-                    INSERT INTO administradores (usuario, clave) 
-                    VALUES ($1, $2)
-                    ON CONFLICT (usuario) DO NOTHING;
-                `, [admin.usuario, admin.clave]);
-            }
-
-            console.log('Tablas listas en PostgreSQL');
-        } catch (err) {
-            console.error('Error al inicializar la base de datos en PostgreSQL:', err);
-        }
-    };
-    initDb();
-} else {
-    console.log('DATABASE_URL no definida. Modo local con persistencia en database.json');
-}
-
-// --- MÉTODOS LOCALES (PERSISTENCIA PRINCIPAL EN database.json) ---
-function leerDBLocal() {
-    let targetFile = PRIMARY_DB_FILE;
-    if (!fs.existsSync(PRIMARY_DB_FILE) && fs.existsSync(LEGACY_DB_FILE)) {
-        targetFile = LEGACY_DB_FILE;
-    }
-
-    if (!fs.existsSync(targetFile)) {
-        const initialData = {
-            usuarios: [],
-            administradores: ADMIN_DEFAULT,
-            descargas: [],
-            soporte: [],
-            auditoria: [{
-                id: Date.now().toString(),
-                fecha: new Date().toLocaleDateString('es-ES'),
-                hora: new Date().toLocaleTimeString('es-ES'),
-                tipo: 'INICIALIZACION',
-                usuario: 'Sistema',
-                detalle: 'Inicialización automática de database.json',
-                ip: '127.0.0.1'
-            }]
-        };
-        fs.writeFileSync(PRIMARY_DB_FILE, JSON.stringify(initialData, null, 2));
-        return initialData;
-    }
-
-    try {
-        const raw = fs.readFileSync(targetFile, 'utf-8');
-        const data = JSON.parse(raw);
-        if (Array.isArray(data)) {
-            return { usuarios: data, administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
-        }
-        if (!data.administradores) data.administradores = ADMIN_DEFAULT;
-        if (!data.descargas) data.descargas = [];
-        if (!data.usuarios) data.usuarios = [];
-        if (!data.soporte) data.soporte = [];
-        if (!data.auditoria) data.auditoria = [];
-        return data;
-    } catch (e) {
-        return { usuarios: [], administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
-    }
-}
-
-function guardarDBLocal(data) {
-    const jsonStr = JSON.stringify(data, null, 2);
-    try {
-        fs.writeFileSync(PRIMARY_DB_FILE, jsonStr);
-    } catch (err) {
-        console.error('Error escribiendo en database.json:', err);
-    }
-    try {
-        fs.writeFileSync(LEGACY_DB_FILE, jsonStr);
-    } catch (err) {
-        // Silencioso para sincronización secundaria
-    }
-}
-
 // --- RUTAS DE VISTAS PRINCIPALES ---
 app.get(['/', '/index', '/index.html'], (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
@@ -371,7 +301,7 @@ app.get(['/admin', '/admin.html'], (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'admin.html'));
 });
 
-// --- API SOPORTE TÉCNICO (Envío del usuario y chat) ---
+// --- API SOPORTE TÉCNICO ---
 app.post(['/api/soporte', '/api/soporte/enviar'], async (req, res) => {
     const usuario = req.body.usuario || req.body.usuario_origen || req.body.remitente;
     const motivo = req.body.motivo || 'Consulta General';
@@ -391,27 +321,13 @@ app.post(['/api/soporte', '/api/soporte/enviar'], async (req, res) => {
         fecha: new Date().toLocaleString('es-ES')
     };
 
-    if (pool) {
-        try {
-            await pool.query(
-                'INSERT INTO soporte (id, usuario, emisor, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5, $6)',
-                [nuevoMensaje.id, nuevoMensaje.usuario, nuevoMensaje.emisor, nuevoMensaje.motivo, nuevoMensaje.mensaje, nuevoMensaje.fecha]
-            );
-            return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito', data: nuevoMensaje });
-        } catch (err) {
-            console.error('Error al guardar mensaje de soporte en PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al enviar mensaje de soporte' });
-        }
-    } else {
-        const db = leerDBLocal();
-        if (!Array.isArray(db.soporte)) db.soporte = [];
-        db.soporte.push(nuevoMensaje);
-        guardarDBLocal(db);
-        return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito', data: nuevoMensaje });
-    }
+    const db = leerDBLocal();
+    if (!Array.isArray(db.soporte)) db.soporte = [];
+    db.soporte.push(nuevoMensaje);
+    guardarDBLocal(db);
+    return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito', data: nuevoMensaje });
 });
 
-// --- API SOPORTE TÉCNICO (Respuesta del Administrador) ---
 app.post('/api/soporte/responder', async (req, res) => {
     const usuario = req.body.usuario || req.body.usuario_origen;
     const { mensaje } = req.body;
@@ -429,330 +345,184 @@ app.post('/api/soporte/responder', async (req, res) => {
         fecha: new Date().toLocaleString('es-ES')
     };
 
-    if (pool) {
-        try {
-            await pool.query(
-                'INSERT INTO soporte (id, usuario, emisor, motivo, mensaje, fecha) VALUES ($1, $2, $3, $4, $5, $6)',
-                [respuestaAdmin.id, respuestaAdmin.usuario, respuestaAdmin.emisor, respuestaAdmin.motivo, respuestaAdmin.mensaje, respuestaAdmin.fecha]
-            );
-            return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito', data: respuestaAdmin });
-        } catch (err) {
-            console.error('Error al guardar respuesta de admin en PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al enviar la respuesta de soporte' });
-        }
-    } else {
-        const db = leerDBLocal();
-        if (!Array.isArray(db.soporte)) db.soporte = [];
-        db.soporte.push(respuestaAdmin);
-        guardarDBLocal(db);
-        return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito', data: respuestaAdmin });
-    }
+    const db = leerDBLocal();
+    if (!Array.isArray(db.soporte)) db.soporte = [];
+    db.soporte.push(respuestaAdmin);
+    guardarDBLocal(db);
+    return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito', data: respuestaAdmin });
 });
 
-// --- API SOPORTE TÉCNICO: Obtener todos los mensajes ---
 app.get('/api/soporte', async (req, res) => {
-    if (pool) {
-        try {
-            const result = await pool.query('SELECT * FROM soporte ORDER BY id ASC');
-            return res.json(result.rows);
-        } catch (err) {
-            console.error('Error al obtener mensajes de soporte en PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al obtener mensajes de soporte' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const soporte = (db.soporte || []).slice().sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
-        return res.json(soporte);
-    }
+    const db = leerDBLocal();
+    const soporte = (db.soporte || []).slice().sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+    return res.json(soporte);
 });
 
-// --- API SOPORTE TÉCNICO: Obtener mensajes de un usuario específico ---
 app.get('/api/soporte/usuario/:usuario', async (req, res) => {
     const usuarioParam = (req.params.usuario || '').trim();
     if (!usuarioParam) {
         return res.status(400).json({ error: 'El parámetro usuario es requerido' });
     }
 
-    if (pool) {
-        try {
-            const result = await pool.query(
-                'SELECT * FROM soporte WHERE LOWER(usuario) = LOWER($1) ORDER BY id ASC',
-                [usuarioParam]
-            );
-            return res.json(result.rows);
-        } catch (err) {
-            console.error(`Error al obtener mensajes de ${usuarioParam}:`, err);
-            return res.status(500).json({ error: 'Error al obtener mensajes del usuario' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const mensajes = (db.soporte || [])
-            .filter(m => m.usuario && m.usuario.toLowerCase() === usuarioParam.toLowerCase())
-            .sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
-        return res.json(mensajes);
-    }
+    const db = leerDBLocal();
+    const mensajes = (db.soporte || [])
+        .filter(m => m.usuario && m.usuario.toLowerCase() === usuarioParam.toLowerCase())
+        .sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+    return res.json(mensajes);
 });
 
-// --- API SOPORTE TÉCNICO: Eliminar conversación de un usuario ---
 app.delete('/api/soporte/usuario/:usuario', async (req, res) => {
     const usuarioParam = (req.params.usuario || '').trim();
     if (!usuarioParam) {
         return res.status(400).json({ error: 'El parámetro usuario es requerido' });
     }
 
-    if (pool) {
-        try {
-            await pool.query('DELETE FROM soporte WHERE LOWER(usuario) = LOWER($1)', [usuarioParam]);
-            return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
-        } catch (err) {
-            console.error(`Error al eliminar conversación de ${usuarioParam}:`, err);
-            return res.status(500).json({ error: 'Error al eliminar la conversación del usuario' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.soporte = (db.soporte || []).filter(
-            m => !m.usuario || m.usuario.toLowerCase() !== usuarioParam.toLowerCase()
-        );
-        guardarDBLocal(db);
-        return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
-    }
+    const db = leerDBLocal();
+    db.soporte = (db.soporte || []).filter(
+        m => !m.usuario || m.usuario.toLowerCase() !== usuarioParam.toLowerCase()
+    );
+    guardarDBLocal(db);
+    return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
 });
 
-// --- API SOPORTE TÉCNICO: Vaciar todos los mensajes ---
 app.delete(['/api/soporte', '/api/soporte/vaciar'], async (req, res) => {
-    if (pool) {
-        try {
-            await pool.query('TRUNCATE TABLE soporte');
-            await registrarEventoAuditoria('SOPORTE_VACIADO', 'Administrador', 'Vaciado completo del historial de soporte', req);
-            return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
-        } catch (err) {
-            console.error('Error al vaciar mensajes de soporte:', err);
-            return res.status(500).json({ error: 'Error al vaciar los chats de soporte' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.soporte = [];
-        guardarDBLocal(db);
-        await registrarEventoAuditoria('SOPORTE_VACIADO', 'Administrador', 'Vaciado completo del historial de soporte', req);
-        return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
-    }
+    const db = leerDBLocal();
+    db.soporte = [];
+    guardarDBLocal(db);
+    await registrarEventoAuditoria('SOPORTE_VACIADO', 'Administrador', 'Vaciado completo del historial de soporte', req);
+    return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
 });
 
-// --- API SOPORTE TÉCNICO: Eliminar un mensaje individual por ID ---
 app.delete('/api/soporte/:id', async (req, res) => {
     const { id } = req.params;
-    if (pool) {
-        try {
-            await pool.query('DELETE FROM soporte WHERE id = $1', [id]);
-            return res.json({ status: 'ok', mensaje: 'Mensaje eliminado' });
-        } catch (err) {
-            console.error('Error al eliminar mensaje:', err);
-            return res.status(500).json({ error: 'Error al eliminar mensaje' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.soporte = (db.soporte || []).filter(m => m.id !== id);
-        guardarDBLocal(db);
-        return res.json({ status: 'ok', mensaje: 'Mensaje eliminado' });
-    }
+    const db = leerDBLocal();
+    db.soporte = (db.soporte || []).filter(m => m.id !== id);
+    guardarDBLocal(db);
+    return res.json({ status: 'ok', mensaje: 'Mensaje eliminado' });
 });
 
-// API: Login exclusivo para Administradores
+// --- API ADMINISTRADORES ---
 app.post('/api/admin/login', async (req, res) => {
-    const usuario = req.body.usuario?.trim();
-    const clave = req.body.clave?.trim();
-
+    const { usuario, clave } = req.body;
     if (!usuario || !clave) {
-        return res.status(400).json({ ok: false, error: 'Usuario y contraseña requeridos' });
+        return res.status(400).json({ error: 'Credenciales incompletas' });
     }
 
-    if (pool) {
-        try {
-            const result = await pool.query(
-                'SELECT usuario FROM administradores WHERE LOWER(usuario) = LOWER($1) AND clave = $2',
-                [usuario, clave]
-            );
+    const db = leerDBLocal();
+    const admins = db.administradores || ADMIN_DEFAULT;
+    const adminEncontrado = admins.find(a => a.usuario.toLowerCase() === usuario.trim().toLowerCase());
 
-            if (result.rows.length > 0) {
-                return res.json({ ok: true, usuario: result.rows[0].usuario, message: 'Acceso concedido' });
-            } else {
-                return res.status(401).json({ ok: false, error: 'Credenciales no válidas' });
-            }
-        } catch (err) {
-            console.error('Error en Login Admin (DB):', err);
-            return res.status(500).json({ ok: false, error: 'Error en el servidor' });
-        }
-    } else {
-        try {
-            const db = leerDBLocal();
-            const adminExiste = db.administradores?.find(
-                a => a.usuario.trim().toLowerCase() === usuario.toLowerCase() && a.clave === clave
-            );
-
-            if (adminExiste) {
-                return res.json({ ok: true, usuario: adminExiste.usuario, message: 'Acceso concedido' });
-            } else {
-                return res.status(401).json({ ok: false, error: 'Credenciales no válidas' });
-            }
-        } catch (err) {
-            console.error('Error en Login Admin (Local):', err);
-            return res.status(500).json({ ok: false, error: 'Error al leer la base local' });
-        }
+    if (adminEncontrado && adminEncontrado.clave === clave.trim()) {
+        await registrarEventoAuditoria('ADMIN_LOGIN_EXITOSO', usuario, 'Acceso exitoso al panel administrativo', req);
+        return res.json({
+            success: true,
+            rol: adminEncontrado.rol || 'admin',
+            usuario: adminEncontrado.usuario,
+            mensaje: 'Acceso autorizado al panel de control'
+        });
     }
+
+    await registrarEventoAuditoria('ADMIN_LOGIN_FALLIDO', usuario, 'Intento de acceso denegado con credenciales inválidas', req);
+    return res.status(401).json({ error: 'Credenciales inválidas para administrador' });
 });
 
-// API: Obtener todos los usuarios
+// --- API GESTIÓN DE USUARIOS ---
 app.get('/api/usuarios', async (req, res) => {
-    if (pool) {
-        try {
-            const result = await pool.query(
-                `SELECT usuario, clave, correo, telefono, direccion, 
-                        fecha_registro AS "fechaRegistro", 
-                        contador_modificaciones AS "contadorModificaciones",
-                        COALESCE(rol, 'Cliente') AS "rol",
-                        COALESCE(estado, 'Activo') AS "estado",
-                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones",
-                        codigo_recuperacion AS "codigoRecuperacion",
-                        codigo_expiracion AS "codigoExpiracion"
-                 FROM usuarios ORDER BY usuario ASC`
-            );
-            const usuariosNormalizados = result.rows.map(normalizarUsuario);
-            return res.json(usuariosNormalizados);
-        } catch (err) {
-            return res.status(500).json({ error: 'Error al consultar PostgreSQL' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const usuariosNormalizados = (db.usuarios || []).map(normalizarUsuario);
-        res.json(usuariosNormalizados);
-    }
+    const db = leerDBLocal();
+    const usuarios = (db.usuarios || []).map(normalizarUsuario);
+    return res.json(usuarios);
 });
 
-// API: Registrar usuario normal
 app.post(['/api/usuarios/registro', '/api/usuarios/registrar'], async (req, res) => {
     const { usuario, clave, correo, telefono, direccion } = req.body;
-    if (!usuario || !clave) return res.status(400).json({ error: 'Usuario y clave requeridos' });
-    if (!correo) return res.status(400).json({ error: 'El correo electrónico es requerido' });
-
-    const fechaRegistro = new Date().toLocaleDateString();
-
-    if (pool) {
-        try {
-            const existe = await pool.query('SELECT usuario FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [usuario]);
-            if (existe.rows.length > 0) return res.status(400).json({ error: 'El usuario ya existe' });
-
-            const existeCorreo = await pool.query('SELECT usuario FROM usuarios WHERE LOWER(correo) = LOWER($1)', [correo]);
-            if (existeCorreo.rows.length > 0) return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
-
-            const insertResult = await pool.query(
-                `INSERT INTO usuarios (usuario, clave, correo, telefono, direccion, fecha_registro, contador_modificaciones, rol, estado, historial_ediciones)
-                 VALUES ($1, $2, $3, $4, $5, $6, 0, 'Cliente', 'Activo', '[]')
-                 RETURNING usuario, clave, correo, telefono, direccion, 
-                           fecha_registro AS "fechaRegistro", 
-                           contador_modificaciones AS "contadorModificaciones", 
-                           rol, estado, historial_ediciones AS "historialEdiciones"`,
-                [usuario, clave, correo, telefono || '', direccion || '', fechaRegistro]
-            );
-
-            await registrarEventoAuditoria('REGISTRO_USUARIO', usuario, `Nuevo usuario registrado con correo ${correo}`, req);
-            return res.json({ mensaje: 'Usuario registrado', usuario: normalizarUsuario(insertResult.rows[0]) });
-        } catch (err) {
-            console.error('Error en registrar PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error en base de datos al registrar usuario' });
-        }
-    } else {
-        const db = leerDBLocal();
-        if (db.usuarios.some(u => u.usuario && u.usuario.toLowerCase() === usuario.toLowerCase())) {
-            return res.status(400).json({ error: 'El usuario ya existe' });
-        }
-        if (db.usuarios.some(u => u.correo && u.correo.toLowerCase() === correo.toLowerCase())) {
-            return res.status(400).json({ error: 'El correo electrónico ya está registrado' });
-        }
-
-        const nuevoUsuario = {
-            usuario,
-            clave,
-            correo,
-            telefono: telefono || '',
-            direccion: direccion || '',
-            fechaRegistro,
-            contadorModificaciones: 0,
-            rol: 'Cliente',
-            estado: 'Activo',
-            historialEdiciones: []
-        };
-        db.usuarios.push(nuevoUsuario);
-        guardarDBLocal(db);
-        await registrarEventoAuditoria('REGISTRO_USUARIO', usuario, `Nuevo usuario registrado con correo ${correo}`, req);
-        res.json({ mensaje: 'Usuario registrado', usuario: normalizarUsuario(nuevoUsuario) });
+    if (!usuario || !clave) {
+        return res.status(400).json({ error: 'Nombre de usuario y contraseña requeridos' });
     }
+
+    const db = leerDBLocal();
+    const usuarioLimpio = usuario.trim();
+    const correoLimpio = (correo || '').trim();
+
+    const existeUsuario = (db.usuarios || []).some(
+        u => u.usuario && u.usuario.toLowerCase() === usuarioLimpio.toLowerCase()
+    );
+    if (existeUsuario) {
+        return res.status(400).json({ error: 'El nombre de usuario ya se encuentra registrado' });
+    }
+
+    if (correoLimpio) {
+        const existeCorreo = (db.usuarios || []).some(
+            u => u.correo && u.correo.toLowerCase() === correoLimpio.toLowerCase()
+        );
+        if (existeCorreo) {
+            return res.status(400).json({ error: 'El correo electrónico ya está registrado con otra cuenta' });
+        }
+    }
+
+    const nuevoUsuario = {
+        usuario: usuarioLimpio,
+        clave: clave.trim(),
+        correo: correoLimpio,
+        telefono: (telefono || '').trim(),
+        direccion: (direccion || '').trim(),
+        fechaRegistro: new Date().toLocaleDateString('es-ES'),
+        contadorModificaciones: 0,
+        rol: 'Cliente',
+        estado: 'Activo',
+        historialEdiciones: [],
+        codigoRecuperacion: null,
+        codigoExpiracion: null
+    };
+
+    db.usuarios.push(nuevoUsuario);
+    guardarDBLocal(db);
+
+    await registrarEventoAuditoria('REGISTRO_USUARIO', usuarioLimpio, `Nueva cuenta registrada (${correoLimpio || 'Sin correo'})`, req);
+
+    return res.status(201).json({
+        success: true,
+        mensaje: 'Usuario registrado con éxito',
+        usuario: normalizarUsuario(nuevoUsuario)
+    });
 });
 
-// API: Iniciar sesión usuario normal
 app.post('/api/usuarios/login', async (req, res) => {
     const { usuario, clave } = req.body;
-    if (!usuario || !clave) return res.status(400).json({ error: 'Usuario y clave requeridos' });
-
-    if (pool) {
-        try {
-            const result = await pool.query(
-                `SELECT usuario, clave, correo, telefono, direccion, 
-                        fecha_registro AS "fechaRegistro", 
-                        contador_modificaciones AS "contadorModificaciones", 
-                        COALESCE(rol, 'Cliente') AS "rol", 
-                        COALESCE(estado, 'Activo') AS "estado", 
-                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones" 
-                 FROM usuarios WHERE (LOWER(usuario) = LOWER($1) OR LOWER(correo) = LOWER($1)) AND clave = $2`,
-                [usuario, clave]
-            );
-
-            if (result.rows.length > 0) {
-                const user = normalizarUsuario(result.rows[0]);
-                if (user.estado === 'Bloqueado') {
-                    await registrarEventoAuditoria('LOGIN_BLOQUEADO', user.usuario, 'Intento de acceso con cuenta bloqueada', req);
-                    return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada. Contacta al administrador.' });
-                }
-                if (user.estado === 'Inactivo') {
-                    await registrarEventoAuditoria('LOGIN_INACTIVO', user.usuario, 'Intento de acceso con cuenta inactiva', req);
-                    return res.status(403).json({ error: 'Tu cuenta se encuentra inactiva. Contacta al administrador.' });
-                }
-                await registrarEventoAuditoria('LOGIN_EXITOSO', user.usuario, 'Inicio de sesión exitoso', req);
-                res.json(user);
-            } else {
-                await registrarEventoAuditoria('LOGIN_FALLIDO', usuario, 'Credenciales incorrectas', req);
-                res.status(401).json({ error: 'Credenciales incorrectas' });
-            }
-        } catch (err) {
-            res.status(500).json({ error: 'Error en PostgreSQL' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const encontrado = db.usuarios.find(u =>
-            (u.usuario.toLowerCase() === usuario.toLowerCase() || (u.correo && u.correo.toLowerCase() === usuario.toLowerCase())) &&
-            u.clave === clave
-        );
-        if (encontrado) {
-            const user = normalizarUsuario(encontrado);
-            if (user.estado === 'Bloqueado') {
-                await registrarEventoAuditoria('LOGIN_BLOQUEADO', user.usuario, 'Intento de acceso con cuenta bloqueada', req);
-                return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada. Contacta al administrador.' });
-            }
-            if (user.estado === 'Inactivo') {
-                await registrarEventoAuditoria('LOGIN_INACTIVO', user.usuario, 'Intento de acceso con cuenta inactiva', req);
-                return res.status(403).json({ error: 'Tu cuenta se encuentra inactiva. Contacta al administrador.' });
-            }
-            await registrarEventoAuditoria('LOGIN_EXITOSO', user.usuario, 'Inicio de sesión exitoso', req);
-            res.json(user);
-        } else {
-            await registrarEventoAuditoria('LOGIN_FALLIDO', usuario, 'Credenciales incorrectas', req);
-            res.status(401).json({ error: 'Credenciales incorrectas' });
-        }
+    if (!usuario || !clave) {
+        return res.status(400).json({ error: 'Ingresa usuario y contraseña' });
     }
+
+    const db = leerDBLocal();
+    const busqueda = usuario.trim().toLowerCase();
+
+    const user = (db.usuarios || []).find(
+        u => (u.usuario && u.usuario.toLowerCase() === busqueda) ||
+             (u.correo && u.correo.toLowerCase() === busqueda)
+    );
+
+    if (!user) {
+        return res.status(401).json({ error: 'Usuario o correo no encontrado' });
+    }
+
+    if (user.estado && user.estado.toLowerCase() === 'bloqueado') {
+        await registrarEventoAuditoria('LOGIN_BLOQUEADO', user.usuario, 'Intento de acceso con cuenta bloqueada', req);
+        return res.status(403).json({ error: 'Tu cuenta ha sido bloqueada. Contacta al administrador.' });
+    }
+
+    if (user.clave !== clave.trim()) {
+        return res.status(401).json({ error: 'Contraseña incorrecta' });
+    }
+
+    await registrarEventoAuditoria('LOGIN_EXITOSO', user.usuario, 'Inicio de sesión exitoso en la plataforma', req);
+
+    return res.json({
+        success: true,
+        usuario: normalizarUsuario(user),
+        mensaje: 'Bienvenido de nuevo'
+    });
 });
 
-// --- RECUPERACIÓN DE CONTRASEÑA POR CORREO (FLUJO RESILIENTE OTP DE 2 PASOS) ---
-
-// 1. Solicitar código de recuperación (Paso 1: Búsqueda por usuario o correo con enmascaramiento visible)
+// --- RECUPERACIÓN DE CONTRASEÑA CON OTP ---
 app.post(['/api/usuarios/recuperar-solicitar', '/api/usuarios/solicitar-codigo-recuperacion'], async (req, res) => {
     const busqueda = (req.body.busqueda || req.body.correo || req.body.usuario || '').trim();
     if (!busqueda) return res.status(400).json({ error: 'Ingresa tu nombre de usuario o correo electrónico' });
@@ -760,44 +530,20 @@ app.post(['/api/usuarios/recuperar-solicitar', '/api/usuarios/solicitar-codigo-r
     const codigo = Math.floor(100000 + Math.random() * 900000).toString();
     const expiracion = Date.now() + (15 * 60 * 1000);
 
-    let usuarioEncontrado = null;
+    const db = leerDBLocal();
+    const idx = (db.usuarios || []).findIndex(u =>
+        (u.usuario && u.usuario.toLowerCase() === busqueda.toLowerCase()) ||
+        (u.correo && u.correo.toLowerCase() === busqueda.toLowerCase())
+    );
 
-    if (pool) {
-        try {
-            const userRes = await pool.query(
-                'SELECT usuario, correo, estado FROM usuarios WHERE LOWER(usuario) = LOWER($1) OR LOWER(correo) = LOWER($1)',
-                [busqueda]
-            );
-
-            if (userRes.rows.length === 0) {
-                return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este usuario o correo electrónico' });
-            }
-            usuarioEncontrado = userRes.rows[0];
-
-            await pool.query(
-                'UPDATE usuarios SET codigo_recuperacion = $1, codigo_expiracion = $2 WHERE LOWER(usuario) = LOWER($3)',
-                [codigo, expiracion, usuarioEncontrado.usuario]
-            );
-        } catch (err) {
-            console.error('Error al generar OTP en PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al actualizar código en la base de datos' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u =>
-            (u.usuario && u.usuario.toLowerCase() === busqueda.toLowerCase()) ||
-            (u.correo && u.correo.toLowerCase() === busqueda.toLowerCase())
-        );
-
-        if (idx === -1) {
-            return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este usuario o correo electrónico' });
-        }
-        usuarioEncontrado = db.usuarios[idx];
-
-        db.usuarios[idx].codigoRecuperacion = codigo;
-        db.usuarios[idx].codigoExpiracion = expiracion;
-        guardarDBLocal(db);
+    if (idx === -1) {
+        return res.status(404).json({ error: 'No existe ninguna cuenta asociada a este usuario o correo electrónico' });
     }
+
+    const usuarioEncontrado = db.usuarios[idx];
+    usuarioEncontrado.codigoRecuperacion = codigo;
+    usuarioEncontrado.codigoExpiracion = expiracion;
+    guardarDBLocal(db);
 
     const correoEnmascarado = enmascararCorreo(usuarioEncontrado.correo);
 
@@ -822,7 +568,6 @@ app.post(['/api/usuarios/recuperar-solicitar', '/api/usuarios/solicitar-codigo-r
     });
 });
 
-// 2. Verificar código OTP y cambio de contraseña en 1 paso unificado (Paso 2)
 app.post('/api/usuarios/recuperar-verificar', async (req, res) => {
     const usuarioTarget = (req.body.usuario || req.body.correo || req.body.busqueda || '').trim();
     const otp = (req.body.otp || req.body.codigo || '').trim();
@@ -834,6 +579,24 @@ app.post('/api/usuarios/recuperar-verificar', async (req, res) => {
 
     if (nuevaClave.length < 6) {
         return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const db = leerDBLocal();
+    const idx = (db.usuarios || []).findIndex(u =>
+        (u.usuario && u.usuario.toLowerCase() === usuarioTarget.toLowerCase()) ||
+        (u.correo && u.correo.toLowerCase() === usuarioTarget.toLowerCase())
+    );
+
+    if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const user = db.usuarios[idx];
+
+    if (!user.codigoRecuperacion || user.codigoRecuperacion !== otp) {
+        return res.status(400).json({ error: 'El código de recuperación es incorrecto o ha caducado' });
+    }
+
+    if (user.codigoExpiracion && Date.now() > user.codigoExpiracion) {
+        return res.status(400).json({ error: 'El código de recuperación ha expirado. Solicita uno nuevo.' });
     }
 
     const logAuditoria = {
@@ -849,346 +612,123 @@ app.post('/api/usuarios/recuperar-verificar', async (req, res) => {
         }]
     };
 
-    if (pool) {
-        try {
-            const userRes = await pool.query(
-                `SELECT usuario, correo, clave, codigo_recuperacion, codigo_expiracion, contador_modificaciones, historial_ediciones 
-                 FROM usuarios WHERE LOWER(usuario) = LOWER($1) OR LOWER(correo) = LOWER($1)`,
-                [usuarioTarget]
-            );
+    if (!Array.isArray(user.historialEdiciones)) user.historialEdiciones = [];
+    user.historialEdiciones.unshift(logAuditoria);
+    user.clave = nuevaClave;
+    user.contadorModificaciones = (parseInt(user.contadorModificaciones || 0)) + 1;
+    user.codigoRecuperacion = null;
+    user.codigoExpiracion = null;
 
-            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    guardarDBLocal(db);
+    await registrarEventoAuditoria('RECUPERACION_EXITOSA', user.usuario, 'Contraseña restablecida mediante código OTP verificado', req);
 
-            const user = userRes.rows[0];
-            if (!user.codigo_recuperacion || user.codigo_recuperacion !== otp) {
-                await registrarEventoAuditoria('OTP_FALLIDO', user.usuario, 'Código OTP incorrecto en cambio de contraseña', req);
-                return res.status(400).json({ error: 'Código de verificación incorrecto' });
-            }
-
-            if (Date.now() > parseInt(user.codigo_expiracion || 0)) {
-                await registrarEventoAuditoria('OTP_EXPIRADO', user.usuario, 'Código OTP expirado en cambio de contraseña', req);
-                return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos). Debes solicitar uno nuevo.' });
-            }
-
-            let historial = [];
-            try {
-                historial = JSON.parse(user.historial_ediciones || '[]');
-            } catch (e) { historial = []; }
-            historial.unshift(logAuditoria);
-
-            const nuevoContador = (parseInt(user.contador_modificaciones || 0)) + 1;
-
-            await pool.query(
-                `UPDATE usuarios 
-                 SET clave = $1, codigo_recuperacion = NULL, codigo_expiracion = NULL, 
-                     contador_modificaciones = $2, historial_ediciones = $3 
-                 WHERE LOWER(usuario) = LOWER($4)`,
-                [nuevaClave, nuevoContador, JSON.stringify(historial), user.usuario]
-            );
-
-            await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada inmediatamente tras verificación de OTP', req);
-            return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.' });
-        } catch (err) {
-            console.error('Error al restablecer clave en PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al actualizar contraseña' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u =>
-            (u.usuario && u.usuario.toLowerCase() === usuarioTarget.toLowerCase()) ||
-            (u.correo && u.correo.toLowerCase() === usuarioTarget.toLowerCase())
-        );
-
-        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        const user = db.usuarios[idx];
-        if (!user.codigoRecuperacion || user.codigoRecuperacion !== otp) {
-            await registrarEventoAuditoria('OTP_FALLIDO', user.usuario, 'Código OTP incorrecto en cambio de contraseña', req);
-            return res.status(400).json({ error: 'Código de verificación incorrecto' });
-        }
-
-        if (Date.now() > (user.codigoExpiracion || 0)) {
-            await registrarEventoAuditoria('OTP_EXPIRADO', user.usuario, 'Código OTP expirado en cambio de contraseña', req);
-            return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos). Debes solicitar uno nuevo.' });
-        }
-
-        if (!Array.isArray(user.historialEdiciones)) user.historialEdiciones = [];
-        user.historialEdiciones.unshift(logAuditoria);
-        user.clave = nuevaClave;
-        user.codigoRecuperacion = null;
-        user.codigoExpiracion = null;
-        user.contadorModificaciones = (parseInt(user.contadorModificaciones || 0)) + 1;
-
-        guardarDBLocal(db);
-        await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada inmediatamente tras verificación de OTP', req);
-        return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito. Ya puedes iniciar sesión.' });
-    }
+    return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
 });
 
-// Retrocompatibilidad: Verificar código individual
 app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
-    const correo = (req.body.correo || req.body.usuario || '').trim();
-    const codigo = (req.body.codigo || req.body.otp || '').trim();
-    if (!correo || !codigo) return res.status(400).json({ error: 'Usuario/Correo y código son requeridos' });
+    const { usuario, busqueda, codigo } = req.body;
+    const target = (usuario || busqueda || '').trim();
+    const code = (codigo || '').trim();
 
-    if (pool) {
-        try {
-            const userRes = await pool.query(
-                'SELECT usuario, codigo_recuperacion, codigo_expiracion FROM usuarios WHERE LOWER(correo) = LOWER($1) OR LOWER(usuario) = LOWER($1)',
-                [correo]
-            );
+    if (!target || !code) return res.status(400).json({ error: 'Datos incompletos' });
 
-            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const db = leerDBLocal();
+    const user = (db.usuarios || []).find(u =>
+        (u.usuario && u.usuario.toLowerCase() === target.toLowerCase()) ||
+        (u.correo && u.correo.toLowerCase() === target.toLowerCase())
+    );
 
-            const user = userRes.rows[0];
-            if (!user.codigo_recuperacion || user.codigo_recuperacion !== codigo) {
-                return res.status(400).json({ error: 'Código de verificación incorrecto' });
-            }
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-            if (Date.now() > parseInt(user.codigo_expiracion || 0)) {
-                return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos)' });
-            }
-
-            return res.json({ ok: true, mensaje: 'Código verificado exitosamente' });
-        } catch (err) {
-            return res.status(500).json({ error: 'Error en la base de datos' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const user = db.usuarios.find(u =>
-            (u.correo && u.correo.toLowerCase() === correo.toLowerCase()) ||
-            (u.usuario && u.usuario.toLowerCase() === correo.toLowerCase())
-        );
-
-        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        if (!user.codigoRecuperacion || user.codigoRecuperacion !== codigo) {
-            return res.status(400).json({ error: 'Código de verificación incorrecto' });
-        }
-
-        if (Date.now() > (user.codigoExpiracion || 0)) {
-            return res.status(400).json({ error: 'El código ha expirado (duración máxima: 15 minutos)' });
-        }
-
-        return res.json({ ok: true, mensaje: 'Código verificado exitosamente' });
+    if (user.codigoRecuperacion !== code) {
+        return res.status(400).json({ error: 'Código de recuperación inválido' });
     }
+
+    if (user.codigoExpiracion && Date.now() > user.codigoExpiracion) {
+        return res.status(400).json({ error: 'El código ha expirado' });
+    }
+
+    return res.json({ ok: true, mensaje: 'Código verificado correctamente' });
 });
 
-// Retrocompatibilidad: Restablecer contraseña con código individual
 app.post('/api/usuarios/restablecer-clave', async (req, res) => {
-    const correo = (req.body.correo || req.body.usuario || '').trim();
-    const codigo = (req.body.codigo || req.body.otp || '').trim();
-    const nuevaClave = (req.body.nuevaClave || req.body.clave || '').trim();
-    if (!correo || !codigo || !nuevaClave) {
-        return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    const { usuario, nuevaClave, codigo } = req.body;
+    if (!usuario || !nuevaClave) {
+        return res.status(400).json({ error: 'Campos requeridos' });
+    }
+    if (nuevaClave.length < 6) {
+        return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
     }
 
-    const logAuditoria = {
-        tipo: 'recuperacion',
-        carpeta: '📁 Recuperación con OTP',
-        editor: 'Sistema (OTP)',
-        fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
-        resumen: 'Contraseña restablecida exitosamente mediante código de seguridad OTP',
-        cambios: [{
-            campo: 'Contraseña',
-            valorAnterior: '••••••••',
-            valorNuevo: '•••••••• (Restablecida)'
-        }]
-    };
+    const db = leerDBLocal();
+    const idx = (db.usuarios || []).findIndex(u => u.usuario.toLowerCase() === usuario.trim().toLowerCase());
+    if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    if (pool) {
-        try {
-            const userRes = await pool.query(
-                `SELECT usuario, codigo_recuperacion, codigo_expiracion, contador_modificaciones, historial_ediciones 
-                 FROM usuarios WHERE LOWER(correo) = LOWER($1) OR LOWER(usuario) = LOWER($1)`,
-                [correo]
-            );
-
-            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-            const user = userRes.rows[0];
-            if (!user.codigo_recuperacion || user.codigo_recuperacion !== codigo) {
-                return res.status(400).json({ error: 'Código inválido' });
-            }
-
-            if (Date.now() > parseInt(user.codigo_expiracion || 0)) {
-                return res.status(400).json({ error: 'El código ha expirado. Debes solicitar uno nuevo.' });
-            }
-
-            let historial = [];
-            try {
-                historial = JSON.parse(user.historial_ediciones || '[]');
-            } catch (e) { historial = []; }
-            historial.unshift(logAuditoria);
-
-            const nuevoContador = (parseInt(user.contador_modificaciones || 0)) + 1;
-
-            await pool.query(
-                `UPDATE usuarios 
-                 SET clave = $1, codigo_recuperacion = NULL, codigo_expiracion = NULL, 
-                     contador_modificaciones = $2, historial_ediciones = $3 
-                 WHERE LOWER(usuario) = LOWER($4)`,
-                [nuevaClave, nuevoContador, JSON.stringify(historial), user.usuario]
-            );
-
-            await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada mediante OTP', req);
-            return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
-        } catch (err) {
-            console.error('Error al restablecer clave en PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al actualizar contraseña' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u =>
-            (u.correo && u.correo.toLowerCase() === correo.toLowerCase()) ||
-            (u.usuario && u.usuario.toLowerCase() === correo.toLowerCase())
-        );
-
-        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        const user = db.usuarios[idx];
-        if (!user.codigoRecuperacion || user.codigoRecuperacion !== codigo) {
-            return res.status(400).json({ error: 'Código inválido' });
-        }
-
-        if (Date.now() > (user.codigoExpiracion || 0)) {
-            return res.status(400).json({ error: 'El código ha expirado. Debes solicitar uno nuevo.' });
-        }
-
-        if (!Array.isArray(user.historialEdiciones)) user.historialEdiciones = [];
-        user.historialEdiciones.unshift(logAuditoria);
-        user.clave = nuevaClave;
-        user.codigoRecuperacion = null;
-        user.codigoExpiracion = null;
-        user.contadorModificaciones = (parseInt(user.contadorModificaciones || 0)) + 1;
-
-        guardarDBLocal(db);
-        await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña actualizada mediante OTP', req);
-        return res.json({ ok: true, mensaje: 'Contraseña actualizada con éxito' });
+    const user = db.usuarios[idx];
+    if (codigo && user.codigoRecuperacion && user.codigoRecuperacion !== codigo) {
+        return res.status(400).json({ error: 'Código de verificación incorrecto' });
     }
+
+    user.clave = nuevaClave.trim();
+    user.codigoRecuperacion = null;
+    user.codigoExpiracion = null;
+    guardarDBLocal(db);
+
+    await registrarEventoAuditoria('CLAVE_RESTABLECIDA', user.usuario, 'Contraseña restablecida con código', req);
+    return res.json({ ok: true, mensaje: 'Contraseña restablecida con éxito' });
 });
 
-// API: Editar perfil del usuario desde index.html
+// --- EDICIÓN DE PERFIL ---
 app.put(['/api/usuarios/perfil', '/api/usuarios/editar'], async (req, res) => {
     const { usuario, correo, telefono, direccion } = req.body;
     if (!usuario) return res.status(400).json({ error: 'Nombre de usuario requerido' });
 
-    if (pool) {
-        try {
-            const userRes = await pool.query(
-                `SELECT usuario, clave, correo, telefono, direccion, 
-                        fecha_registro AS "fechaRegistro", 
-                        contador_modificaciones AS "contadorModificaciones", 
-                        COALESCE(rol, 'Cliente') AS "rol", 
-                        COALESCE(estado, 'Activo') AS "estado", 
-                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones" 
-                 FROM usuarios WHERE LOWER(usuario) = LOWER($1)`,
-                [usuario]
-            );
+    const db = leerDBLocal();
+    const idx = (db.usuarios || []).findIndex(u => u.usuario.toLowerCase() === usuario.trim().toLowerCase());
+    if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
-            const userActual = normalizarUsuario(userRes.rows[0]);
+    const userActual = normalizarUsuario(db.usuarios[idx]);
+    const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
+    const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
+    const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
 
-            const cambios = [];
-            const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
-            const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
-            const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
-
-            if (nuevoCorreo !== userActual.correo) {
-                cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
-            }
-            if (nuevoTelefono !== userActual.telefono) {
-                cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
-            }
-            if (nuevaDireccion !== userActual.direccion) {
-                cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
-            }
-
-            let historial = userActual.historialEdiciones;
-            let nuevoContador = userActual.contadorModificaciones;
-
-            if (cambios.length > 0) {
-                const logAuditoria = {
-                    tipo: 'perfil',
-                    carpeta: '📁 Actualización de Perfil',
-                    editor: 'Usuario',
-                    fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
-                    resumen: `${cambios.length} campo(s) de perfil modificado(s)`,
-                    cambios: cambios
-                };
-                historial.unshift(logAuditoria);
-                nuevoContador++;
-            }
-
-            const updateResult = await pool.query(
-                `UPDATE usuarios 
-                 SET correo = $2, telefono = $3, direccion = $4, contador_modificaciones = $5, historial_ediciones = $6 
-                 WHERE LOWER(usuario) = LOWER($1)
-                 RETURNING usuario, clave, correo, telefono, direccion, 
-                           fecha_registro AS "fechaRegistro", 
-                           contador_modificaciones AS "contadorModificaciones", 
-                           COALESCE(rol, 'Cliente') AS "rol", 
-                           COALESCE(estado, 'Activo') AS "estado", 
-                           COALESCE(historial_ediciones, '[]') AS "historialEdiciones"`,
-                [usuario, nuevoCorreo, nuevoTelefono, nuevaDireccion, nuevoContador, JSON.stringify(historial)]
-            );
-
-            if (cambios.length > 0) {
-                await registrarEventoAuditoria('PERFIL_ACTUALIZADO', usuario, `Perfil actualizado: ${cambios.map(c => c.campo).join(', ')}`, req);
-            }
-            res.json({ mensaje: 'Perfil actualizado', usuario: normalizarUsuario(updateResult.rows[0]) });
-        } catch (err) {
-            console.error('Error al editar perfil PostgreSQL:', err);
-            res.status(500).json({ error: 'Error al actualizar perfil en el servidor' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u => u.usuario.toLowerCase() === usuario.toLowerCase());
-        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        const userActual = normalizarUsuario(db.usuarios[idx]);
-        const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
-        const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
-        const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
-
-        const cambios = [];
-        if (nuevoCorreo !== userActual.correo) {
-            cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
-        }
-        if (nuevoTelefono !== userActual.telefono) {
-            cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
-        }
-        if (nuevaDireccion !== userActual.direccion) {
-            cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
-        }
-
-        if (cambios.length > 0) {
-            const logAuditoria = {
-                tipo: 'perfil',
-                carpeta: '📁 Actualización de Perfil',
-                editor: 'Usuario',
-                fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
-                resumen: `${cambios.length} campo(s) de perfil modificado(s)`,
-                cambios: cambios
-            };
-            if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
-            db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
-            db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
-        }
-
-        db.usuarios[idx].correo = nuevoCorreo;
-        db.usuarios[idx].telefono = nuevoTelefono;
-        db.usuarios[idx].direccion = nuevaDireccion;
-
-        guardarDBLocal(db);
-        if (cambios.length > 0) {
-            await registrarEventoAuditoria('PERFIL_ACTUALIZADO', usuario, `Perfil actualizado: ${cambios.map(c => c.campo).join(', ')}`, req);
-        }
-        res.json({ mensaje: 'Perfil actualizado', usuario: normalizarUsuario(db.usuarios[idx]) });
+    const cambios = [];
+    if (nuevoCorreo !== userActual.correo) {
+        cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
     }
+    if (nuevoTelefono !== userActual.telefono) {
+        cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
+    }
+    if (nuevaDireccion !== userActual.direccion) {
+        cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
+    }
+
+    if (cambios.length > 0) {
+        const logAuditoria = {
+            tipo: 'perfil',
+            carpeta: '📁 Actualización de Perfil',
+            editor: 'Usuario',
+            fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+            resumen: `${cambios.length} campo(s) de perfil modificado(s)`,
+            cambios: cambios
+        };
+        if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
+        db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
+        db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
+    }
+
+    db.usuarios[idx].correo = nuevoCorreo;
+    db.usuarios[idx].telefono = nuevoTelefono;
+    db.usuarios[idx].direccion = nuevaDireccion;
+
+    guardarDBLocal(db);
+    if (cambios.length > 0) {
+        await registrarEventoAuditoria('PERFIL_ACTUALIZADO', usuario, `Perfil actualizado: ${cambios.map(c => c.campo).join(', ')}`, req);
+    }
+    return res.json({ mensaje: 'Perfil actualizado', usuario: normalizarUsuario(db.usuarios[idx]) });
 });
 
-// API: Cambiar contraseña voluntariamente desde el perfil (index.html)
+// Cambio voluntario de contraseña por el usuario
 app.put('/api/usuarios/cambiar-clave', async (req, res) => {
     const { usuario, claveActual, claveNueva } = req.body;
     if (!usuario || !claveActual || !claveNueva) {
@@ -1196,6 +736,14 @@ app.put('/api/usuarios/cambiar-clave', async (req, res) => {
     }
     if (claveNueva.length < 6) {
         return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+    }
+
+    const db = leerDBLocal();
+    const idx = (db.usuarios || []).findIndex(u => u.usuario.toLowerCase() === usuario.trim().toLowerCase());
+    if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    if (db.usuarios[idx].clave !== claveActual) {
+        return res.status(400).json({ error: 'La contraseña actual no es correcta' });
     }
 
     const logAuditoria = {
@@ -1211,208 +759,84 @@ app.put('/api/usuarios/cambiar-clave', async (req, res) => {
         }]
     };
 
-    if (pool) {
-        try {
-            const userRes = await pool.query(
-                `SELECT usuario, clave, contador_modificaciones, historial_ediciones 
-                 FROM usuarios WHERE LOWER(usuario) = LOWER($1)`,
-                [usuario]
-            );
+    if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
+    db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
+    db.usuarios[idx].clave = claveNueva;
+    db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
 
-            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
-            const user = userRes.rows[0];
-
-            if (user.clave !== claveActual) {
-                return res.status(400).json({ error: 'La contraseña actual no es correcta' });
-            }
-
-            let historial = [];
-            try { historial = JSON.parse(user.historial_ediciones || '[]'); } catch (e) { historial = []; }
-            historial.unshift(logAuditoria);
-            const nuevoContador = (parseInt(user.contador_modificaciones || 0)) + 1;
-
-            const updateResult = await pool.query(
-                `UPDATE usuarios 
-                 SET clave = $1, contador_modificaciones = $2, historial_ediciones = $3 
-                 WHERE LOWER(usuario) = LOWER($4)
-                 RETURNING usuario, clave, correo, telefono, direccion, 
-                           fecha_registro AS "fechaRegistro", 
-                           contador_modificaciones AS "contadorModificaciones", 
-                           COALESCE(rol, 'Cliente') AS "rol", 
-                           COALESCE(estado, 'Activo') AS "estado", 
-                           COALESCE(historial_ediciones, '[]') AS "historialEdiciones"`,
-                [claveNueva, nuevoContador, JSON.stringify(historial), usuario]
-            );
-
-            res.json({ ok: true, mensaje: 'Contraseña cambiada con éxito', usuario: normalizarUsuario(updateResult.rows[0]) });
-        } catch (err) {
-            console.error('Error al cambiar clave en PostgreSQL:', err);
-            res.status(500).json({ error: 'Error en el servidor al cambiar contraseña' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u => u.usuario.toLowerCase() === usuario.toLowerCase());
-        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        if (db.usuarios[idx].clave !== claveActual) {
-            return res.status(400).json({ error: 'La contraseña actual no es correcta' });
-        }
-
-        if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
-        db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
-        db.usuarios[idx].clave = claveNueva;
-        db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
-
-        guardarDBLocal(db);
-        res.json({ ok: true, mensaje: 'Contraseña cambiada con éxito', usuario: normalizarUsuario(db.usuarios[idx]) });
-    }
+    guardarDBLocal(db);
+    await registrarEventoAuditoria('CLAVE_CAMBIADA', usuario, 'Contraseña cambiada voluntariamente', req);
+    return res.json({ ok: true, mensaje: 'Contraseña cambiada con éxito', usuario: normalizarUsuario(db.usuarios[idx]) });
 });
 
-// API: Edición completa de usuario por el Administrador (admin.html)
+// Edición de usuario por el Administrador
 app.put(['/api/usuarios/admin-editar', '/api/usuarios/:usuario'], async (req, res) => {
     const usuarioTarget = req.params.usuario || req.body.usuario || req.body.originalUsuario;
     const { correo, telefono, direccion, clave, rol, estado } = req.body;
 
     if (!usuarioTarget) return res.status(400).json({ error: 'Usuario objetivo requerido' });
 
-    if (pool) {
-        try {
-            const userRes = await pool.query(
-                `SELECT usuario, clave, correo, telefono, direccion, 
-                        fecha_registro AS "fechaRegistro", 
-                        contador_modificaciones AS "contadorModificaciones", 
-                        COALESCE(rol, 'Cliente') AS "rol", 
-                        COALESCE(estado, 'Activo') AS "estado", 
-                        COALESCE(historial_ediciones, '[]') AS "historialEdiciones" 
-                 FROM usuarios WHERE LOWER(usuario) = LOWER($1)`,
-                [usuarioTarget]
-            );
+    const db = leerDBLocal();
+    const idx = (db.usuarios || []).findIndex(u => u.usuario.toLowerCase() === usuarioTarget.trim().toLowerCase());
+    if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-            if (userRes.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
-            const userActual = normalizarUsuario(userRes.rows[0]);
+    const userActual = normalizarUsuario(db.usuarios[idx]);
+    const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
+    const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
+    const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
+    const nuevaClave = clave !== undefined && clave.trim() !== '' ? clave.trim() : userActual.clave;
+    const nuevoRol = rol || userActual.rol;
+    const nuevoEstado = estado || userActual.estado;
 
-            const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
-            const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
-            const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
-            const nuevaClave = clave !== undefined && clave.trim() !== '' ? clave.trim() : userActual.clave;
-            const nuevoRol = rol || userActual.rol;
-            const nuevoEstado = estado || userActual.estado;
-
-            const cambios = [];
-            if (nuevoCorreo !== userActual.correo) {
-                cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
-            }
-            if (nuevoTelefono !== userActual.telefono) {
-                cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
-            }
-            if (nuevaDireccion !== userActual.direccion) {
-                cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
-            }
-            if (nuevaClave !== userActual.clave) {
-                cambios.push({ campo: 'Contraseña', valorAnterior: userActual.clave || '••••••••', valorNuevo: nuevaClave });
-            }
-            if (nuevoRol !== userActual.rol) {
-                cambios.push({ campo: 'Rol', valorAnterior: userActual.rol || 'Cliente', valorNuevo: nuevoRol });
-            }
-            if (nuevoEstado !== userActual.estado) {
-                cambios.push({ campo: 'Estado de Cuenta', valorAnterior: userActual.estado || 'Activo', valorNuevo: nuevoEstado });
-            }
-
-            let historial = userActual.historialEdiciones;
-            let nuevoContador = userActual.contadorModificaciones;
-
-            if (cambios.length > 0) {
-                const logAuditoria = {
-                    tipo: 'admin',
-                    carpeta: '📁 Modificación por Administrador',
-                    editor: 'Administrador',
-                    fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
-                    resumen: `${cambios.length} cambio(s) realizado(s) por el Administrador`,
-                    cambios: cambios
-                };
-                historial.unshift(logAuditoria);
-                nuevoContador++;
-            }
-
-            const updateResult = await pool.query(
-                `UPDATE usuarios 
-                 SET correo = $2, telefono = $3, direccion = $4, clave = $5, rol = $6, estado = $7, 
-                     contador_modificaciones = $8, historial_ediciones = $9 
-                 WHERE LOWER(usuario) = LOWER($1)
-                 RETURNING usuario, clave, correo, telefono, direccion, 
-                           fecha_registro AS "fechaRegistro", 
-                           contador_modificaciones AS "contadorModificaciones", 
-                           COALESCE(rol, 'Cliente') AS "rol", 
-                           COALESCE(estado, 'Activo') AS "estado", 
-                           COALESCE(historial_ediciones, '[]') AS "historialEdiciones"`,
-                [usuarioTarget, nuevoCorreo, nuevoTelefono, nuevaDireccion, nuevaClave, nuevoRol, nuevoEstado, nuevoContador, JSON.stringify(historial)]
-            );
-
-            res.json({ ok: true, mensaje: 'Usuario actualizado con éxito', usuario: normalizarUsuario(updateResult.rows[0]) });
-        } catch (err) {
-            console.error('Error al editar usuario por Admin PostgreSQL:', err);
-            res.status(500).json({ error: 'Error en el servidor al actualizar usuario' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const idx = db.usuarios.findIndex(u => u.usuario.toLowerCase() === usuarioTarget.toLowerCase());
-        if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        const userActual = normalizarUsuario(db.usuarios[idx]);
-        const nuevoCorreo = correo !== undefined ? correo.trim() : userActual.correo;
-        const nuevoTelefono = telefono !== undefined ? telefono.trim() : userActual.telefono;
-        const nuevaDireccion = direccion !== undefined ? direccion.trim() : userActual.direccion;
-        const nuevaClave = clave !== undefined && clave.trim() !== '' ? clave.trim() : userActual.clave;
-        const nuevoRol = rol || userActual.rol;
-        const nuevoEstado = estado || userActual.estado;
-
-        const cambios = [];
-        if (nuevoCorreo !== userActual.correo) {
-            cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
-        }
-        if (nuevoTelefono !== userActual.telefono) {
-            cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
-        }
-        if (nuevaDireccion !== userActual.direccion) {
-            cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
-        }
-        if (nuevaClave !== userActual.clave) {
-            cambios.push({ campo: 'Contraseña', valorAnterior: userActual.clave || '••••••••', valorNuevo: nuevaClave });
-        }
-        if (nuevoRol !== userActual.rol) {
-            cambios.push({ campo: 'Rol', valorAnterior: userActual.rol || 'Cliente', valorNuevo: nuevoRol });
-        }
-        if (nuevoEstado !== userActual.estado) {
-            cambios.push({ campo: 'Estado de Cuenta', valorAnterior: userActual.estado || 'Activo', valorNuevo: nuevoEstado });
-        }
-
-        if (cambios.length > 0) {
-            const logAuditoria = {
-                tipo: 'admin',
-                carpeta: '📁 Modificación por Administrador',
-                editor: 'Administrador',
-                fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
-                resumen: `${cambios.length} cambio(s) realizado(s) por el Administrador`,
-                cambios: cambios
-            };
-            if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
-            db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
-            db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
-        }
-
-        db.usuarios[idx].correo = nuevoCorreo;
-        db.usuarios[idx].telefono = nuevoTelefono;
-        db.usuarios[idx].direccion = nuevaDireccion;
-        db.usuarios[idx].clave = nuevaClave;
-        db.usuarios[idx].rol = nuevoRol;
-        db.usuarios[idx].estado = nuevoEstado;
-
-        guardarDBLocal(db);
-        res.json({ ok: true, mensaje: 'Usuario actualizado con éxito', usuario: normalizarUsuario(db.usuarios[idx]) });
+    const cambios = [];
+    if (nuevoCorreo !== userActual.correo) {
+        cambios.push({ campo: 'Correo Electrónico', valorAnterior: userActual.correo || 'Vacío', valorNuevo: nuevoCorreo || 'Vacío' });
     }
+    if (nuevoTelefono !== userActual.telefono) {
+        cambios.push({ campo: 'Teléfono', valorAnterior: userActual.telefono || 'Vacío', valorNuevo: nuevoTelefono || 'Vacío' });
+    }
+    if (nuevaDireccion !== userActual.direccion) {
+        cambios.push({ campo: 'Dirección', valorAnterior: userActual.direccion || 'Vacío', valorNuevo: nuevaDireccion || 'Vacío' });
+    }
+    if (nuevaClave !== userActual.clave) {
+        cambios.push({ campo: 'Contraseña', valorAnterior: userActual.clave || '••••••••', valorNuevo: nuevaClave });
+    }
+    if (nuevoRol !== userActual.rol) {
+        cambios.push({ campo: 'Rol', valorAnterior: userActual.rol || 'Cliente', valorNuevo: nuevoRol });
+    }
+    if (nuevoEstado !== userActual.estado) {
+        cambios.push({ campo: 'Estado de Cuenta', valorAnterior: userActual.estado || 'Activo', valorNuevo: nuevoEstado });
+    }
+
+    if (cambios.length > 0) {
+        const logAuditoria = {
+            tipo: 'admin',
+            carpeta: '📁 Modificación por Administrador',
+            editor: 'Administrador',
+            fecha: new Date().toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'medium' }),
+            resumen: `${cambios.length} cambio(s) realizado(s) por el Administrador`,
+            cambios: cambios
+        };
+        if (!Array.isArray(db.usuarios[idx].historialEdiciones)) db.usuarios[idx].historialEdiciones = [];
+        db.usuarios[idx].historialEdiciones.unshift(logAuditoria);
+        db.usuarios[idx].contadorModificaciones = (parseInt(db.usuarios[idx].contadorModificaciones || 0)) + 1;
+    }
+
+    db.usuarios[idx].correo = nuevoCorreo;
+    db.usuarios[idx].telefono = nuevoTelefono;
+    db.usuarios[idx].direccion = nuevaDireccion;
+    db.usuarios[idx].clave = nuevaClave;
+    db.usuarios[idx].rol = nuevoRol;
+    db.usuarios[idx].estado = nuevoEstado;
+
+    guardarDBLocal(db);
+    if (cambios.length > 0) {
+        await registrarEventoAuditoria('ADMIN_EDITO_USUARIO', 'Administrador', `Modificación sobre ${usuarioTarget}: ${cambios.map(c => c.campo).join(', ')}`, req);
+    }
+    return res.json({ ok: true, mensaje: 'Usuario actualizado con éxito', usuario: normalizarUsuario(db.usuarios[idx]) });
 });
 
-// Función unificada para procesamiento de acciones masivas sobre cuentas
+// Función de procesamiento de acciones masivas sobre usuarios
 async function manejarAccionBulk(accion, usuariosSeleccionados, req, res) {
     if (!accion || !Array.isArray(usuariosSeleccionados) || usuariosSeleccionados.length === 0) {
         return res.status(400).json({ error: 'Debes proporcionar una acción válida y al menos un usuario seleccionado.' });
@@ -1423,289 +847,147 @@ async function manejarAccionBulk(accion, usuariosSeleccionados, req, res) {
         return res.status(400).json({ error: 'Acción inválida. Opciones permitidas: activar, inactivo, bloquear, eliminar.' });
     }
 
-    if (pool) {
-        try {
-            if (accionNormalizada === 'eliminar') {
-                await pool.query(
-                    'DELETE FROM usuarios WHERE LOWER(usuario) = ANY($1::text[])',
-                    [usuariosSeleccionados.map(u => u.toLowerCase())]
-                );
-            } else {
-                let nuevoEstado = 'Activo';
-                if (accionNormalizada === 'inactivo') {
-                    nuevoEstado = 'Inactivo';
-                } else if (accionNormalizada === 'bloquear') {
-                    nuevoEstado = 'Bloqueado';
-                }
-                await pool.query(
-                    'UPDATE usuarios SET estado = $1 WHERE LOWER(usuario) = ANY($2::text[])',
-                    [nuevoEstado, usuariosSeleccionados.map(u => u.toLowerCase())]
-                );
-            }
+    const db = leerDBLocal();
+    const setUsuarios = new Set(usuariosSeleccionados.map(u => u.toLowerCase()));
 
-            await registrarEventoAuditoria(
-                'ACCION_MASIVA',
-                'Administrador',
-                `Acción masiva '${accionNormalizada}' ejecutada sobre ${usuariosSeleccionados.length} usuario(s): ${usuariosSeleccionados.join(', ')}`,
-                req
-            );
-
-            return res.json({
-                ok: true,
-                success: true,
-                accion: accionNormalizada,
-                afectados: usuariosSeleccionados.length,
-                mensaje: `Operación masiva '${accionNormalizada}' completada con éxito sobre ${usuariosSeleccionados.length} cuenta(s).`
-            });
-        } catch (err) {
-            console.error('Error en bulk PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al procesar acción masiva en base de datos' });
-        }
+    if (accionNormalizada === 'eliminar') {
+        db.usuarios = (db.usuarios || []).filter(u => !setUsuarios.has(u.usuario.toLowerCase()));
     } else {
-        const db = leerDBLocal();
-        const setUsuarios = new Set(usuariosSeleccionados.map(u => u.toLowerCase()));
-
-        if (accionNormalizada === 'eliminar') {
-            db.usuarios = (db.usuarios || []).filter(u => !setUsuarios.has(u.usuario.toLowerCase()));
-        } else {
-            let nuevoEstado = 'Activo';
-            if (accionNormalizada === 'inactivo') {
-                nuevoEstado = 'Inactivo';
-            } else if (accionNormalizada === 'bloquear') {
-                nuevoEstado = 'Bloqueado';
-            }
-            (db.usuarios || []).forEach(u => {
-                if (setUsuarios.has(u.usuario.toLowerCase())) {
-                    u.estado = nuevoEstado;
-                }
-            });
+        let nuevoEstado = 'Activo';
+        if (accionNormalizada === 'inactivo') {
+            nuevoEstado = 'Inactivo';
+        } else if (accionNormalizada === 'bloquear') {
+            nuevoEstado = 'Bloqueado';
         }
-        guardarDBLocal(db);
-
-        await registrarEventoAuditoria(
-            'ACCION_MASIVA',
-            'Administrador',
-            `Acción masiva '${accionNormalizada}' ejecutada sobre ${usuariosSeleccionados.length} usuario(s): ${usuariosSeleccionados.join(', ')}`,
-            req
-        );
-
-        return res.json({
-            ok: true,
-            success: true,
-            accion: accionNormalizada,
-            afectados: usuariosSeleccionados.length,
-            mensaje: `Operación masiva '${accionNormalizada}' completada con éxito sobre ${usuariosSeleccionados.length} cuenta(s).`
+        (db.usuarios || []).forEach(u => {
+            if (setUsuarios.has(u.usuario.toLowerCase())) {
+                u.estado = nuevoEstado;
+            }
         });
     }
+    guardarDBLocal(db);
+
+    await registrarEventoAuditoria(
+        'ACCION_MASIVA',
+        'Administrador',
+        `Acción masiva '${accionNormalizada}' ejecutada sobre ${usuariosSeleccionados.length} usuario(s): ${usuariosSeleccionados.join(', ')}`,
+        req
+    );
+
+    return res.json({
+        ok: true,
+        success: true,
+        accion: accionNormalizada,
+        afectados: usuariosSeleccionados.length,
+        mensaje: `Operación masiva '${accionNormalizada}' completada con éxito sobre ${usuariosSeleccionados.length} cuenta(s).`
+    });
 }
 
-// API: Acciones masivas sobre cuentas (Gestión en lote oficial)
 app.post('/api/usuarios/bulk', async (req, res) => {
     const accion = req.body.accion;
     const lista = req.body.usuariosSeleccionados || req.body.usuarios;
     await manejarAccionBulk(accion, lista, req, res);
 });
 
-// Compatibilidad retroactiva: Cambiar estado masivo
 app.post('/api/usuarios/bulk-status', async (req, res) => {
     const { usuarios, estado } = req.body;
     const accion = (estado || '').toLowerCase() === 'bloqueado' ? 'bloquear' : 'activar';
     await manejarAccionBulk(accion, usuarios, req, res);
 });
 
-// Compatibilidad retroactiva: Cambiar estado masivo Inactivo
 app.post('/api/usuarios/bulk-statusinactivo', async (req, res) => {
     const { usuarios, estado } = req.body;
     const accion = (estado || '').toLowerCase() === 'inactivo' ? 'inactivo' : 'activar';
     await manejarAccionBulk(accion, usuarios, req, res);
 });
 
-// Compatibilidad retroactiva: Eliminar usuarios masivamente
 app.post('/api/usuarios/bulk-delete', async (req, res) => {
     const { usuarios } = req.body;
     await manejarAccionBulk('eliminar', usuarios, req, res);
 });
 
-// API: Vaciar toda la base de datos de usuarios
+// Vaciar toda la base de datos de usuarios
 app.delete('/api/usuarios', async (req, res) => {
-    if (pool) {
-        try {
-            await pool.query('TRUNCATE TABLE usuarios');
-            await registrarEventoAuditoria('BASE_DATOS_VACIADA', 'Administrador', 'Se vaciaron todos los usuarios de la base de datos PostgreSQL', req);
-            return res.json({ ok: true, mensaje: 'Base de datos de usuarios vaciada con éxito' });
-        } catch (err) {
-            console.error('Error al vaciar usuarios en PostgreSQL:', err);
-            return res.status(500).json({ error: 'Error al vaciar la base de datos de usuarios' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.usuarios = [];
-        guardarDBLocal(db);
-        await registrarEventoAuditoria('BASE_DATOS_VACIADA', 'Administrador', 'Se vaciaron todos los usuarios de la base de datos local JSON', req);
-        return res.json({ ok: true, mensaje: 'Base de datos de usuarios vaciada con éxito' });
-    }
+    const db = leerDBLocal();
+    db.usuarios = [];
+    guardarDBLocal(db);
+    await registrarEventoAuditoria('BASE_DATOS_VACIADA', 'Administrador', 'Se vaciaron todos los usuarios de la base de datos local JSON', req);
+    return res.json({ ok: true, mensaje: 'Base de datos de usuarios vaciada con éxito' });
 });
 
-// API: Eliminar usuario individual
+// Eliminar un usuario individual
 app.delete('/api/usuarios/:usuario', async (req, res) => {
-    const nombreUsuario = req.params.usuario;
-
-    if (pool) {
-        try {
-            await pool.query('DELETE FROM usuarios WHERE LOWER(usuario) = LOWER($1)', [nombreUsuario]);
-            await registrarEventoAuditoria('ELIMINAR_USUARIO', 'Administrador', `Usuario ${nombreUsuario} eliminado del sistema`, req);
-            res.json({ mensaje: 'Usuario eliminado' });
-        } catch (err) {
-            res.status(500).json({ error: 'Error al eliminar usuario' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.usuarios = db.usuarios.filter(u => u.usuario.toLowerCase() !== nombreUsuario.toLowerCase());
-        guardarDBLocal(db);
-        await registrarEventoAuditoria('ELIMINAR_USUARIO', 'Administrador', `Usuario ${nombreUsuario} eliminado del sistema`, req);
-        res.json({ mensaje: 'Usuario eliminado' });
+    const { usuario } = req.params;
+    const db = leerDBLocal();
+    const lenAntes = (db.usuarios || []).length;
+    db.usuarios = (db.usuarios || []).filter(u => u.usuario.toLowerCase() !== usuario.toLowerCase());
+    
+    if (db.usuarios.length === lenAntes) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+
+    guardarDBLocal(db);
+    await registrarEventoAuditoria('USUARIO_ELIMINADO', 'Administrador', `Usuario ${usuario} eliminado del sistema`, req);
+    return res.json({ ok: true, mensaje: `Usuario ${usuario} eliminado con éxito` });
 });
 
-// --- BITÁCORA DE AUDITORÍA GLOBAL DEL SISTEMA ---
-
-// API: Leer registros de auditoría
+// --- AUDITORÍA ---
 app.get('/api/auditoria', async (req, res) => {
-    if (pool) {
-        try {
-            const result = await pool.query('SELECT * FROM auditoria ORDER BY id DESC LIMIT 500');
-            res.json(result.rows);
-        } catch (err) {
-            console.error('Error al consultar auditoría PostgreSQL:', err);
-            res.status(500).json({ error: 'Error al consultar la bitácora de auditoría' });
-        }
-    } else {
-        const db = leerDBLocal();
-        res.json(db.auditoria || []);
-    }
+    const db = leerDBLocal();
+    return res.json(db.auditoria || []);
 });
 
-// API: Vaciar registros de auditoría
+// Vaciar bitácora de auditoría (corregido para responder siempre)
 app.delete('/api/auditoria', async (req, res) => {
-    if (pool) {
-        try {
-            await pool.query('TRUNCATE TABLE auditoria');
-        } catch (err) {
-            console.error('Error al vaciar auditoría PostgreSQL:', err);
-            res.status(500).json({ error: 'Error al vaciar la bitácora de auditoría' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.auditoria = [];
-        guardarDBLocal(db);
-
-    }
+    const db = leerDBLocal();
+    db.auditoria = [];
+    guardarDBLocal(db);
+    return res.json({ ok: true, mensaje: 'Bitácora de auditoría vaciada con éxito' });
 });
-
 
 // --- HISTORIAL DE DESCARGAS ---
-
-// API: Registrar una descarga
 app.post('/api/descargas', async (req, res) => {
     const { formato } = req.body;
     const ahora = new Date();
-    const fecha = ahora.toLocaleDateString();
-    const hora = ahora.toLocaleTimeString();
+    const fecha = ahora.toLocaleDateString('es-ES');
+    const hora = ahora.toLocaleTimeString('es-ES');
 
-    if (pool) {
-        try {
-            const result = await pool.query(
-                'INSERT INTO descargas (formato, fecha, hora) VALUES ($1, $2, $3) RETURNING *',
-                [formato, fecha, hora]
-            );
-            res.json(result.rows[0]);
-        } catch (err) {
-            res.status(500).json({ error: 'Error al guardar log de descarga' });
-        }
-    } else {
-        const db = leerDBLocal();
-        const nuevaDescarga = { id: Date.now(), formato, fecha, hora };
-        db.descargas.push(nuevaDescarga);
-        guardarDBLocal(db);
-        res.json(nuevaDescarga);
-    }
+    const db = leerDBLocal();
+    if (!Array.isArray(db.descargas)) db.descargas = [];
+    const nuevoRegistro = { id: Date.now(), formato: formato || 'Excel', fecha, hora };
+    db.descargas.push(nuevoRegistro);
+    guardarDBLocal(db);
+
+    return res.json({ ok: true, id: nuevoRegistro.id, fecha, hora });
 });
 
-// API: Obtener lista de descargas
 app.get('/api/descargas', async (req, res) => {
-    if (pool) {
-        try {
-            const result = await pool.query('SELECT * FROM descargas ORDER BY id DESC');
-            res.json(result.rows);
-        } catch (err) {
-            res.status(500).json({ error: 'Error al consultar descargas' });
-        }
-    } else {
-        const db = leerDBLocal();
-        res.json([...db.descargas].reverse());
-    }
+    const db = leerDBLocal();
+    return res.json(db.descargas || []);
 });
 
-// API: Eliminar una descarga específica por ID
 app.delete('/api/descargas/:id', async (req, res) => {
     const { id } = req.params;
-
-    if (pool) {
-        try {
-            await pool.query('DELETE FROM descargas WHERE id = $1', [id]);
-            res.json({ mensaje: 'Registro de descarga eliminado' });
-        } catch (err) {
-            res.status(500).json({ error: 'Error al eliminar el registro' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.descargas = db.descargas.filter(d => d.id.toString() !== id.toString());
-        guardarDBLocal(db);
-        res.json({ mensaje: 'Registro de descarga eliminado' });
-    }
+    const db = leerDBLocal();
+    db.descargas = (db.descargas || []).filter(d => String(d.id) !== String(id));
+    guardarDBLocal(db);
+    return res.json({ ok: true, mensaje: 'Registro de descarga eliminado con éxito' });
 });
 
-// API: Vaciar todas las descargas
 app.delete('/api/descargas', async (req, res) => {
-    if (pool) {
-        try {
-            await pool.query('TRUNCATE TABLE descargas');
-            res.json({ mensaje: 'Historial de descargas vaciado' });
-        } catch (err) {
-            res.status(500).json({ error: 'Error al vaciar historial' });
-        }
-    } else {
-        const db = leerDBLocal();
-        db.descargas = [];
-        guardarDBLocal(db);
-        res.json({ mensaje: 'Historial de descargas vaciado' });
-    }
+    const db = leerDBLocal();
+    db.descargas = [];
+    guardarDBLocal(db);
+    return res.json({ ok: true, mensaje: 'Historial de descargas vaciado con éxito' });
 });
 
 // --- API EXPORTACIÓN DE DATOS (EXCEL / CSV) ---
 app.get('/api/exportar/excel', async (req, res) => {
     try {
         const formato = (req.query.formato || 'xlsx').toLowerCase();
-        let usuarios = [];
-        let auditoria = [];
-
-        if (pool) {
-            const resU = await pool.query(
-                `SELECT usuario, clave, correo, telefono, direccion, 
-                        fecha_registro AS "fechaRegistro", 
-                        contador_modificaciones AS "contadorModificaciones",
-                        COALESCE(rol, 'Cliente') AS "rol",
-                        COALESCE(estado, 'Activo') AS "estado"
-                 FROM usuarios ORDER BY usuario ASC`
-            );
-            usuarios = resU.rows.map(normalizarUsuario);
-            const resA = await pool.query('SELECT id, fecha, hora, tipo, usuario, detalle, ip FROM auditoria ORDER BY id DESC');
-            auditoria = resA.rows;
-        } else {
-            const db = leerDBLocal();
-            usuarios = (db.usuarios || []).map(normalizarUsuario);
-            auditoria = db.auditoria || [];
-        }
+        const db = leerDBLocal();
+        const usuarios = (db.usuarios || []).map(normalizarUsuario);
+        const auditoria = db.auditoria || [];
 
         const datosUsuarios = usuarios.map(u => ({
             "Usuario": u.usuario || '',
@@ -1733,16 +1015,9 @@ app.get('/api/exportar/excel', async (req, res) => {
         const fechaDescarga = ahora.toLocaleDateString('es-ES');
         const horaDescarga = ahora.toLocaleTimeString('es-ES');
 
-        if (pool) {
-            try {
-                await pool.query('INSERT INTO descargas (formato, fecha, hora) VALUES ($1, $2, $3)', ['Excel', fechaDescarga, horaDescarga]);
-            } catch (e) { }
-        } else {
-            const db = leerDBLocal();
-            if (!Array.isArray(db.descargas)) db.descargas = [];
-            db.descargas.push({ id: Date.now(), formato: 'Excel', fecha: fechaDescarga, hora: horaDescarga });
-            guardarDBLocal(db);
-        }
+        if (!Array.isArray(db.descargas)) db.descargas = [];
+        db.descargas.push({ id: Date.now(), formato: 'Excel', fecha: fechaDescarga, hora: horaDescarga });
+        guardarDBLocal(db);
 
         await registrarEventoAuditoria('EXPORTAR_EXCEL', 'Administrador', 'Exportación de base de datos a archivo Excel (.xlsx)', req);
 
@@ -1778,11 +1053,26 @@ app.get('/api/exportar/excel', async (req, res) => {
     }
 });
 
-// Redirección por defecto (SIEMPRE AL FINAL)
+// Redirección por defecto
 app.get('*', (req, res) => {
     res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
+// --- INICIO DEL SERVIDOR LOCAL ---
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor iniciado en puerto ${PORT}`);
+    console.log(`
+======================================================================
+  🏢  ${SYSTEM_NAME.toUpperCase()}
+  ⚡  Servidor Local Optimizado (Rápido y Sin Dependencia de Render)
+======================================================================
+  🌐 Acceso con Nombre:    http://${HOST_NAME}:${PORT}
+  💻 Acceso Localhost:     http://localhost:${PORT}
+  🛡️  Panel Administrador:  http://${HOST_NAME}:${PORT}/admin
+  📧 Servicio de Correo:   Resend API
+  💾 Almacenamiento:       Local (database.json)
+======================================================================
+  💡 TIP: Puedes abrir http://${HOST_NAME}:${PORT} en tu navegador
+     ejecutando 'activar-nombre-sistema.bat' una sola vez como admin.
+======================================================================
+`);
 });

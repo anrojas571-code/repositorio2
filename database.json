@@ -9,7 +9,7 @@
       "fechaRegistro": "15/9/2026",
       "contadorModificaciones": 0,
       "rol": "Cliente",
-      "estado": "Inactivo",
+      "estado": "Activo",
       "historialEdiciones": [],
       "codigoRecuperacion": "648068",
       "codigoExpiracion": 1789756928596
@@ -68,7 +68,9 @@
             }
           ]
         }
-      ]
+      ],
+      "codigoRecuperacion": "598861",
+      "codigoExpiracion": 1790268173643
     },
     {
       "usuario": "Samuel Rojas",
@@ -79,7 +81,7 @@
       "fechaRegistro": "18/9/2026",
       "contadorModificaciones": 0,
       "rol": "Cliente",
-      "estado": "Activo",
+      "estado": "Inactivo",
       "historialEdiciones": []
     }
   ],
@@ -134,12 +136,21 @@
   "soporte": [],
   "auditoria": [
     {
-      "id": "1789756162227-399",
-      "fecha": "18/9/2026",
-      "hora": "14:29:22",
-      "tipo": "AUDITORIA_VACIADA",
-      "usuario": "Administrador",
-      "detalle": "La bitácora de auditoría ha sido vaciada",
+      "id": "1790267273644-139",
+      "fecha": "24/9/2026",
+      "hora": "12:27:53",
+      "tipo": "OTP_SOLICITADO",
+      "usuario": "Gary",
+      "detalle": "Código OTP de 6 dígitos generado para m***6@gmail.com",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1790267196474-190",
+      "fecha": "24/9/2026",
+      "hora": "12:26:36",
+      "tipo": "ADMIN_LOGIN_EXITOSO",
+      "usuario": "Admin",
+      "detalle": "Acceso exitoso al panel administrativo",
       "ip": "127.0.0.1"
     }
   ]
