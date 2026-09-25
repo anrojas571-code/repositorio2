@@ -110,44 +110,7 @@
       "clave": "Samuel20"
     }
   ],
-  "descargas": [
-    {
-      "id": 1787673690916,
-      "formato": "Excel",
-      "fecha": "25/8/2026",
-      "hora": "12:01:30"
-    },
-    {
-      "id": 1787673721506,
-      "formato": "Excel",
-      "fecha": "25/8/2026",
-      "hora": "12:02:01"
-    },
-    {
-      "id": 1789136140696,
-      "formato": "Excel",
-      "fecha": "11/9/2026",
-      "hora": "10:15:40"
-    },
-    {
-      "id": 1789136175601,
-      "formato": "Excel",
-      "fecha": "11/9/2026",
-      "hora": "10:16:15"
-    },
-    {
-      "id": 1789500109924,
-      "formato": "Excel",
-      "fecha": "15/9/2026",
-      "hora": "15:21:49"
-    },
-    {
-      "id": 1789500153790,
-      "formato": "JSON",
-      "fecha": "15/9/2026",
-      "hora": "15:22:33"
-    }
-  ],
+  "descargas": [],
   "soporte": [],
   "auditoria": []
 }
