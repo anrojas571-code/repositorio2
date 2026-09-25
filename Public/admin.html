@@ -79,7 +79,7 @@
             <div class="header-panel">
                 <div class="header-info">
                     <h1><i class="fa-solid fa-sliders"></i> Panel de Administración</h1>
-                    <p>Monitoreo en tiempo real, gestión masiva de cuentas y bitácora de auditoría</p>
+                    <p>Monitoreo en tiempo real, Gestión masiva de cuentas y Bitácora de auditoría</p>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <button onclick="abrirModalAuditoriaGlobal()" class="btn btn-history" style="height: fit-content;"
@@ -95,19 +95,23 @@
 
             <!-- DASHBOARD DE MÉTRICAS Y ANALÍTICA EN TIEMPO REAL -->
             <div class="stats-grid">
-                <div class="stat-card-item total-card" onclick="filtrarPorEstadoCard('todos')" style="cursor: pointer;" title="Clic para ver todas las cuentas">
+                <div class="stat-card-item total-card" onclick="filtrarPorEstadoCard('todos')" style="cursor: pointer;"
+                    title="Clic para ver todas las cuentas">
                     <div class="num" id="totalUsuariosCount" style="color: var(--primary);">0</div>
                     <div class="lbl">Total Cuentas</div>
                 </div>
-                <div class="stat-card-item active-card" onclick="filtrarPorEstadoCard('Activo')" style="cursor: pointer;" title="Clic para filtrar cuentas activas">
+                <div class="stat-card-item active-card" onclick="filtrarPorEstadoCard('Activo')"
+                    style="cursor: pointer;" title="Clic para filtrar cuentas activas">
                     <div class="num" id="activosCount" style="color: #10b981;">0</div>
                     <div class="lbl">🟢 Activos</div>
                 </div>
-                <div class="stat-card-item inactive-card" onclick="filtrarPorEstadoCard('Inactivo')" style="cursor: pointer;" title="Clic para filtrar cuentas inactivas">
+                <div class="stat-card-item inactive-card" onclick="filtrarPorEstadoCard('Inactivo')"
+                    style="cursor: pointer;" title="Clic para filtrar cuentas inactivas">
                     <div class="num" id="inactivosCount" style="color: #f59e0b;">0</div>
                     <div class="lbl">🟡 Inactivos</div>
                 </div>
-                <div class="stat-card-item blocked-card" onclick="filtrarPorEstadoCard('Bloqueado')" style="cursor: pointer;" title="Clic para filtrar cuentas bloqueadas">
+                <div class="stat-card-item blocked-card" onclick="filtrarPorEstadoCard('Bloqueado')"
+                    style="cursor: pointer;" title="Clic para filtrar cuentas bloqueadas">
                     <div class="num" id="bloqueadosCount" style="color: #ef4444;">0</div>
                     <div class="lbl">🔴 Bloqueados</div>
                 </div>
@@ -202,17 +206,20 @@
                             title="Activar seleccionados" disabled>
                             <i class="fa-solid fa-user-check"></i> Activar
                         </button>
-                        <button id="btnBulkInactivo" onclick="ejecutarAccionLote('inactivo')" class="btn btn-bulk-inactivo"
+                        <button id="btnBulkInactivo" onclick="ejecutarAccionLote('inactivo')"
+                            class="btn btn-bulk-inactivo"
                             style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;"
                             title="Marcar seleccionados como inactivos" disabled>
                             <i class="fa-solid fa-user-clock"></i> Inactivo
                         </button>
-                        <button id="btnBulkBloquear" onclick="ejecutarAccionLote('bloquear')" class="btn btn-bulk-bloquear"
+                        <button id="btnBulkBloquear" onclick="ejecutarAccionLote('bloquear')"
+                            class="btn btn-bulk-bloquear"
                             style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;"
                             title="Bloquear seleccionados" disabled>
                             <i class="fa-solid fa-user-lock"></i> Bloquear
                         </button>
-                        <button id="btnBulkEliminar" onclick="ejecutarAccionLote('eliminar')" class="btn btn-bulk-eliminar"
+                        <button id="btnBulkEliminar" onclick="ejecutarAccionLote('eliminar')"
+                            class="btn btn-bulk-eliminar"
                             style="padding: 6px 14px; font-size: 12px; font-weight: 700; border-radius: 8px;"
                             title="Eliminar seleccionados" disabled>
                             <i class="fa-solid fa-trash"></i> Eliminar
