@@ -1930,7 +1930,7 @@
                     try {
                         const res = await fetch('/api/auditoria', { method: 'DELETE' });
                         if (res.ok) {
-                            showToast('Bitácora de auditoría vaciada con éxito', 'success');
+                            showToast('Bitácora de Auditoría Vaciada con Exito', 'success');
                             auditoriaCargada = [];
                             try { localStorage.removeItem('admin_cached_auditoria'); } catch (e) { }
                             filtrarAuditoriaGlobal();
