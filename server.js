@@ -516,10 +516,11 @@ app.post('/api/usuarios/login', async (req, res) => {
 
     await registrarEventoAuditoria('LOGIN_EXITOSO', user.usuario, 'Inicio de sesión exitoso en la plataforma', req);
 
+    const usuarioNormalizado = normalizarUsuario(user);
     return res.json({
+        ...usuarioNormalizado,
         success: true,
-        usuario: normalizarUsuario(user),
-        mensaje: 'Bienvenido de nuevo'
+        usuario: usuarioNormalizado.usuario
     });
 });
 
