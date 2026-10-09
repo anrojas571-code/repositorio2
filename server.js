@@ -17,6 +17,21 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 
+// --- BASE DE DATOS RELACIONAL SQLITE & VALIDACIONES CON ESQUEMAS ZOD ---
+const { dbSqlite, leerDBDesdeSQLite, guardarDBEnSQLite } = require('./sqliteDB');
+const {
+    validar,
+    registroSchema,
+    loginSchema,
+    adminLoginSchema,
+    cambiarClaveSchema,
+    recuperarSolicitarSchema,
+    restablecerClaveSchema,
+    editarPerfilSchema,
+    soporteMensajeSchema,
+    soporteRespuestaSchema
+} = require('./validaciones');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -164,7 +179,7 @@ function verificarAdminJWT(req, res, next) {
     const token = req.cookies.admin_token || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
 
     if (!token) {
-        return res.status(401).json({ error: 'Acceso denegado. Sesión no iniciada o token no proporcionado.' });
+        return res.status(401).json({ error: 'Acceso denegado. Sesión administrativa no iniciada o token no proporcionado.' });
     }
 
     try {
@@ -175,7 +190,7 @@ function verificarAdminJWT(req, res, next) {
         req.admin = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ error: 'Token inválido o sesión expirada. Inicia sesión nuevamente.' });
+        return res.status(401).json({ error: 'Token de administrador inválido o sesión expirada. Inicia sesión nuevamente.' });
     }
 }
 
@@ -183,7 +198,7 @@ function verificarUsuarioJWT(req, res, next) {
     const token = req.cookies.auth_token || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
 
     if (!token) {
-        return res.status(401).json({ error: 'No autenticado. Token no proporcionado.' });
+        return res.status(401).json({ error: 'No autenticado. Token de sesión no proporcionado.' });
     }
 
     try {
@@ -191,64 +206,73 @@ function verificarUsuarioJWT(req, res, next) {
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(401).json({ error: 'Sesión expirada. Inicia sesión nuevamente.' });
+        return res.status(401).json({ error: 'Sesión expirada o token inválido. Inicia sesión nuevamente.' });
     }
 }
 
-// --- CACHÉ EN MEMORIA PARA MÁXIMA VELOCIDAD LOCAL ---
+// Middleware: Permite Admin o Usuario dueño de la cuenta
+function verificarAdminOUsuarioPropio(req, res, next) {
+    const adminToken = req.cookies.admin_token || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
+    if (adminToken) {
+        try {
+            const decoded = jwt.verify(adminToken, JWT_SECRET);
+            if (decoded.rol === 'admin') {
+                req.admin = decoded;
+                return next();
+            }
+        } catch (e) {}
+    }
+
+    const userToken = req.cookies.auth_token || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
+    if (userToken) {
+        try {
+            const decoded = jwt.verify(userToken, JWT_SECRET);
+            const targetUser = (req.params.usuario || req.body.usuario || '').trim().toLowerCase();
+            if (decoded.usuario && decoded.usuario.toLowerCase() === targetUser) {
+                req.user = decoded;
+                return next();
+            }
+        } catch (e) {}
+    }
+
+    return res.status(403).json({ error: 'Acceso denegado. No tienes permisos para realizar esta acción sobre este usuario.' });
+}
+
+// Middleware híbrido: Permite al usuario autenticado o al administrador
+function verificarUsuarioOUsuarioAdmin(req, res, next) {
+    const userToken = req.cookies.auth_token || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
+    if (userToken) {
+        try {
+            const decoded = jwt.verify(userToken, JWT_SECRET);
+            req.user = decoded;
+            return next();
+        } catch (e) {}
+    }
+
+    const adminToken = req.cookies.admin_token || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
+    if (adminToken) {
+        try {
+            const decoded = jwt.verify(adminToken, JWT_SECRET);
+            if (decoded.rol === 'admin') {
+                req.admin = decoded;
+                return next();
+            }
+        } catch (e) {}
+    }
+
+    return res.status(401).json({ error: 'No autenticado. Inicia sesión para realizar esta acción.' });
+}
+
+// --- BASE DE DATOS RELACIONAL SQLITE (CON CACHÉ Y RESPALDO JSON SINCRONIZADO) ---
 let dbCache = null;
 
 function leerDBLocal() {
     if (dbCache) return dbCache;
 
-    let targetFile = PRIMARY_DB_FILE;
-    if (!fs.existsSync(PRIMARY_DB_FILE) && fs.existsSync(LEGACY_DB_FILE)) {
-        targetFile = LEGACY_DB_FILE;
-    }
-
-    if (!fs.existsSync(targetFile)) {
-        const initialData = {
-            usuarios: [],
-            administradores: ADMIN_DEFAULT.map(a => ({ ...a, clave: hashearClave(a.clave) })),
-            descargas: [],
-            soporte: [],
-            auditoria: [{
-                id: Date.now().toString(),
-                fecha: new Date().toLocaleDateString('es-ES'),
-                hora: new Date().toLocaleTimeString('es-ES'),
-                tipo: 'INICIALIZACION',
-                usuario: 'Sistema',
-                detalle: 'Inicialización de la base de datos local en database.json con seguridad bcrypt',
-                ip: '127.0.0.1'
-            }]
-        };
-        try {
-            fs.writeFileSync(PRIMARY_DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
-            fs.writeFileSync(LEGACY_DB_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
-        } catch (e) {
-            console.error('Error creando base de datos inicial:', e);
-        }
-        dbCache = initialData;
-        return dbCache;
-    }
-
     try {
-        const raw = fs.readFileSync(targetFile, 'utf-8');
-        const data = JSON.parse(raw);
-        if (Array.isArray(data)) {
-            dbCache = { usuarios: data, administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
-        } else {
-            if (!data.administradores || !Array.isArray(data.administradores) || data.administradores.length === 0) {
-                data.administradores = ADMIN_DEFAULT;
-            }
-            if (!Array.isArray(data.descargas)) data.descargas = [];
-            if (!Array.isArray(data.usuarios)) data.usuarios = [];
-            if (!Array.isArray(data.soporte)) data.soporte = [];
-            if (!Array.isArray(data.auditoria)) data.auditoria = [];
-            dbCache = data;
-        }
+        dbCache = leerDBDesdeSQLite();
 
-        // Ejecutar migración transparente de contraseñas si hay texto plano
+        // Migración transparente si se detectan credenciales en texto plano
         const migrado = migrarClavesPlanas(dbCache);
         if (migrado) {
             guardarDBLocal(dbCache);
@@ -257,24 +281,17 @@ function leerDBLocal() {
 
         return dbCache;
     } catch (e) {
-        console.error('Error al leer base de datos local:', e.message);
-        dbCache = { usuarios: [], administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
-        return dbCache;
+        console.error('Error al leer desde base de datos SQLite:', e.message);
+        return { usuarios: [], administradores: ADMIN_DEFAULT, descargas: [], soporte: [], auditoria: [] };
     }
 }
 
 function guardarDBLocal(data) {
     dbCache = data;
-    const jsonStr = JSON.stringify(data, null, 2);
     try {
-        fs.writeFileSync(PRIMARY_DB_FILE, jsonStr, 'utf-8');
+        guardarDBEnSQLite(data);
     } catch (err) {
-        console.error('Error escribiendo en database.json:', err.message);
-    }
-    try {
-        fs.writeFileSync(LEGACY_DB_FILE, jsonStr, 'utf-8');
-    } catch (err) {
-        // Silencioso para réplica
+        console.error('Error guardando en base de datos SQLite:', err.message);
     }
 }
 
@@ -491,7 +508,7 @@ io.on('connection', (socket) => {
 });
 
 // --- API SOPORTE TÉCNICO ---
-app.post(['/api/soporte', '/api/soporte/enviar'], async (req, res) => {
+app.post(['/api/soporte', '/api/soporte/enviar'], validar(soporteMensajeSchema), async (req, res) => {
     const usuario = req.body.usuario || req.body.usuario_origen || req.body.remitente;
     const motivo = req.body.motivo || 'Consulta General';
     const mensaje = req.body.mensaje;
@@ -524,7 +541,7 @@ app.post(['/api/soporte', '/api/soporte/enviar'], async (req, res) => {
     return res.status(201).json({ status: 'ok', mensaje: 'Mensaje recibido con éxito', data: nuevoMensaje });
 });
 
-app.post('/api/soporte/responder', async (req, res) => {
+app.post('/api/soporte/responder', verificarAdminJWT, validar(soporteRespuestaSchema), async (req, res) => {
     const usuario = req.body.usuario || req.body.usuario_origen;
     const { mensaje } = req.body;
 
@@ -555,7 +572,7 @@ app.post('/api/soporte/responder', async (req, res) => {
     return res.status(201).json({ status: 'ok', mensaje: 'Respuesta enviada con éxito', data: respuestaAdmin });
 });
 
-app.get('/api/soporte', async (req, res) => {
+app.get('/api/soporte', verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     const soporte = (db.soporte || []).slice().sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
     return res.json(soporte);
@@ -574,7 +591,7 @@ app.get('/api/soporte/usuario/:usuario', async (req, res) => {
     return res.json(mensajes);
 });
 
-app.delete('/api/soporte/usuario/:usuario', async (req, res) => {
+app.delete('/api/soporte/usuario/:usuario', verificarAdminOUsuarioPropio, async (req, res) => {
     const usuarioParam = (req.params.usuario || '').trim();
     if (!usuarioParam) {
         return res.status(400).json({ error: 'El parámetro usuario es requerido' });
@@ -589,7 +606,7 @@ app.delete('/api/soporte/usuario/:usuario', async (req, res) => {
     return res.json({ status: 'ok', mensaje: `Conversación de ${usuarioParam} eliminada` });
 });
 
-app.delete(['/api/soporte', '/api/soporte/vaciar'], async (req, res) => {
+app.delete(['/api/soporte', '/api/soporte/vaciar'], verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     db.soporte = [];
     guardarDBLocal(db);
@@ -598,7 +615,7 @@ app.delete(['/api/soporte', '/api/soporte/vaciar'], async (req, res) => {
     return res.json({ status: 'ok', mensaje: 'Todos los chats han sido eliminados' });
 });
 
-app.delete('/api/soporte/:id', async (req, res) => {
+app.delete('/api/soporte/:id', verificarAdminJWT, async (req, res) => {
     const { id } = req.params;
     const db = leerDBLocal();
     db.soporte = (db.soporte || []).filter(m => m.id !== id);
@@ -608,7 +625,7 @@ app.delete('/api/soporte/:id', async (req, res) => {
 });
 
 // --- API ADMINISTRADORES (AUTENTICACIÓN JWT Y SESIÓN SEGURA) ---
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin/login', validar(adminLoginSchema), async (req, res) => {
     const { usuario, clave } = req.body;
     if (!usuario || !clave) {
         return res.status(400).json({ error: 'Credenciales incompletas' });
@@ -667,13 +684,13 @@ app.post('/api/admin/logout', (req, res) => {
 });
 
 // --- API GESTIÓN DE USUARIOS ---
-app.get('/api/usuarios', async (req, res) => {
+app.get('/api/usuarios', verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     const usuarios = (db.usuarios || []).map(normalizarUsuario);
     return res.json(usuarios);
 });
 
-app.post(['/api/usuarios/registro', '/api/usuarios/registrar'], async (req, res) => {
+app.post(['/api/usuarios/registro', '/api/usuarios/registrar'], validar(registroSchema), async (req, res) => {
     const { usuario, clave, correo, telefono, direccion } = req.body;
     if (!usuario || !clave) {
         return res.status(400).json({ error: 'Nombre de usuario y contraseña requeridos' });
@@ -729,7 +746,7 @@ app.post(['/api/usuarios/registro', '/api/usuarios/registrar'], async (req, res)
     });
 });
 
-app.post('/api/usuarios/login', async (req, res) => {
+app.post('/api/usuarios/login', validar(loginSchema), async (req, res) => {
     const { usuario, clave } = req.body;
     if (!usuario || !clave) {
         return res.status(400).json({ error: 'Ingresa usuario y contraseña' });
@@ -804,7 +821,7 @@ app.post('/api/usuarios/logout', (req, res) => {
 });
 
 // --- RECUPERACIÓN DE CONTRASEÑA CON OTP ---
-app.post(['/api/usuarios/recuperar-solicitar', '/api/usuarios/solicitar-codigo-recuperacion'], async (req, res) => {
+app.post(['/api/usuarios/recuperar-solicitar', '/api/usuarios/solicitar-codigo-recuperacion'], validar(recuperarSolicitarSchema), async (req, res) => {
     const busqueda = (req.body.busqueda || req.body.correo || req.body.usuario || '').trim();
     if (!busqueda) return res.status(400).json({ error: 'Ingresa tu nombre de usuario o correo electrónico' });
 
@@ -932,12 +949,15 @@ app.post('/api/usuarios/verificar-codigo-recuperacion', async (req, res) => {
     return res.json({ ok: true, mensaje: 'Código verificado correctamente' });
 });
 
-app.post('/api/usuarios/restablecer-clave', async (req, res) => {
-    const { usuario, nuevaClave, codigo } = req.body;
-    if (!usuario || !nuevaClave) {
+app.post('/api/usuarios/restablecer-clave', validar(restablecerClaveSchema), async (req, res) => {
+    const { usuario, nuevaClave, claveNueva, codigo, otp } = req.body;
+    const claveAEstablecer = (nuevaClave || claveNueva || '').trim();
+    const codigoAValidar = (codigo || otp || '').trim();
+
+    if (!usuario || !claveAEstablecer) {
         return res.status(400).json({ error: 'Campos requeridos' });
     }
-    if (nuevaClave.length < 6) {
+    if (claveAEstablecer.length < 6) {
         return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
     }
 
@@ -946,11 +966,11 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
     if (idx === -1) return res.status(404).json({ error: 'Usuario no encontrado' });
 
     const user = db.usuarios[idx];
-    if (codigo && user.codigoRecuperacion && user.codigoRecuperacion !== codigo) {
+    if (codigoAValidar && user.codigoRecuperacion && user.codigoRecuperacion !== codigoAValidar) {
         return res.status(400).json({ error: 'Código de verificación incorrecto' });
     }
 
-    user.clave = hashearClave(nuevaClave.trim());
+    user.clave = hashearClave(claveAEstablecer);
     user.codigoRecuperacion = null;
     user.codigoExpiracion = null;
     guardarDBLocal(db);
@@ -960,7 +980,7 @@ app.post('/api/usuarios/restablecer-clave', async (req, res) => {
 });
 
 // --- EDICIÓN DE PERFIL ---
-app.put(['/api/usuarios/perfil', '/api/usuarios/editar'], async (req, res) => {
+app.put(['/api/usuarios/perfil', '/api/usuarios/editar'], verificarUsuarioOUsuarioAdmin, validar(editarPerfilSchema), async (req, res) => {
     const { usuario, correo, telefono, direccion } = req.body;
     if (!usuario) return res.status(400).json({ error: 'Nombre de usuario requerido' });
 
@@ -1010,7 +1030,7 @@ app.put(['/api/usuarios/perfil', '/api/usuarios/editar'], async (req, res) => {
 });
 
 // Cambio voluntario de contraseña por el usuario
-app.put('/api/usuarios/cambiar-clave', async (req, res) => {
+app.put('/api/usuarios/cambiar-clave', verificarUsuarioOUsuarioAdmin, validar(cambiarClaveSchema), async (req, res) => {
     const { usuario, claveActual, claveNueva } = req.body;
     if (!usuario || !claveActual || !claveNueva) {
         return res.status(400).json({ error: 'Todos los campos son requeridos' });
@@ -1053,7 +1073,7 @@ app.put('/api/usuarios/cambiar-clave', async (req, res) => {
 });
 
 // Edición de usuario por el Administrador
-app.put(['/api/usuarios/admin-editar', '/api/usuarios/:usuario'], async (req, res) => {
+app.put(['/api/usuarios/admin-editar', '/api/usuarios/:usuario'], verificarAdminJWT, async (req, res) => {
     const usuarioTarget = req.params.usuario || req.body.usuario || req.body.originalUsuario;
     const { correo, telefono, direccion, clave, rol, estado } = req.body;
 
@@ -1177,40 +1197,40 @@ async function manejarAccionBulk(accion, usuariosSeleccionados, req, res) {
     });
 }
 
-app.post('/api/usuarios/bulk', async (req, res) => {
+app.post('/api/usuarios/bulk', verificarAdminJWT, async (req, res) => {
     const accion = req.body.accion;
     const lista = req.body.usuariosSeleccionados || req.body.usuarios;
     await manejarAccionBulk(accion, lista, req, res);
 });
 
-app.post('/api/usuarios/bulk-status', async (req, res) => {
+app.post('/api/usuarios/bulk-status', verificarAdminJWT, async (req, res) => {
     const { usuarios, estado } = req.body;
     const accion = (estado || '').toLowerCase() === 'bloqueado' ? 'bloquear' : 'activar';
     await manejarAccionBulk(accion, usuarios, req, res);
 });
 
-app.post('/api/usuarios/bulk-statusinactivo', async (req, res) => {
+app.post('/api/usuarios/bulk-statusinactivo', verificarAdminJWT, async (req, res) => {
     const { usuarios, estado } = req.body;
     const accion = (estado || '').toLowerCase() === 'inactivo' ? 'inactivo' : 'activar';
     await manejarAccionBulk(accion, usuarios, req, res);
 });
 
-app.post('/api/usuarios/bulk-delete', async (req, res) => {
+app.post('/api/usuarios/bulk-delete', verificarAdminJWT, async (req, res) => {
     const { usuarios } = req.body;
     await manejarAccionBulk('eliminar', usuarios, req, res);
 });
 
-// Vaciar toda la base de datos de usuarios
-app.delete('/api/usuarios', async (req, res) => {
+// Vaciar toda la base de datos de usuarios (Solo Admin)
+app.delete('/api/usuarios', verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     db.usuarios = [];
     guardarDBLocal(db);
-    await registrarEventoAuditoria('BASE_DATOS_VACIADA', 'Administrador', 'Se vaciaron todos los usuarios de la base de datos local JSON', req);
+    await registrarEventoAuditoria('BASE_DATOS_VACIADA', 'Administrador', 'Se vaciaron todos los usuarios de la base de datos SQLite', req);
     return res.json({ ok: true, mensaje: 'Base de datos de usuarios vaciada con éxito' });
 });
 
-// Eliminar un usuario individual
-app.delete('/api/usuarios/:usuario', async (req, res) => {
+// Eliminar un usuario individual (Admin o el propio usuario autenticado)
+app.delete('/api/usuarios/:usuario', verificarAdminOUsuarioPropio, async (req, res) => {
     const { usuario } = req.params;
     const db = leerDBLocal();
     const lenAntes = (db.usuarios || []).length;
@@ -1226,13 +1246,13 @@ app.delete('/api/usuarios/:usuario', async (req, res) => {
 });
 
 // --- AUDITORÍA ---
-app.get('/api/auditoria', async (req, res) => {
+app.get('/api/auditoria', verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     return res.json(db.auditoria || []);
 });
 
 // Vaciar bitácora de auditoría
-app.delete('/api/auditoria', async (req, res) => {
+app.delete('/api/auditoria', verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     db.auditoria = [];
     guardarDBLocal(db);
@@ -1240,7 +1260,7 @@ app.delete('/api/auditoria', async (req, res) => {
 });
 
 // --- HISTORIAL DE DESCARGAS ---
-app.post('/api/descargas', async (req, res) => {
+app.post('/api/descargas', verificarAdminJWT, async (req, res) => {
     const { formato } = req.body;
     const ahora = new Date();
     const fecha = ahora.toLocaleDateString('es-ES');
@@ -1255,12 +1275,12 @@ app.post('/api/descargas', async (req, res) => {
     return res.json({ ok: true, id: nuevoRegistro.id, fecha, hora });
 });
 
-app.get('/api/descargas', async (req, res) => {
+app.get('/api/descargas', verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     return res.json(db.descargas || []);
 });
 
-app.delete('/api/descargas/:id', async (req, res) => {
+app.delete('/api/descargas/:id', verificarAdminJWT, async (req, res) => {
     const { id } = req.params;
     const db = leerDBLocal();
     db.descargas = (db.descargas || []).filter(d => String(d.id) !== String(id));
@@ -1268,7 +1288,7 @@ app.delete('/api/descargas/:id', async (req, res) => {
     return res.json({ ok: true, mensaje: 'Registro de descarga eliminado con éxito' });
 });
 
-app.delete('/api/descargas', async (req, res) => {
+app.delete('/api/descargas', verificarAdminJWT, async (req, res) => {
     const db = leerDBLocal();
     db.descargas = [];
     guardarDBLocal(db);
@@ -1276,7 +1296,7 @@ app.delete('/api/descargas', async (req, res) => {
 });
 
 // --- API EXPORTACIÓN DE DATOS (EXCEL / CSV) ---
-app.get('/api/exportar/excel', async (req, res) => {
+app.get('/api/exportar/excel', verificarAdminJWT, async (req, res) => {
     try {
         const formato = (req.query.formato || 'xlsx').toLowerCase();
         const db = leerDBLocal();

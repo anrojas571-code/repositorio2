@@ -1,6 +1,7 @@
 {
   "usuarios": [
     {
+      "id": 5,
       "usuario": "Angel Rojas",
       "clave": "$2b$10$yqiKUolYih8EXsd8.29shuRzTbw3zwNgIRWACYcI2KqkSnc1GKV.u",
       "correo": "anrojas571@gmail.com",
@@ -30,6 +31,7 @@
       "codigoExpiracion": 1791552486157
     },
     {
+      "id": 6,
       "usuario": "Anggll",
       "clave": "$2b$10$Fr9fFhXWqJwb3xuFB.D/G.EEA6O2OWyZt.MIARtSHFFMpscLwyvO2",
       "correo": "garybod23@gmail.com",
@@ -59,6 +61,7 @@
       "codigoExpiracion": 1789501479290
     },
     {
+      "id": 7,
       "usuario": "Gary",
       "clave": "$2b$10$.tVHfh0IY6/oiWuie71T2OO5.fOUkw1Fw16dSpFFDTHguaKAhY06a",
       "correo": "monolito2026@gmail.com",
@@ -88,6 +91,7 @@
       "codigoExpiracion": 1790268173643
     },
     {
+      "id": 8,
       "usuario": "Samuel Rojas",
       "clave": "$2b$10$eTekocBEqwSGqTDX90w.B.UP7ZWu7dpntKDLKxUEW3iylnP8T7vVO",
       "correo": "SAmuelito50@gmail.com",
@@ -97,20 +101,132 @@
       "contadorModificaciones": 0,
       "rol": "Cliente",
       "estado": "Inactivo",
-      "historialEdiciones": []
+      "historialEdiciones": [],
+      "codigoRecuperacion": null,
+      "codigoExpiracion": null
     }
   ],
   "administradores": [
     {
+      "id": 3,
       "usuario": "Admin",
-      "clave": "$2b$10$ljdPN5dqcRp/FRdkmcdAkuZuG1Qcxa4LJrDlDli6y4pugEepEs.dG"
+      "clave": "$2b$10$ljdPN5dqcRp/FRdkmcdAkuZuG1Qcxa4LJrDlDli6y4pugEepEs.dG",
+      "nombre": "Admin",
+      "correo": ""
     },
     {
+      "id": 4,
       "usuario": "Angel",
-      "clave": "$2b$10$UgbnHC5KwLF6SyGfPGBv1eU/0XinLsGn/r92p0.8WGa7J1V56FhSu"
+      "clave": "$2b$10$UgbnHC5KwLF6SyGfPGBv1eU/0XinLsGn/r92p0.8WGa7J1V56FhSu",
+      "nombre": "Angel",
+      "correo": ""
     }
   ],
-  "descargas": [],
+  "descargas": [
+    {
+      "id": 1791552852712,
+      "formato": "Excel",
+      "fecha": "9/10/2026",
+      "hora": "9:34:12"
+    },
+    {
+      "id": 1791552849797,
+      "formato": "JSON",
+      "fecha": "9/10/2026",
+      "hora": "9:34:09"
+    }
+  ],
   "soporte": [],
-  "auditoria": []
+  "auditoria": [
+    {
+      "id": "1791571765760-909",
+      "fecha": "9/10/2026",
+      "hora": "14:49:25",
+      "tipo": "USUARIO_ELIMINADO",
+      "usuario": "Administrador",
+      "detalle": "Usuario UserTest_5474 eliminado del sistema",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791571765750-560",
+      "fecha": "9/10/2026",
+      "hora": "14:49:25",
+      "tipo": "PERFIL_ACTUALIZADO",
+      "usuario": "UserTest_5474",
+      "detalle": "Perfil actualizado: Dirección",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791571765728-693",
+      "fecha": "9/10/2026",
+      "hora": "14:49:25",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "UserTest_5474",
+      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791571765606-10",
+      "fecha": "9/10/2026",
+      "hora": "14:49:25",
+      "tipo": "REGISTRO_USUARIO",
+      "usuario": "UserTest_5474",
+      "detalle": "Nueva cuenta registrada (usertest_5474@test.com) con encriptación bcrypt",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791571765448-584",
+      "fecha": "9/10/2026",
+      "hora": "14:49:25",
+      "tipo": "ADMIN_LOGIN_EXITOSO",
+      "usuario": "Admin",
+      "detalle": "Acceso exitoso al panel administrativo con Token JWT",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791554845974-961",
+      "fecha": "9/10/2026",
+      "hora": "10:07:25",
+      "tipo": "LOGIN_FALLIDO",
+      "usuario": "Samuel Rojas",
+      "detalle": "Intento de inicio de sesión con contraseña incorrecta",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791552852713-893",
+      "fecha": "9/10/2026",
+      "hora": "9:34:12",
+      "tipo": "EXPORTAR_EXCEL",
+      "usuario": "Administrador",
+      "detalle": "Exportación de base de datos a archivo Excel (.xlsx)",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791552820277-724",
+      "fecha": "9/10/2026",
+      "hora": "9:33:40",
+      "tipo": "LOGIN_EXITOSO",
+      "usuario": "Angel Rojas",
+      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791552797257-503",
+      "fecha": "9/10/2026",
+      "hora": "9:33:17",
+      "tipo": "LOGIN_BLOQUEADO",
+      "usuario": "Anggll",
+      "detalle": "Intento de acceso con cuenta bloqueada",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791571728544-930",
+      "fecha": "9/10/2026",
+      "hora": "14:48:48",
+      "tipo": "ADMIN_LOGIN_FALLIDO",
+      "usuario": "Admin",
+      "detalle": "Intento de acceso denegado con credenciales inválidas",
+      "ip": "127.0.0.1"
+    }
+  ]
 }
