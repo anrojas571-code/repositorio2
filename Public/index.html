@@ -479,23 +479,25 @@
         </div>
     </div>
 
-    <!-- MODAL DE CONFIRMACIÓN DE USUARIO -->
+    <!-- MODAL DE CONFIRMACIÓN DE USUARIO (DISEÑO MODERNO) -->
     <div id="modalConfirmacionUsuario" class="modal-overlay">
-        <div class="modal-card" style="max-width: 440px; text-align: center;">
-            <div style="font-size: 42px; color: #ef4444; margin-bottom: 12px;">
+        <div class="modal-card modal-confirm-card">
+            <div class="modal-confirm-icon">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <h2 id="confirmTituloUsuario"
-                style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
-                ¿Estás seguro?
+            <h2 id="confirmTituloUsuario" class="modal-confirm-title">
+                ¿Vaciar Todos los Mensajes?
             </h2>
-            <p id="confirmMensajeUsuario" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">
-                Esta acción eliminará el historial.
+            <p id="confirmMensajeUsuario" class="modal-confirm-desc">
+                Se borrarán de forma irreversible todas las conversaciones de soporte de la base de datos.
             </p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button type="button" class="btn btn-refresh"
-                    onclick="cerrarModalConfirmacionUsuario()">Cancelar</button>
-                <button type="button" id="btnConfirmarAccionUsuario" class="btn btn-danger">Confirmar</button>
+            <div class="modal-confirm-actions">
+                <button type="button" class="btn-confirm-cancel" onclick="cerrarModalConfirmacionUsuario()">
+                    Cancelar
+                </button>
+                <button type="button" id="btnConfirmarAccionUsuario" class="btn-confirm-danger">
+                    <i class="fa-solid fa-trash-can"></i> Confirmar
+                </button>
             </div>
         </div>
     </div>
@@ -842,8 +844,8 @@
             }
 
             mostrarModalConfirmacionUsuario(
-                '¿Vaciar todos los mensajes?',
-                `Se eliminarán de forma permanente todos los mensajes de soporte con "${usuarioActual}".`,
+                '¿Vaciar Todos los Mensajes?',
+                `Se borrarán de forma irreversible todos los mensajes de soporte con "${usuarioActual}".`,
                 async () => {
                     try {
                         const res = await fetch(`/api/soporte/usuario/${encodeURIComponent(usuarioActual)}`, {

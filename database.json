@@ -26,8 +26,8 @@
           ]
         }
       ],
-      "codigoRecuperacion": null,
-      "codigoExpiracion": null
+      "codigoRecuperacion": "256469",
+      "codigoExpiracion": 1791552486157
     },
     {
       "usuario": "Anggll",
@@ -112,42 +112,5 @@
   ],
   "descargas": [],
   "soporte": [],
-  "auditoria": [
-    {
-      "id": "1791550976127-833",
-      "fecha": "9/10/2026",
-      "hora": "9:02:56",
-      "tipo": "LOGIN_EXITOSO",
-      "usuario": "Angel Rojas",
-      "detalle": "Inicio de sesión exitoso en la plataforma",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1791550975985-62",
-      "fecha": "9/10/2026",
-      "hora": "9:02:55",
-      "tipo": "ADMIN_LOGIN_EXITOSO",
-      "usuario": "Admin",
-      "detalle": "Acceso exitoso al panel administrativo con Token JWT",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1791295008058-549",
-      "fecha": "6/10/2026",
-      "hora": "9:56:48",
-      "tipo": "LOGIN_EXITOSO",
-      "usuario": "Angel Rojas",
-      "detalle": "Inicio de sesión exitoso en la plataforma",
-      "ip": "127.0.0.1"
-    },
-    {
-      "id": "1791294987883-152",
-      "fecha": "6/10/2026",
-      "hora": "9:56:27",
-      "tipo": "ADMIN_LOGIN_EXITOSO",
-      "usuario": "Admin",
-      "detalle": "Acceso exitoso al panel administrativo con Token JWT",
-      "ip": "127.0.0.1"
-    }
-  ]
+  "auditoria": []
 }

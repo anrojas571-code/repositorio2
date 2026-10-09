@@ -412,25 +412,24 @@
     </div>
 
     <!-- MODAL DE CONFIRMACIÓN ELEGANTE (REEMPLAZO DE CONFIRM NATIVO) -->
+    <!-- MODAL DE CONFIRMACIÓN ELEGANTE (DISEÑO MODERNO) -->
     <div id="modalConfirmacion" class="modal-overlay">
-        <div class="modal-card" style="max-width: 440px; text-align: center;">
-            <div style="font-size: 42px; color: var(--danger); margin-bottom: 12px;">
+        <div class="modal-card modal-confirm-card">
+            <div class="modal-confirm-icon">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <h2 id="confirmTitulo"
-                style="font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 6px;">
+            <h2 id="confirmTitulo" class="modal-confirm-title">
                 ¿Estás seguro?
             </h2>
-            <p id="confirmMensaje"
-                style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.4;">
+            <p id="confirmMensaje" class="modal-confirm-desc">
                 Esta acción no se puede deshacer.
             </p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button type="button" class="btn btn-refresh" style="flex: 1;" onclick="cerrarModalConfirmacion()">
+            <div class="modal-confirm-actions">
+                <button type="button" class="btn-confirm-cancel" onclick="cerrarModalConfirmacion()">
                     Cancelar
                 </button>
-                <button type="button" id="btnConfirmarAccion" class="btn btn-danger" style="flex: 1;">
-                    <i class="fa-solid fa-trash"></i> Confirmar
+                <button type="button" id="btnConfirmarAccion" class="btn-confirm-danger">
+                    <i class="fa-solid fa-trash-can"></i> Confirmar
                 </button>
             </div>
         </div>
