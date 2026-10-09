@@ -15,6 +15,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <link rel="stylesheet" href="styles.css">
+
+    <!-- Socket.io para mensajería en tiempo real -->
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
@@ -506,6 +509,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             cargarTemaGuardado();
+            inicializarSocketUsuario();
             verificarSesionGuardada();
         });
 
@@ -555,6 +559,44 @@
             document.getElementById('themeIcon').className = savedTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
         }
 
+        // --- CONEXIÓN EN TIEMPO REAL CON WEBSOCKETS (SOCKET.IO) ---
+        let userSocket = null;
+
+        function inicializarSocketUsuario() {
+            if (typeof io !== 'undefined') {
+                try {
+                    userSocket = io();
+                    userSocket.on('connect', () => {
+                        const uTarget = (usuarioActualEnSesion && usuarioActualEnSesion.usuario) || soporteSesion.usuario || '';
+                        if (uTarget) {
+                            userSocket.emit('join_user_room', uTarget);
+                        }
+                    });
+
+                    // Recepción instantánea de respuestas del administrador
+                    userSocket.on('nuevo_mensaje_soporte', (nuevoMsg) => {
+                        const actual = (soporteSesion.usuario || (usuarioActualEnSesion && usuarioActualEnSesion.usuario) || '').toLowerCase();
+                        if (nuevoMsg.usuario && nuevoMsg.usuario.toLowerCase() === actual) {
+                            recargarChatUsuarioSilencioso(false);
+                            if (nuevoMsg.emisor === 'admin') {
+                                mostrarToast('Respuesta de Soporte', 'El administrador te ha respondido en el chat.', 'info');
+                            }
+                        }
+                    });
+
+                    userSocket.on('soporte_eliminado', () => {
+                        recargarChatUsuarioSilencioso(false);
+                    });
+
+                    userSocket.on('soporte_vaciado', () => {
+                        recargarChatUsuarioSilencioso(false);
+                    });
+                } catch (e) {
+                    console.warn('Socket.io no disponible en cliente, usando sondeo HTTP.');
+                }
+            }
+        }
+
         // --- SISTEMA DE SOPORTE CON EL DESARROLLADOR / ADMINISTRADOR ---
         let soporteSesion = {
             usuario: '',
@@ -585,6 +627,9 @@
                 const inputUsuario = document.getElementById('soporteUsuario');
                 if (inputUsuario) inputUsuario.value = usuarioActual;
                 soporteSesion.usuario = usuarioActual;
+                if (userSocket && userSocket.connected) {
+                    userSocket.emit('join_user_room', usuarioActual);
+                }
             }
 
             modal.classList.add('active');
@@ -988,8 +1033,11 @@
                     } catch (errCache) { }
 
                     renderizarPerfil(usuarioValido);
+                    if (userSocket && userSocket.connected) {
+                        userSocket.emit('join_user_room', usuarioValido.usuario);
+                    }
                     const nombreMostrar = typeof usuarioValido.usuario === 'string' ? usuarioValido.usuario : 'Usuario';
-                    mostrarToast('¡Bienvenido!', `Sesión iniciada como ${nombreMostrar}`, 'exito');
+                    mostrarToast('¡Bienvenido!', `Sesión iniciada con JWT como ${nombreMostrar}`, 'exito');
                 } else if (response.status === 403) {
                     mostrarToast('Acceso Restringido', data.error || 'Tu cuenta se encuentra bloqueada.', 'error');
                 } else {
@@ -1058,7 +1106,11 @@
             `;
         }
 
-        function cerrarSesion() {
+        async function cerrarSesion() {
+            try {
+                await fetch('/api/usuarios/logout', { method: 'POST' });
+            } catch (e) { }
+
             localStorage.removeItem(SESSION_KEY);
             usuarioActualEnSesion = null;
             document.getElementById('formLoginWrapper').style.display = 'block';
@@ -1067,13 +1119,34 @@
             mostrarToast('Sesión Cerrada', 'Has salido del sistema correctamente.', 'exito');
         }
 
-        function verificarSesionGuardada() {
+        async function verificarSesionGuardada() {
+            // Verificación primaria en servidor con Cookie JWT HttpOnly
+            try {
+                const res = await fetch('/api/usuarios/verificar-sesion');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.usuario) {
+                        usuarioActualEnSesion = data.usuario;
+                        localStorage.setItem(SESSION_KEY, JSON.stringify(data.usuario));
+                        renderizarPerfil(data.usuario);
+                        if (userSocket && userSocket.connected) {
+                            userSocket.emit('join_user_room', data.usuario.usuario);
+                        }
+                        return;
+                    }
+                }
+            } catch (e) { }
+
+            // Modo resiliente hibrido con almacenamiento local
             const sesion = localStorage.getItem(SESSION_KEY);
             if (sesion) {
                 try {
                     const parsed = JSON.parse(sesion);
                     if (parsed && parsed.usuario) {
                         renderizarPerfil(parsed);
+                        if (userSocket && userSocket.connected) {
+                            userSocket.emit('join_user_room', parsed.usuario);
+                        }
                     }
                 } catch (e) {
                     localStorage.removeItem(SESSION_KEY);

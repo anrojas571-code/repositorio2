@@ -2,7 +2,7 @@
   "usuarios": [
     {
       "usuario": "Angel Rojas",
-      "clave": "123456789/",
+      "clave": "$2b$10$yqiKUolYih8EXsd8.29shuRzTbw3zwNgIRWACYcI2KqkSnc1GKV.u",
       "correo": "anrojas571@gmail.com",
       "telefono": "04123823890",
       "direccion": "Los Guayos",
@@ -31,7 +31,7 @@
     },
     {
       "usuario": "Anggll",
-      "clave": "123456789*",
+      "clave": "$2b$10$Fr9fFhXWqJwb3xuFB.D/G.EEA6O2OWyZt.MIARtSHFFMpscLwyvO2",
       "correo": "garybod23@gmail.com",
       "telefono": "04145310274",
       "direccion": "",
@@ -60,7 +60,7 @@
     },
     {
       "usuario": "Gary",
-      "clave": "987654321.",
+      "clave": "$2b$10$.tVHfh0IY6/oiWuie71T2OO5.fOUkw1Fw16dSpFFDTHguaKAhY06a",
       "correo": "monolito2026@gmail.com",
       "telefono": "04125555555",
       "direccion": "",
@@ -89,7 +89,7 @@
     },
     {
       "usuario": "Samuel Rojas",
-      "clave": "000000*",
+      "clave": "$2b$10$eTekocBEqwSGqTDX90w.B.UP7ZWu7dpntKDLKxUEW3iylnP8T7vVO",
       "correo": "SAmuelito50@gmail.com",
       "telefono": "04123826988",
       "direccion": "",
@@ -103,41 +103,50 @@
   "administradores": [
     {
       "usuario": "Admin",
-      "clave": "An12345*"
+      "clave": "$2b$10$ljdPN5dqcRp/FRdkmcdAkuZuG1Qcxa4LJrDlDli6y4pugEepEs.dG"
     },
     {
       "usuario": "Angel",
-      "clave": "Samuel20"
+      "clave": "$2b$10$UgbnHC5KwLF6SyGfPGBv1eU/0XinLsGn/r92p0.8WGa7J1V56FhSu"
     }
   ],
   "descargas": [],
   "soporte": [],
   "auditoria": [
     {
-      "id": "1790946808313-925",
-      "fecha": "2/10/2026",
-      "hora": "9:13:28",
+      "id": "1791550976127-833",
+      "fecha": "9/10/2026",
+      "hora": "9:02:56",
       "tipo": "LOGIN_EXITOSO",
       "usuario": "Angel Rojas",
       "detalle": "Inicio de sesión exitoso en la plataforma",
       "ip": "127.0.0.1"
     },
     {
-      "id": "1790690599742-663",
-      "fecha": "29/9/2026",
-      "hora": "10:03:19",
+      "id": "1791550975985-62",
+      "fecha": "9/10/2026",
+      "hora": "9:02:55",
+      "tipo": "ADMIN_LOGIN_EXITOSO",
+      "usuario": "Admin",
+      "detalle": "Acceso exitoso al panel administrativo con Token JWT",
+      "ip": "127.0.0.1"
+    },
+    {
+      "id": "1791295008058-549",
+      "fecha": "6/10/2026",
+      "hora": "9:56:48",
       "tipo": "LOGIN_EXITOSO",
-      "usuario": "Samuel Rojas",
+      "usuario": "Angel Rojas",
       "detalle": "Inicio de sesión exitoso en la plataforma",
       "ip": "127.0.0.1"
     },
     {
-      "id": "1790690532062-767",
-      "fecha": "29/9/2026",
-      "hora": "10:02:12",
-      "tipo": "LOGIN_EXITOSO",
-      "usuario": "Samuel Rojas",
-      "detalle": "Inicio de sesión exitoso en la plataforma",
+      "id": "1791294987883-152",
+      "fecha": "6/10/2026",
+      "hora": "9:56:27",
+      "tipo": "ADMIN_LOGIN_EXITOSO",
+      "usuario": "Admin",
+      "detalle": "Acceso exitoso al panel administrativo con Token JWT",
       "ip": "127.0.0.1"
     }
   ]

@@ -17,6 +17,9 @@
 
     <!-- Librería para generar .xlsx (cargada con defer para no bloquear el inicio) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+    <!-- WebSockets en tiempo real y Chart.js interactivo -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="admin.css">
 </head>
@@ -137,6 +140,36 @@
                     <div id="progresoBloqueados"
                         style="height: 100%; width: 0%; background: #ef4444; transition: width 0.4s ease;"
                         title="Bloqueados"></div>
+                </div>
+            </div>
+
+            <!-- PANEL DE ANALÍTICA VISUAL CON CHART.JS -->
+            <div class="content-panel" style="margin: 15px 0 20px 0; padding: 18px 22px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                    <span style="font-weight: 800; font-size: 15px; color: var(--text-main);">
+                        <i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> Métricas y Analítica Visual (Chart.js)
+                    </span>
+                    <span style="font-size: 12px; color: var(--text-muted); font-weight: 600;">
+                        <i class="fa-solid fa-bolt" style="color: #f59e0b;"></i> En Tiempo Real
+                    </span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px;">
+                    <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; position: relative;">
+                        <div style="font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; text-align: center;">
+                            <i class="fa-solid fa-chart-pie"></i> Proporción por Estado
+                        </div>
+                        <div style="position: relative; height: 190px; width: 100%;">
+                            <canvas id="graficoEstadosUsuarios"></canvas>
+                        </div>
+                    </div>
+                    <div style="background: var(--item-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; position: relative;">
+                        <div style="font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; text-align: center;">
+                            <i class="fa-solid fa-chart-column"></i> Balance Global de Cuentas
+                        </div>
+                        <div style="position: relative; height: 190px; width: 100%;">
+                            <canvas id="graficoBarrasUsuarios"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -279,10 +312,10 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Contraseña</label>
+                        <label>Contraseña (Opcional)</label>
                         <div class="input-wrapper">
                             <i class="fa-solid fa-key field-icon"></i>
-                            <input type="text" id="editClave" placeholder="Contraseña de acceso" required>
+                            <input type="text" id="editClave" placeholder="Nueva clave (dejar vacío para no cambiar)">
                         </div>
                     </div>
 
@@ -538,16 +571,64 @@
         let usuariosSeleccionados = new Set();
         let auditoriaCargada = [];
 
+        let adminSocket = null;
+
         document.addEventListener('DOMContentLoaded', () => {
             cargarTemaGuardado();
-            const sesionAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
-            if (sesionAdmin === 'true') {
-                mostrarPanelAdmin();
-            } else {
-                document.getElementById('vistaPanelAdmin').style.display = 'none';
-                document.getElementById('vistaLoginAdmin').style.display = 'block';
-            }
+            inicializarSocketAdmin();
+            verificarSesionAdminEnServidor();
         });
+
+        // Verificación de sesión Enterprise con JWT en Cookie HttpOnly
+        async function verificarSesionAdminEnServidor() {
+            try {
+                const res = await fetch('/api/admin/verificar-sesion');
+                if (res.ok) {
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                    mostrarPanelAdmin();
+                    return;
+                }
+            } catch (e) { }
+
+            // Si no hay token válido o expiró
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            document.getElementById('vistaPanelAdmin').style.display = 'none';
+            document.getElementById('vistaLoginAdmin').style.display = 'block';
+        }
+
+        // Conexión en tiempo real con WebSockets (Socket.io)
+        function inicializarSocketAdmin() {
+            if (typeof io !== 'undefined') {
+                try {
+                    adminSocket = io();
+                    adminSocket.on('connect', () => {
+                        adminSocket.emit('join_admin_room');
+                    });
+
+                    // Mensajes entrantes en tiempo real
+                    adminSocket.on('nuevo_mensaje_soporte', (nuevoMsg) => {
+                        cargarMensajesSoporte(true);
+                        if (nuevoMsg.emisor !== 'admin') {
+                            showToast(`Nuevo mensaje de soporte de @${nuevoMsg.usuario}`, 'info', 'Chat en Vivo');
+                        }
+                    });
+
+                    adminSocket.on('soporte_actualizado', () => {
+                        cargarMensajesSoporte(true);
+                    });
+
+                    adminSocket.on('soporte_eliminado', () => {
+                        cargarMensajesSoporte(true);
+                    });
+
+                    adminSocket.on('soporte_vaciado', () => {
+                        cargarMensajesSoporte(true);
+                    });
+                } catch (err) {
+                    console.warn('Socket.io no disponible, operando en modo híbrido', err);
+                }
+            }
+        }
 
         // --- MODO OSCURO / CLARO ---
         function toggleTheme() {
@@ -558,6 +639,9 @@
 
             const icon = document.getElementById('themeIcon');
             icon.className = newTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+
+            // Redibujar gráficos de Chart.js con la paleta de colores del tema seleccionado
+            actualizarMetricasYProgreso();
         }
 
         function cargarTemaGuardado() {
@@ -898,10 +982,12 @@
                 if (response.ok) {
                     sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
                     mostrarPanelAdmin();
-                    showToast('Sesión iniciada correctamente en el panel', 'success', 'Bienvenido');
+                    showToast('Sesión segura iniciada con JWT y Cookies HttpOnly', 'success', 'Bienvenido');
                 } else {
+                    const errData = await response.json().catch(() => ({}));
+                    errorElem.textContent = errData.error || 'Credenciales de Administrador no válidas';
                     errorElem.style.display = 'block';
-                    showToast('Credenciales de Administrador no válidas', 'error', 'Acceso Denegado');
+                    showToast(errData.error || 'Credenciales de Administrador no válidas', 'error', 'Acceso Denegado');
                 }
             } catch (err) {
                 showToast('Error al conectar con el servidor', 'error');
@@ -914,7 +1000,11 @@
             cargarDatos();
         }
 
-        function cerrarSesionAdmin() {
+        async function cerrarSesionAdmin() {
+            try {
+                await fetch('/api/admin/logout', { method: 'POST' });
+            } catch (e) { }
+
             sessionStorage.removeItem(ADMIN_SESSION_KEY);
             document.getElementById('vistaPanelAdmin').style.display = 'none';
             document.getElementById('vistaLoginAdmin').style.display = 'block';
@@ -1004,6 +1094,121 @@
                     if (legend) legend.textContent = `${pAct}% Activos | ${pIna}% Inactivos | ${pBlo}% Bloqueados`;
                 }
             }
+
+            // Actualizar gráficos interactivos con Chart.js
+            renderizarGraficosMetricas(activos, inactivos, bloqueados, total);
+        }
+
+        // --- RENDERIZADO DE GRÁFICOS INTERACTIVOS (CHART.JS) ---
+        let miGraficoEstados = null;
+        let miGraficoBarras = null;
+
+        function renderizarGraficosMetricas(activos, inactivos, bloqueados, total) {
+            if (typeof Chart === 'undefined') return;
+
+            const esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+            const colorTexto = esOscuro ? '#cbd5e1' : '#475569';
+            const colorBorde = esOscuro ? '#1e293b' : '#ffffff';
+
+            // 1. Gráfico de Dona para Distribución de Estados
+            const canvasDona = document.getElementById('graficoEstadosUsuarios');
+            if (canvasDona) {
+                const ctxDona = canvasDona.getContext('2d');
+                if (miGraficoEstados) {
+                    miGraficoEstados.destroy();
+                }
+
+                const dataDona = (total === 0) ? [1] : [activos, inactivos, bloqueados];
+                const labelsDona = (total === 0) ? ['Sin registros'] : ['Activos', 'Inactivos', 'Bloqueados'];
+                const bgDona = (total === 0) ? ['#94a3b8'] : ['#10b981', '#f59e0b', '#ef4444'];
+
+                miGraficoEstados = new Chart(ctxDona, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labelsDona,
+                        datasets: [{
+                            data: dataDona,
+                            backgroundColor: bgDona,
+                            borderWidth: 2,
+                            borderColor: colorBorde
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: colorTexto,
+                                    font: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+                                    boxWidth: 12,
+                                    padding: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (ctx) {
+                                        if (total === 0) return 'Sin usuarios';
+                                        const val = ctx.raw || 0;
+                                        const pct = ((val / total) * 100).toFixed(1);
+                                        return ` ${ctx.label}: ${val} (${pct}%)`;
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '62%'
+                    }
+                });
+            }
+
+            // 2. Gráfico de Barras para Balance Global de Cuentas
+            const canvasBarras = document.getElementById('graficoBarrasUsuarios');
+            if (canvasBarras) {
+                const ctxBarras = canvasBarras.getContext('2d');
+                if (miGraficoBarras) {
+                    miGraficoBarras.destroy();
+                }
+
+                miGraficoBarras = new Chart(ctxBarras, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Total', 'Activos', 'Inactivos', 'Bloqueados'],
+                        datasets: [{
+                            label: 'Cuentas',
+                            data: [total, activos, inactivos, bloqueados],
+                            backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444'],
+                            borderRadius: 6,
+                            maxBarThickness: 34
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1,
+                                    color: colorTexto,
+                                    font: { family: 'Plus Jakarta Sans', size: 10 }
+                                },
+                                grid: { color: esOscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)' }
+                            },
+                            x: {
+                                ticks: {
+                                    color: colorTexto,
+                                    font: { family: 'Plus Jakarta Sans', size: 10, weight: '600' }
+                                },
+                                grid: { display: false }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
         }
 
         // --- FILTRADO DE USUARIOS Y GESTIÓN DE SELECCIÓN ---
@@ -1068,7 +1273,7 @@
                                         <span class="${statusBadgeClass}">${estado}</span>
                                     </h3>
                                     <p><i class="fa-solid fa-envelope"></i> ${u.correo || 'Sin correo'} | <i class="fa-solid fa-phone"></i> ${u.telefono || 'Sin teléfono'}</p>
-                                    <p><i class="fa-solid fa-key"></i> Clave: <strong>${u.clave}</strong> ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
+                                    <p><i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Seguridad: <strong style="color: #10b981;">•••••••• (Protegida bcrypt)</strong> ${u.direccion ? `| <i class="fa-solid fa-location-dot"></i> ${u.direccion}` : ''}</p>
                                 </div>
                             </div>
                         </div>
@@ -1445,7 +1650,7 @@
             document.getElementById('editCorreo').value = usuario.correo || '';
             document.getElementById('editTelefono').value = usuario.telefono || '';
             document.getElementById('editDireccion').value = usuario.direccion || '';
-            document.getElementById('editClave').value = usuario.clave || '';
+            document.getElementById('editClave').value = ''; // Vacío para preservar contraseña actual si no se modifica
             document.getElementById('editRol').value = usuario.rol || 'Cliente';
             document.getElementById('editEstado').value = usuario.estado || 'Activo';
 
